@@ -11,14 +11,14 @@ Build a continuous integration system that leverages Kubernetes-native paradigms
 
 ## Technical Context
 
-**Language/Version**: Go 1.21+ (resolved: Kubernetes ecosystem standard, client-go library)
+**Language/Version**: Go 1.25 (resolved: Kubernetes ecosystem standard, client-go library, enhanced stdlib)
 **Primary Dependencies**:
   - `client-go` v0.28+ (Kubernetes client library)
   - `controller-runtime` v0.16+ (CRD controller framework)
   - `gopkg.in/yaml.v3` (YAML parsing for pipeline configs)
-  - `gorilla/mux` v1.8+ (HTTP routing for REST API)
-  - `gorilla/websocket` v1.5+ (WebSocket for log streaming)
-  - Svelte 4+ + Tailwind CSS 3+ (optional dashboard, separate deployment)
+  - `net/http` stdlib (HTTP server and routing with Go 1.22+ enhanced ServeMux)
+  - `html/template` stdlib (server-side HTML rendering for dashboard)
+  - HTMX 2.0+ (~14KB JS library, CDN-hosted) + Tailwind CSS 3+ (optional dashboard, embedded in API server)
 **Storage**:
   - Kubernetes CRDs backed by etcd (PipelineConfig, PipelineRun, RepositoryConnection state)
   - S3-compatible object storage (logs and artifacts: AWS S3, GCS, MinIO, Ceph)
@@ -205,14 +205,15 @@ config/
 └── manager/            # Controller deployment manifests
     └── deployment.yaml
 
-dashboard/              # Optional Svelte dashboard (separate deployment)
-├── src/
-│   ├── lib/
-│   │   ├── components/
-│   │   └── api/
-│   ├── routes/
-│   └── app.html
-└── tests/
+web/                    # Optional HTMX dashboard (embedded in API server)
+├── templates/          # Go html/template files
+│   ├── layout.html
+│   ├── pipelines.html
+│   ├── runs.html
+│   └── logs.html
+└── static/            # Static assets
+    ├── htmx.min.js    # HTMX library (~14KB)
+    └── styles.css     # Tailwind-generated CSS
 
 deploy/                 # Deployment resources
 ├── install.yaml        # Combined installation manifest
@@ -228,7 +229,7 @@ Selected **Option 1: Single project** structure adapted for Kubernetes operator 
 - **`pkg/`**: Shared libraries organized by domain (APIs, controller, parser, storage, etc.)
 - **`tests/`**: Three-tier test structure (contract, integration, unit) per constitution
 - **`config/`**: Kubernetes manifests for CRDs and deployments
-- **`dashboard/`**: Separate Svelte application (independently deployable)
+- **`web/`**: HTMX dashboard templates and static assets (embedded in API server binary)
 - **`deploy/`**: Installation artifacts for end users
 
 This structure enables:
@@ -236,7 +237,8 @@ This structure enables:
 - Shared code reuse through `pkg/` libraries
 - Clear separation between CRD definitions (`pkg/apis`) and business logic
 - Standard Go testing patterns with dedicated test directories
-- Optional dashboard deployment (can be omitted entirely)
+- Optional dashboard embedded in API server (toggled via `--enable-dashboard` flag)
+- Zero JavaScript build tooling required (HTMX served from CDN or embedded)
 
 ## Post-Design Constitution Check
 
@@ -269,8 +271,9 @@ This structure enables:
 
 ✅ **Leverages Kubernetes primitives**: Using native CRDs, Jobs, Pods, Secrets instead of custom abstractions
 ✅ **No premature abstractions**: Direct use of client-go and controller-runtime (standard libraries)
-✅ **Minimal external dependencies**: No database, no message queue, no service mesh required
-✅ **Standard patterns**: Standard Go K8s operator layout, REST API with gorilla/mux, standard testing
+✅ **Minimal external dependencies**: No database, no message queue, no service mesh, no third-party HTTP routers
+✅ **Standard library focus**: Go 1.25 stdlib for HTTP server/routing (net/http with enhanced ServeMux), WebSocket support
+✅ **Standard patterns**: Standard Go K8s operator layout, REST API with stdlib only, standard testing
 
 **Complexity Introduced** (justified):
 

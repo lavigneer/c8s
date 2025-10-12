@@ -487,7 +487,7 @@ aws s3 ls s3://your-bucket/c8s-logs/
 
 ## Next Steps
 
-- **Dashboard**: Install optional web UI for visual pipeline monitoring
+- **Dashboard**: Enable optional web UI with `--enable-dashboard` flag on API server for visual pipeline monitoring
 - **Resource Quotas**: Configure per-team quotas with `ResourceQuota` objects
 - **RBAC**: Set up namespace-scoped access control for teams
 - **Autoscaling**: Configure Cluster Autoscaler to handle workload spikes

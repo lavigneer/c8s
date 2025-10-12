@@ -12,7 +12,7 @@ This document resolves all "NEEDS CLARIFICATION" items from the Technical Contex
 
 ## Decision 1: Primary Implementation Language
 
-**Decision**: Go (Golang) 1.21+
+**Decision**: Go 1.25
 
 **Rationale**:
 - **Kubernetes ecosystem standard**: Kubernetes itself, kubectl, Helm, and most K8s operators are written in Go
@@ -21,53 +21,60 @@ This document resolves all "NEEDS CLARIFICATION" items from the Technical Contex
 - **Static binaries**: Produces single-binary CLI tools with no runtime dependencies, simplifying deployment
 - **Performance**: Compiled language with excellent performance characteristics for API services and controllers
 - **Community alignment**: Extensive resources, patterns, and examples for building Kubernetes-native applications in Go
+- **Go 1.25 improvements**: Enhanced standard library features, improved routing patterns in `net/http`, better performance
 
 **Alternatives Considered**:
 - **Rust**: Excellent performance and safety but smaller Kubernetes ecosystem, steeper learning curve, and less mature client libraries (kube-rs)
 - **Python**: Easier learning curve but slower performance, requires runtime dependencies, and the `kubernetes` client library is less mature than client-go
 - **TypeScript/Node.js**: Good for web UIs but poor fit for Kubernetes controllers and system services; JavaScript K8s clients lack maturity
 
-**Impact**: All core components (controller, API server, CLI) will be written in Go. UI dashboard (if built) may use different technology.
+**Impact**: All core components (controller, API server, CLI) will be written in Go 1.25. UI dashboard (if built) may use different technology.
 
 ---
 
 ## Decision 2: API Framework
 
-**Decision**: REST API using standard `net/http` with `gorilla/mux` for routing
+**Decision**: REST API using standard `net/http` with `http.ServeMux` (Go 1.22+ enhanced routing)
 
 **Rationale**:
 - **Simplicity**: Standard library HTTP server is production-ready and well-understood
+- **Zero external dependencies**: Go 1.22+ added enhanced routing patterns to `http.ServeMux` (method-specific routes, path parameters)
 - **Kubernetes alignment**: K8s API server uses HTTP/REST patterns; following same conventions
-- **Minimal dependencies**: Avoid heavy frameworks (Gin, Echo) that add abstraction for minimal benefit
+- **Minimal abstraction**: Using stdlib avoids unnecessary third-party dependencies
 - **Flexibility**: Easy to add gRPC later if needed for internal service-to-service communication
 - **Client generation**: Can generate OpenAPI specs for client SDKs
+- **Go 1.25 enhancements**: Further improvements to HTTP routing and request handling
 
 **Alternatives Considered**:
+- **gorilla/mux**: Previously standard choice but Go 1.22+ stdlib now provides equivalent routing capabilities
 - **GraphQL**: Adds complexity for minimal benefit; REST is sufficient for CRUD operations on pipelines/runs
 - **gRPC**: Better for service mesh scenarios but adds complexity; REST is more accessible for external clients
-- **Heavy frameworks (Gin, Fiber)**: Unnecessary abstractions that hide standard library patterns
+- **Heavy frameworks (Gin, Echo, Fiber)**: Unnecessary abstractions that hide standard library patterns
 
-**Impact**: API endpoints follow RESTful conventions. OpenAPI 3.0 specification will be generated for contracts.
+**Impact**: API endpoints follow RESTful conventions using only stdlib. OpenAPI 3.0 specification will be generated for contracts. No external HTTP routing dependencies needed.
 
 ---
 
 ## Decision 3: Dashboard UI
 
-**Decision**: Optional web dashboard using Svelte + Tailwind CSS (separate from core system)
+**Decision**: Optional web dashboard using HTMX + Tailwind CSS with server-side Go templates (separate from core system)
 
 **Rationale**:
 - **Separation of concerns**: UI is P2 feature (User Story 2) and should not block P1 core functionality
-- **Svelte performance**: Lightweight framework with excellent performance and small bundle sizes
+- **HTMX simplicity**: Hypermedia-driven approach with zero build step, no JavaScript framework needed
+- **Server-side rendering**: Go html/template stdlib generates HTML, reducing client-side complexity
+- **Minimal JavaScript**: HTMX is a single ~14KB library, drastically smaller than SPA frameworks
 - **Tailwind simplicity**: Utility-first CSS reduces custom styling complexity
-- **Static site**: Dashboard can be served as static files, no server-side rendering needed
-- **Independence**: Dashboard consumes REST API, can be deployed separately or omitted entirely
+- **No build pipeline**: No npm, webpack, or bundler - just serve static HTMX library and Go-generated HTML
+- **Progressive enhancement**: Works without JavaScript, degrades gracefully
+- **Independence**: Dashboard is a simple HTTP handler in API server, can be disabled via flag
 
 **Alternatives Considered**:
-- **React**: More popular but heavier bundle size and more complex (JSX, hooks, context)
-- **Vue**: Good middle ground but Svelte is simpler for small to medium UIs
+- **Svelte/React/Vue**: Require build pipelines (npm, bundlers), more complex state management, heavier bundles
+- **Pure server-side HTML**: Works but lacks interactivity; HTMX adds AJAX/WebSocket without complexity
 - **No dashboard**: CLI-only approach is viable but User Story 2 explicitly mentions "dashboard or CLI tool"
 
-**Impact**: Dashboard is independently deployable. Core system works fully without UI. CLI remains primary interface for power users.
+**Impact**: Dashboard is served directly from Go API server using html/template + HTMX. No separate build/deployment needed. Can be toggled on/off with `--enable-dashboard` flag. Zero JavaScript build tooling required.
 
 ---
 
@@ -350,17 +357,17 @@ spec:
 
 | Component | Technology | Rationale |
 |-----------|-----------|-----------|
-| **Language** | Go 1.21+ | Kubernetes ecosystem standard, client-go |
+| **Language** | Go 1.25 | Kubernetes ecosystem standard, client-go, enhanced stdlib |
 | **State Storage** | Kubernetes CRDs (etcd) | Native, declarative, no external DB |
-| **API Framework** | net/http + gorilla/mux | Simple, standard, K8s-aligned REST |
+| **API Framework** | net/http + http.ServeMux | Simple, stdlib only (Go 1.22+ enhanced routing) |
 | **Log/Artifact Storage** | S3-compatible object storage | Scalable, cost-effective, standard interface |
-| **Log Streaming** | In-memory buffer + WebSocket | Real-time (<500ms), no external dependencies |
+| **Log Streaming** | In-memory buffer + WebSocket (stdlib) | Real-time (<500ms), minimal dependencies |
 | **Workload Execution** | Kubernetes Jobs | Native primitive, isolation, retry |
 | **Secret Management** | Kubernetes Secrets + masking | Native with log redaction |
 | **Webhook Handling** | Dedicated service with signature verification | Security, reliability |
 | **Pipeline Config** | YAML (`.c8s.yaml`) | K8s ecosystem standard, human-readable |
 | **Testing** | Go testing + Testify + envtest | Native, simple, K8s integration testing |
-| **Dashboard (optional)** | Svelte + Tailwind CSS | Lightweight, independent, P2 feature |
+| **Dashboard (optional)** | HTMX + Tailwind CSS + html/template | Zero build step, server-side rendering, ~14KB JS |
 | **Queueing** | controller-runtime workqueue | Proven, rate-limited, concurrent |
 | **Resource Quotas** | K8s ResourceQuota + admission webhook | Native, atomic, fair scheduling |
 
