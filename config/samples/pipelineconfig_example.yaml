@@ -1,0 +1,54 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: example-go-pipeline
+  namespace: default
+spec:
+  repository: https://github.com/example-org/example-repo
+  branches: ["main", "develop"]
+  steps:
+    - name: test
+      image: golang:1.21
+      commands:
+        - go test ./...
+        - go test -race ./...
+      resources:
+        cpu: 1000m
+        memory: 2Gi
+      timeout: 10m
+
+    - name: lint
+      image: golangci/golangci-lint:latest
+      commands:
+        - golangci-lint run
+      resources:
+        cpu: 500m
+        memory: 1Gi
+      timeout: 5m
+
+    - name: build
+      image: golang:1.21
+      commands:
+        - go build -o app ./cmd/main.go
+      dependsOn: [test, lint]
+      artifacts:
+        - app
+      resources:
+        cpu: 1000m
+        memory: 1Gi
+      timeout: 5m
+
+    - name: security-scan
+      image: aquasec/trivy:latest
+      commands:
+        - trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+      dependsOn: [build]
+      resources:
+        cpu: 500m
+        memory: 512Mi
+      timeout: 5m
+
+  timeout: 30m
+  retryPolicy:
+    maxRetries: 2
+    backoffSeconds: 60

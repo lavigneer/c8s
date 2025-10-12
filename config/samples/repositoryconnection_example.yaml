@@ -1,0 +1,19 @@
+apiVersion: c8s.dev/v1alpha1
+kind: RepositoryConnection
+metadata:
+  name: example-repo-connection
+  namespace: default
+spec:
+  repository: https://github.com/example-org/example-repo
+  provider: github
+  webhookSecretRef: example-webhook-secret
+  pipelineConfigRef: example-go-pipeline
+  events:
+    - push
+    - pull_request
+  branches:
+    - main
+    - develop
+    - 'feature/*'
+  tags:
+    - 'v*'

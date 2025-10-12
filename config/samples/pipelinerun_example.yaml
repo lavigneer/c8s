@@ -1,0 +1,13 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: example-go-pipeline-abc123
+  namespace: default
+spec:
+  pipelineConfigRef: example-go-pipeline
+  commit: abc123def456789
+  branch: main
+  triggeredBy: webhook
+  triggeredAt: "2025-10-12T10:30:00Z"
+  commitMessage: "Add new feature for user authentication"
+  author: john.doe@example.com
