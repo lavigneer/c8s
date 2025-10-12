@@ -8,6 +8,10 @@ bin/
 *.test
 *.out
 
+# Devbox
+.devbox/
+.direnv/
+
 # Go workspace files
 go.work
 go.work.sum

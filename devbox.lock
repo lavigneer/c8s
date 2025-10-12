@@ -1,0 +1,41 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "docker@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#docker",
+      "source": "devbox-search",
+      "version": "latest"
+    },
+    "git@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#git",
+      "source": "devbox-search",
+      "version": "latest"
+    },
+    "gnumake@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#gnumake",
+      "source": "devbox-search",
+      "version": "latest"
+    },
+    "go_1_25@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#go_1_25",
+      "source": "devbox-search",
+      "version": "1.25.0"
+    },
+    "kind@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#kind",
+      "source": "devbox-search",
+      "version": "latest"
+    },
+    "kubectl@latest": {
+      "last_modified": "2025-01-10T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/nixpkgs-unstable#kubectl",
+      "source": "devbox-search",
+      "version": "latest"
+    }
+  }
+}

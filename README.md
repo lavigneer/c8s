@@ -105,6 +105,11 @@ c8s logs my-pipeline-xxxxx --follow
 
 ### Prerequisites
 
+**Option 1: Using Devbox (Recommended)**
+- [Devbox](https://www.jetify.com/devbox) (install: `curl -fsSL https://get.jetify.com/devbox | bash`)
+- Docker (for building images and kind clusters)
+
+**Option 2: Manual Setup**
 - Go 1.25+
 - Kubernetes cluster (1.24+)
 - kubectl with cluster access
@@ -112,6 +117,25 @@ c8s logs my-pipeline-xxxxx --follow
 
 ### Setup
 
+**With Devbox (Recommended)**:
+```bash
+# Clone repository
+git clone https://github.com/org/c8s.git
+cd c8s
+
+# Enter development environment (installs all tools automatically)
+devbox shell
+
+# Run tests
+make test
+
+# Build binaries
+make build
+```
+
+See [docs/devbox-setup.md](./docs/devbox-setup.md) for detailed devbox usage.
+
+**Manual Setup**:
 ```bash
 # Clone repository
 git clone https://github.com/org/c8s.git

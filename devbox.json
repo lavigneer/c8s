@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": [
+    "go_1_25@latest",
+    "kubectl@latest",
+    "kind@latest",
+    "docker@latest",
+    "git@latest",
+    "gnumake@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Welcome to C8S development environment!'",
+      "echo 'Go version: $(go version)'",
+      "echo 'Kubectl version: $(kubectl version --client --short 2>/dev/null || echo \"not configured\")'",
+      "echo ''",
+      "echo 'Quick commands:'",
+      "echo '  make help       - Show available make targets'",
+      "echo '  make test       - Run tests'",
+      "echo '  make build      - Build all binaries'",
+      "echo '  make manifests  - Generate CRD manifests'",
+      "echo ''",
+      "export GOPATH=$HOME/go",
+      "export PATH=$GOPATH/bin:$PATH",
+      "# Install Go tools if not present",
+      "if ! command -v controller-gen &> /dev/null; then",
+      "  echo 'Installing controller-gen...'",
+      "  go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest",
+      "fi",
+      "if ! command -v setup-envtest &> /dev/null; then",
+      "  echo 'Installing setup-envtest...'",
+      "  go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest",
+      "fi",
+      "if ! command -v golangci-lint &> /dev/null; then",
+      "  echo 'Installing golangci-lint...'",
+      "  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
+      "fi"
+    ],
+    "scripts": {
+      "test": "make test",
+      "build": "make build",
+      "lint": "make lint",
+      "generate": "make generate && make manifests",
+      "run-controller": "make run-controller",
+      "install-crds": "make install-crds"
+    }
+  },
+  "env": {
+    "KUBEBUILDER_ASSETS": "$HOME/.local/share/kubebuilder-envtest/k8s/current",
+    "GO111MODULE": "on",
+    "CGO_ENABLED": "0"
+  }
+}
