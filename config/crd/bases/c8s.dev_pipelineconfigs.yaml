@@ -1,0 +1,223 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: pipelineconfigs.c8s.dev
+spec:
+  group: c8s.dev
+  names:
+    kind: PipelineConfig
+    listKind: PipelineConfigList
+    plural: pipelineconfigs
+    shortNames:
+    - pc
+    singular: pipelineconfig
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.repository
+      name: Repository
+      type: string
+    - jsonPath: .spec.steps[*].name
+      name: Steps
+      type: integer
+    - jsonPath: .status.lastRun
+      name: Last Run
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PipelineConfig is the Schema for the pipelineconfigs API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PipelineConfigSpec defines the desired state of PipelineConfig
+            properties:
+              branches:
+                default:
+                - '*'
+                description: Branches are branch filters (glob patterns, default ["*"])
+                items:
+                  type: string
+                type: array
+              matrix:
+                description: Matrix strategy for parallel execution
+                properties:
+                  dimensions:
+                    additionalProperties:
+                      items:
+                        type: string
+                      type: array
+                    description: |-
+                      Dimensions define matrix variables and their values
+                      Example: {"os": ["ubuntu", "alpine"], "go_version": ["1.21", "1.22"]}
+                    type: object
+                  exclude:
+                    description: Exclude specific combinations
+                    items:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    type: array
+                required:
+                - dimensions
+                type: object
+              repository:
+                description: Repository is the Git repository URL (https or ssh)
+                pattern: ^(https?|git|ssh)://.*
+                type: string
+              retryPolicy:
+                description: RetryPolicy defines retry behavior for failed steps
+                properties:
+                  backoffSeconds:
+                    default: 60
+                    description: BackoffSeconds is the delay between retries
+                    minimum: 0
+                    type: integer
+                  maxRetries:
+                    default: 0
+                    description: MaxRetries is the maximum number of retry attempts
+                    maximum: 5
+                    minimum: 0
+                    type: integer
+                type: object
+              steps:
+                description: Steps are the pipeline steps in execution order
+                items:
+                  description: PipelineStep defines a single step in the pipeline
+                  properties:
+                    artifacts:
+                      description: Artifacts are file patterns to upload to artifact
+                        storage
+                      items:
+                        type: string
+                      type: array
+                    commands:
+                      description: Commands are shell commands to execute
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                    conditional:
+                      description: Conditional defines conditions for step execution
+                      properties:
+                        branch:
+                          description: Branch pattern - execute only on matching branch
+                          type: string
+                        onSuccess:
+                          default: true
+                          description: OnSuccess - execute only if previous steps
+                            succeeded
+                          type: boolean
+                      type: object
+                    dependsOn:
+                      description: DependsOn are step names that must complete before
+                        this step
+                      items:
+                        type: string
+                      type: array
+                    image:
+                      description: Image is the container image for step execution
+                      type: string
+                    name:
+                      description: Name is the step identifier (must be unique)
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                      type: string
+                    resources:
+                      description: Resources define CPU/memory requests and limits
+                      properties:
+                        cpu:
+                          default: 500m
+                          description: CPU resource request/limit (e.g., "500m", "2")
+                          pattern: ^[0-9]+m?$
+                          type: string
+                        memory:
+                          default: 1Gi
+                          description: Memory resource request/limit (e.g., "1Gi",
+                            "512Mi")
+                          pattern: ^[0-9]+(Mi|Gi)$
+                          type: string
+                      type: object
+                    secrets:
+                      description: Secrets are secret references to inject as env
+                        vars
+                      items:
+                        description: SecretReference defines how to inject a Kubernetes
+                          Secret into a step
+                        properties:
+                          envVar:
+                            description: EnvVar is the environment variable name (defaults
+                              to key)
+                            type: string
+                          key:
+                            description: Key is the key within the Secret
+                            type: string
+                          secretRef:
+                            description: SecretRef is the Kubernetes Secret name
+                            type: string
+                        required:
+                        - key
+                        - secretRef
+                        type: object
+                      type: array
+                    timeout:
+                      default: 30m
+                      description: Timeout is the step timeout (e.g., "30m", "2h")
+                      pattern: ^[0-9]+(s|m|h)$
+                      type: string
+                  required:
+                  - commands
+                  - image
+                  - name
+                  type: object
+                minItems: 1
+                type: array
+              timeout:
+                default: 1h
+                description: Timeout is the pipeline-level timeout (e.g., "30m", "2h")
+                pattern: ^[0-9]+(s|m|h)$
+                type: string
+            required:
+            - repository
+            - steps
+            type: object
+          status:
+            description: PipelineConfigStatus defines the observed state of PipelineConfig
+            properties:
+              lastRun:
+                description: LastRun is the timestamp of the last pipeline run
+                format: date-time
+                type: string
+              successRate:
+                description: SuccessRate is the percentage of successful runs
+                type: number
+              totalRuns:
+                description: TotalRuns is the total number of pipeline runs
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

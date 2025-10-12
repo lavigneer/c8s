@@ -1,0 +1,56 @@
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# Documentation
+*.md
+docs/
+specs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go files
+*.test
+*.out
+coverage.out
+coverage.html
+testbin/
+
+# Dependencies (will be fetched during build)
+vendor/
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Tests
+tests/
+*_test.go
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Config samples (not needed in image)
+config/samples/

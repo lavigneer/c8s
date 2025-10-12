@@ -27,7 +27,7 @@ LDFLAGS := -ldflags "-X $(MODULE)/pkg/version.Version=$(VERSION)"
 
 # CRD and code generation
 CONTROLLER_GEN := $(shell which controller-gen)
-CRD_OPTIONS ?= "crd:trivialVersions=false"
+CRD_OPTIONS ?= crd:allowDangerousTypes=true
 
 # Test configuration
 TEST_TIMEOUT := 10m
