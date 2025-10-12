@@ -1,50 +1,143 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version: 0.1.0 → 1.0.0 (MAJOR: Initial constitution establishment)
+Modified Principles: N/A (initial creation)
+Added Sections: All sections added (Core Principles, Development Workflow, Governance)
+Removed Sections: None
+Templates Status:
+  ✅ spec-template.md - Validated: User stories, functional requirements aligned
+  ✅ plan-template.md - Validated: Constitution Check section references this file
+  ✅ tasks-template.md - Validated: Phase-based organization matches principles
+  ✅ commands/*.md - Validated: All commands reference constitution gates
+Follow-up TODOs:
+  - RATIFICATION_DATE needs to be confirmed by project owner
+  - Consider adding performance/observability principles if needed in future amendments
+-->
+
+# C8S (Specify) Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Specification-First Development
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Every feature MUST begin with a complete specification before implementation. Features are developed through a structured workflow:
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+1. **Specification** (`/speckit.specify`): Define user scenarios, requirements, and success criteria
+2. **Planning** (`/speckit.plan`): Research, design, and create implementation artifacts
+3. **Task Generation** (`/speckit.tasks`): Generate actionable, dependency-ordered tasks
+4. **Implementation** (`/speckit.implement`): Execute tasks following the established plan
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Specification-first development ensures alignment between stakeholders, reduces rework, and provides clear success criteria before code is written.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. User Story-Driven Architecture
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Features MUST be decomposed into prioritized, independently testable user stories (P1, P2, P3...). Each user story:
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Delivers standalone value
+- Can be implemented independently
+- Can be tested independently
+- Can be deployed as an incremental MVP
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Independent user stories enable incremental delivery, parallel development, and continuous validation of value delivery.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Constitution Gates
+
+All implementation plans MUST pass Constitution Check gates before proceeding. Gates validate:
+
+- Architectural simplicity (avoid premature abstraction)
+- Complexity justification (document why simpler alternatives were rejected)
+- Compliance with project principles
+
+**Rationale**: Proactive gate enforcement prevents technical debt and ensures architectural consistency across the codebase.
+
+### IV. Test Independence
+
+When tests are required, they MUST be:
+
+- Written FIRST before implementation
+- Designed to FAIL initially (red-green-refactor)
+- Independently executable per user story
+- Categorized as contract, integration, or unit tests
+
+**Rationale**: Test-first development ensures testability, validates requirements understanding, and provides regression protection.
+
+### V. Documentation as Artifact
+
+Design artifacts (spec.md, plan.md, research.md, data-model.md, contracts/) are first-class deliverables:
+
+- Generated systematically through workflow commands
+- Version-controlled alongside code
+- Kept synchronized through consistency analysis (`/speckit.analyze`)
+- Serve as the source of truth for feature intent
+
+**Rationale**: Living documentation reduces knowledge silos, enables effective onboarding, and maintains architectural coherence over time.
+
+## Development Workflow
+
+### Command Workflow
+
+The canonical feature development workflow follows this command sequence:
+
+1. **`/speckit.specify`** - Create or update feature specification from natural language description
+2. **`/speckit.clarify`** - Identify and resolve underspecified areas through targeted questions
+3. **`/speckit.plan`** - Execute implementation planning (research, design artifacts, contracts)
+4. **`/speckit.analyze`** - Perform cross-artifact consistency and quality analysis
+5. **`/speckit.tasks`** - Generate actionable, dependency-ordered tasks from design artifacts
+6. **`/speckit.implement`** - Execute implementation following the task plan
+
+### Artifact Locations
+
+All feature documentation MUST reside in:
+
+```
+specs/[###-feature-name]/
+├── spec.md              # Feature specification (user stories, requirements, success criteria)
+├── plan.md              # Implementation plan (technical context, structure, constitution check)
+├── research.md          # Research findings and technical decisions
+├── data-model.md        # Entity definitions, relationships, validation rules
+├── contracts/           # API contracts (OpenAPI, GraphQL schemas, etc.)
+├── tasks.md             # Dependency-ordered implementation tasks
+└── quickstart.md        # Quick start guide for developers
+```
+
+### Quality Gates
+
+- **Pre-Planning**: Specification must define user scenarios and functional requirements
+- **Pre-Implementation**: Constitution Check must pass; all "NEEDS CLARIFICATION" resolved
+- **Pre-Deployment**: Success criteria from spec.md must be validated
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Process
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Constitution amendments require:
+
+1. **Proposal**: Document proposed changes with rationale
+2. **Impact Analysis**: Identify affected templates, commands, and existing features
+3. **Sync Propagation**: Update all dependent artifacts (templates, commands, docs)
+4. **Version Bump**: Follow semantic versioning (MAJOR.MINOR.PATCH)
+5. **Ratification**: Project owner approval and documentation update
+
+### Versioning Policy
+
+- **MAJOR**: Backward-incompatible principle removals or redefinitions
+- **MINOR**: New principles added or materially expanded guidance
+- **PATCH**: Clarifications, wording fixes, non-semantic refinements
+
+### Compliance Review
+
+All code reviews and feature implementations MUST verify:
+
+- Compliance with specification-first workflow
+- Constitution Check passage for architectural decisions
+- User story independence and testability
+- Documentation synchronization with implementation
+
+Violations MUST be documented in plan.md Complexity Tracking table with:
+- What principle is violated
+- Why the violation is necessary
+- Why simpler compliant alternatives were rejected
+
+---
+
+**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE: project owner must confirm) | **Last Amended**: 2025-10-12
