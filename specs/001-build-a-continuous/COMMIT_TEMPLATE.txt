@@ -1,0 +1,24 @@
+# Git Commit Template for Task Implementation
+# Copy this template when committing each task
+# Replace placeholders with actual values
+
+[T###] Short task description (50 chars max)
+
+Detailed description:
+- What was implemented
+- Key changes made
+- Important decisions
+
+User Story: [US#] (Optional - US1, US2, US3, US4, US5)
+Phase: # - Phase Name
+Files: <key files created/modified>
+
+# Examples:
+#
+# [T001] Initialize Go module and project structure
+# [T025] Implement Job creation from PipelineStep
+# [T042] Write unit tests for DAG scheduler
+# [T044] Write integration test for basic pipeline execution
+#
+# [CHECKPOINT] Phase 1 - Setup & Project Initialization Complete
+# [CHECKPOINT] Phase 3 - User Story 1 Complete (MVP)
