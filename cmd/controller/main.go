@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/controller"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -81,6 +82,15 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	// Setup PipelineRun controller
+	if err = (&controller.PipelineRunReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PipelineRun")
 		os.Exit(1)
 	}
 
