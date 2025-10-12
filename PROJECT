@@ -1,0 +1,37 @@
+# Kubebuilder project metadata
+# This file tracks kubebuilder versions and API resources for code generation
+
+domain: c8s.dev
+layout:
+- go.kubebuilder.io/v4
+projectName: c8s
+repo: github.com/org/c8s
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: c8s.dev
+  group: c8s
+  kind: PipelineConfig
+  path: github.com/org/c8s/pkg/apis/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: c8s.dev
+  group: c8s
+  kind: PipelineRun
+  path: github.com/org/c8s/pkg/apis/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: c8s.dev
+  group: c8s
+  kind: RepositoryConnection
+  path: github.com/org/c8s/pkg/apis/v1alpha1
+  version: v1alpha1
+version: "3"
