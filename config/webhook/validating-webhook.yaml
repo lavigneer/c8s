@@ -1,0 +1,37 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: c8s-validating-webhook
+webhooks:
+  - name: validate.pipelinerun.c8s.dev
+    clientConfig:
+      service:
+        name: c8s-admission-webhook
+        namespace: c8s-system
+        path: /validate-pipelinerun
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY205bGRHVnpNQjRYRFRJeU1ERXdNVEF3TURBd01Gb1hEVE15TURFd01UQXdNREF3TUZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTEs4Cg==
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["c8s.dev"]
+        apiVersions: ["v1alpha1"]
+        resources: ["pipelineruns"]
+        scope: "Namespaced"
+    admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: None
+    timeoutSeconds: 10
+    failurePolicy: Ignore  # Fail open - allow creation if webhook unavailable
+    namespaceSelector:
+      matchExpressions:
+        - key: c8s.dev/quota-validation
+          operator: In
+          values: ["enabled"]
+
+---
+# Example: Enable quota validation for a namespace
+# kubectl label namespace default c8s.dev/quota-validation=enabled
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-team
+  labels:
+    c8s.dev/quota-validation: enabled

@@ -1,0 +1,63 @@
+# Example ResourceQuota for team namespace
+# This limits the total resources that can be consumed by all PipelineRuns in a namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-quota
+  namespace: default
+spec:
+  hard:
+    # Total CPU across all PipelineRuns (sum of all step requests)
+    requests.cpu: "100"
+    # Total Memory across all PipelineRuns
+    requests.memory: "200Gi"
+    # Maximum number of concurrent pods
+    pods: "50"
+    # Maximum number of PipelineRun CRDs
+    count/pipelineruns.c8s.dev: "100"
+
+---
+# Example: Per-team namespace setup
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-backend
+  labels:
+    team: backend
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: backend-team-quota
+  namespace: team-backend
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: "100Gi"
+    limits.cpu: "100"
+    limits.memory: "200Gi"
+    pods: "25"
+    count/pipelineruns.c8s.dev: "50"
+
+---
+# Example: Development namespace with smaller quota
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-environment
+  labels:
+    environment: development
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-quota
+  namespace: dev-environment
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    pods: "10"
+    count/pipelineruns.c8s.dev: "20"

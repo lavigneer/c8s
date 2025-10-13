@@ -112,6 +112,25 @@ type PipelineRunStatus struct {
 	// Conditions represent the latest available observations of the run's state
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// ResourceUsage tracks actual resource consumption for capacity planning
+	// +optional
+	ResourceUsage *ResourceUsage `json:"resourceUsage,omitempty"`
+}
+
+// ResourceUsage tracks resource consumption for a PipelineRun
+type ResourceUsage struct {
+	// CPU is the total CPU time consumed in core-seconds
+	// +optional
+	CPU string `json:"cpu,omitempty"`
+
+	// Memory is the average memory usage in bytes
+	// +optional
+	Memory string `json:"memory,omitempty"`
+
+	// Duration is the total wall-clock duration in seconds
+	// +optional
+	Duration int64 `json:"duration,omitempty"`
 }
 
 // StepStatus represents the status of a single step in the pipeline

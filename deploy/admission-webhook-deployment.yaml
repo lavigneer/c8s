@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: c8s-admission-webhook
+  namespace: c8s-system
+spec:
+  selector:
+    app: c8s-admission-webhook
+  ports:
+    - port: 443
+      targetPort: 9443
+      protocol: TCP
+      name: https
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c8s-admission-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-admission-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: c8s-admission-webhook
+  template:
+    metadata:
+      labels:
+        app: c8s-admission-webhook
+    spec:
+      serviceAccountName: c8s-controller
+      containers:
+      - name: webhook
+        image: c8s:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - /webhook
+        args:
+          - --port=9443
+          - --cert-dir=/tmp/k8s-webhook-server/serving-certs
+        ports:
+        - containerPort: 9443
+          name: webhook
+          protocol: TCP
+        volumeMounts:
+        - name: cert
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9443
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          secretName: c8s-webhook-server-cert
+          defaultMode: 420
+
+---
+# Certificate for webhook (use cert-manager in production)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: c8s-webhook-server-cert
+  namespace: c8s-system
+type: kubernetes.io/tls
+data:
+  # Base64 encoded self-signed cert (for development only)
+  # In production, use cert-manager to generate certificates:
+  # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+  # Then create Certificate and Issuer resources
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY205bGRHVnpNQjRYRFRJeU1ERXdNVEF3TURBd01Gb1hEVE15TURFd01UQXdNREF3TUZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTEs4Cg==
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQ3l2SzB3MXJKd2RBVnYKVHlONnpHSGZPTlJMeW1nWjZtVGFqTzBqRXBUU2lzRzBmdGhIZVBWQVhCMUt1WWRpQXpjTjhMQlVCa1E2WVNWMQ==
