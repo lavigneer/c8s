@@ -21,6 +21,7 @@ import (
 	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,7 +37,8 @@ import (
 // PipelineRunReconciler reconciles a PipelineRun object
 type PipelineRunReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme        *runtime.Scheme
+	LogCollector  *LogCollector
 }
 
 // +kubebuilder:rbac:groups=c8s.dev,resources=pipelineruns,verbs=get;list;watch;create;update;patch;delete
@@ -218,6 +220,14 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
+	// Step 7.5: Collect and upload logs for completed Jobs
+	if r.LogCollector != nil {
+		if err := r.collectLogsForCompletedJobs(ctx, pipelineRun, jobsByStep); err != nil {
+			logger.Error(err, "Failed to collect logs for completed jobs")
+			// Continue even if log collection fails - don't block pipeline progress
+		}
+	}
+
 	// Step 8: Requeue if not in terminal state
 	if !r.isTerminalPhase(pipelineRun.Status.Phase) {
 		logger.Info("PipelineRun still running, requeuing")
@@ -229,6 +239,86 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	)
 
 	return ctrl.Result{}, nil
+}
+
+// collectLogsForCompletedJobs collects logs from completed Job Pods and uploads them
+func (r *PipelineRunReconciler) collectLogsForCompletedJobs(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, jobsByStep map[string]*batchv1.Job) error {
+	logger := log.FromContext(ctx)
+	statusUpdated := false
+
+	// Get the current status to check which steps have completed but don't have logs yet
+	for i := range pipelineRun.Status.Steps {
+		step := &pipelineRun.Status.Steps[i]
+
+		// Skip if logs already collected
+		if step.LogURL != "" {
+			continue
+		}
+
+		// Skip if step hasn't completed yet
+		if step.Phase != c8sv1alpha1.StepPhaseSucceeded && step.Phase != c8sv1alpha1.StepPhaseFailed {
+			continue
+		}
+
+		// Find the Job for this step
+		job, ok := jobsByStep[step.Name]
+		if !ok {
+			logger.Info("Job not found for step", "step", step.Name)
+			continue
+		}
+
+		// Find the Pod created by this Job
+		podList := &corev1.PodList{}
+		if err := r.List(ctx, podList,
+			client.InNamespace(pipelineRun.Namespace),
+			client.MatchingLabels{
+				"job-name": job.Name,
+			},
+		); err != nil {
+			logger.Error(err, "Failed to list Pods for Job", "job", job.Name)
+			continue
+		}
+
+		if len(podList.Items) == 0 {
+			logger.Info("No Pod found for Job yet", "job", job.Name, "step", step.Name)
+			continue
+		}
+
+		// Get the first Pod (Jobs typically create one Pod)
+		pod := &podList.Items[0]
+
+		// Skip if Pod is not in a state where we can collect logs
+		if pod.Status.Phase != corev1.PodSucceeded &&
+		   pod.Status.Phase != corev1.PodFailed &&
+		   pod.Status.Phase != corev1.PodRunning {
+			logger.Info("Pod not ready for log collection", "pod", pod.Name, "phase", pod.Status.Phase)
+			continue
+		}
+
+		// Collect and upload logs
+		logger.Info("Collecting logs for step", "step", step.Name, "pod", pod.Name)
+		logURL, err := r.LogCollector.CollectAndUpload(ctx, pod, pipelineRun, step.Name)
+		if err != nil {
+			logger.Error(err, "Failed to collect and upload logs", "step", step.Name)
+			// Continue to next step - don't block on log collection failures
+			continue
+		}
+
+		// Update step status with log URL
+		pipelineRun.Status.Steps[i].LogURL = logURL
+		statusUpdated = true
+		logger.Info("Updated step with log URL", "step", step.Name, "url", logURL)
+	}
+
+	// Update PipelineRun status if any logs were collected
+	if statusUpdated {
+		if err := r.Status().Update(ctx, pipelineRun); err != nil {
+			logger.Error(err, "Failed to update PipelineRun status with log URLs")
+			return err
+		}
+	}
+
+	return nil
 }
 
 // isTerminalPhase returns true if the phase is terminal (no further transitions)
