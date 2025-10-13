@@ -177,7 +177,7 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// Parse timestamp
 	timestamp := metav1.Now()
 	if change.New.Target.Date != "" {
-		if t, err := metav1.ParseTime(change.New.Target.Date); err == nil {
+		if t, err := parseTimestamp(change.New.Target.Date); err == nil {
 			timestamp = t
 		}
 	}
@@ -215,25 +215,25 @@ func (h *BitbucketHandler) verifySignature(
 	logger := log.FromContext(ctx)
 
 	// Get webhook secret from Kubernetes Secret
-	if repoConn.Spec.WebhookSecretRef == nil {
+	if repoConn.Spec.WebhookSecretRef == "" {
 		return fmt.Errorf("no webhook secret configured for repository connection")
 	}
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
-		Name:      repoConn.Spec.WebhookSecretRef.Name,
+		Name:      repoConn.Spec.WebhookSecretRef,
 		Namespace: repoConn.Namespace,
 	}
 
 	if err := h.client.Get(ctx, secretKey, secret); err != nil {
-		logger.Error(err, "Failed to get webhook secret", "secret", repoConn.Spec.WebhookSecretRef.Name)
+		logger.Error(err, "Failed to get webhook secret", "secret", repoConn.Spec.WebhookSecretRef)
 		return fmt.Errorf("failed to get webhook secret: %w", err)
 	}
 
-	// Get secret value
-	webhookSecret, ok := secret.Data[repoConn.Spec.WebhookSecretRef.Key]
+	// Get secret value (default key is "webhook-secret")
+	webhookSecret, ok := secret.Data["webhook-secret"]
 	if !ok {
-		return fmt.Errorf("webhook secret key not found: %s", repoConn.Spec.WebhookSecretRef.Key)
+		return fmt.Errorf("webhook secret key 'webhook-secret' not found")
 	}
 
 	// Compute HMAC-SHA256

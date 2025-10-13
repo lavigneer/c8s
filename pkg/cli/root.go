@@ -36,7 +36,7 @@ func Execute() error {
 	// Get subcommand
 	args := flag.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("no command specified. Available commands: run, get, validate, logs")
+		return fmt.Errorf("no command specified. Available commands: run, get, validate")
 	}
 
 	command := args[0]
@@ -57,10 +57,11 @@ func Execute() error {
 		return getCommand(commandArgs)
 	case "validate":
 		return validateCommand(commandArgs)
-	case "logs":
-		return logsCommand(commandArgs)
+	// TODO: Implement logs command (Phase 4 - User Story 2)
+	// case "logs":
+	// 	return logsCommand(commandArgs)
 	default:
-		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate, logs", command)
+		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate", command)
 	}
 }
 

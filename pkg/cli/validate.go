@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	v1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/parser"
 )
 
@@ -27,25 +28,28 @@ func validateCommand(args []string) error {
 	}
 
 	// Parse YAML
-	config, err := parser.Parse(yamlContent)
+	spec, err := parser.Parse(yamlContent)
 	if err != nil {
 		fmt.Printf("❌ Invalid pipeline configuration\n\n")
 		fmt.Printf("Parse error: %v\n", err)
 		return fmt.Errorf("validation failed")
 	}
 
+	// Create a full PipelineConfig for validation
+	config := &v1alpha1.PipelineConfig{
+		Spec: *spec,
+	}
+
 	// Validate configuration
-	validator := parser.NewValidator()
-	if err := validator.Validate(config); err != nil {
+	if err := parser.Validate(config); err != nil {
 		fmt.Printf("❌ Invalid pipeline configuration\n\n")
 		fmt.Printf("Validation error: %v\n", err)
 		return fmt.Errorf("validation failed")
 	}
 
 	fmt.Printf("✅ Valid pipeline configuration\n\n")
-	fmt.Printf("Pipeline: %s\n", config.Name)
-	fmt.Printf("Repository: %s\n", config.Spec.Repository)
-	fmt.Printf("Steps: %d\n", len(config.Spec.Steps))
+	fmt.Printf("Repository: %s\n", spec.Repository)
+	fmt.Printf("Steps: %d\n", len(spec.Steps))
 
 	return nil
 }

@@ -26,6 +26,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -187,25 +188,25 @@ func (h *GitHubHandler) verifySignature(
 	logger := log.FromContext(ctx)
 
 	// Get webhook secret from Kubernetes Secret
-	if repoConn.Spec.WebhookSecretRef == nil {
+	if repoConn.Spec.WebhookSecretRef == "" {
 		return fmt.Errorf("no webhook secret configured for repository connection")
 	}
 
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
-		Name:      repoConn.Spec.WebhookSecretRef.Name,
+		Name:      repoConn.Spec.WebhookSecretRef,
 		Namespace: repoConn.Namespace,
 	}
 
 	if err := h.client.Get(ctx, secretKey, secret); err != nil {
-		logger.Error(err, "Failed to get webhook secret", "secret", repoConn.Spec.WebhookSecretRef.Name)
+		logger.Error(err, "Failed to get webhook secret", "secret", repoConn.Spec.WebhookSecretRef)
 		return fmt.Errorf("failed to get webhook secret: %w", err)
 	}
 
-	// Get secret value
-	webhookSecret, ok := secret.Data[repoConn.Spec.WebhookSecretRef.Key]
+	// Get secret value (default key is "webhook-secret")
+	webhookSecret, ok := secret.Data["webhook-secret"]
 	if !ok {
-		return fmt.Errorf("webhook secret key not found: %s", repoConn.Spec.WebhookSecretRef.Key)
+		return fmt.Errorf("webhook secret key 'webhook-secret' not found")
 	}
 
 	// Compute HMAC-SHA256
@@ -232,9 +233,9 @@ func (h *GitHubHandler) verifySignature(
 // parseTimestamp parses ISO 8601 timestamp from GitHub
 func parseTimestamp(timestamp string) (metav1.Time, error) {
 	// GitHub uses RFC3339 format
-	t, err := metav1.ParseTime(timestamp)
+	t, err := time.Parse(time.RFC3339, timestamp)
 	if err != nil {
 		return metav1.Time{}, err
 	}
-	return t, nil
+	return metav1.Time{Time: t}, nil
 }

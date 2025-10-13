@@ -198,8 +198,8 @@ func TestComplexDAGMixedParallelSequential(t *testing.T) {
 	assert.Equal(t, "deploy", layers[2][0])
 }
 
-// TestCircularDependencyDetection verifies circular dependency detection
-func TestCircularDependencyDetection(t *testing.T) {
+// TestSchedulerCircularDependencyDetection verifies circular dependency detection
+func TestSchedulerCircularDependencyDetection(t *testing.T) {
 	tests := []struct {
 		name  string
 		steps []c8sv1alpha1.PipelineStep
@@ -288,8 +288,8 @@ func TestNonExistentDependencyReference(t *testing.T) {
 	assert.Contains(t, err.Error(), "test")
 }
 
-// TestDuplicateStepNames verifies error on duplicate step names
-func TestDuplicateStepNames(t *testing.T) {
+// TestSchedulerDuplicateStepNames verifies error on duplicate step names
+func TestSchedulerDuplicateStepNames(t *testing.T) {
 	steps := []c8sv1alpha1.PipelineStep{
 		{
 			Name:  "build",
