@@ -38,6 +38,8 @@ import (
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/api/handlers"
 	"github.com/org/c8s/pkg/api/middleware"
+	"github.com/org/c8s/pkg/storage"
+	"github.com/org/c8s/pkg/storage/s3"
 )
 
 var (
@@ -45,6 +47,9 @@ var (
 	kubeconfig      string
 	enableDashboard bool
 	enableCORS      bool
+	s3Bucket        string
+	s3Region        string
+	s3Endpoint      string
 )
 
 func init() {
@@ -52,6 +57,9 @@ func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to kubeconfig file (leave empty for in-cluster config)")
 	flag.BoolVar(&enableDashboard, "enable-dashboard", false, "Enable HTMX dashboard")
 	flag.BoolVar(&enableCORS, "enable-cors", true, "Enable CORS middleware")
+	flag.StringVar(&s3Bucket, "s3-bucket", "", "S3 bucket for logs (env: C8S_S3_BUCKET)")
+	flag.StringVar(&s3Region, "s3-region", "us-west-2", "S3 region (env: C8S_S3_REGION)")
+	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "S3 endpoint for MinIO/compatible storage (env: C8S_S3_ENDPOINT)")
 }
 
 func main() {
@@ -98,13 +106,46 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize storage client
+	var storageClient storage.StorageClient
+	if s3Bucket != "" {
+		// Use env vars if flags not provided
+		if s3Bucket == "" {
+			s3Bucket = os.Getenv("C8S_S3_BUCKET")
+		}
+		if s3Region == "" {
+			s3Region = os.Getenv("C8S_S3_REGION")
+		}
+		if s3Endpoint == "" {
+			s3Endpoint = os.Getenv("C8S_S3_ENDPOINT")
+		}
+
+		storageConfig := &storage.Config{
+			Bucket:          s3Bucket,
+			Region:          s3Region,
+			Endpoint:        s3Endpoint,
+			AccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
+			SecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			UsePathStyle:    s3Endpoint != "", // Use path-style for custom endpoints
+		}
+
+		storageClient, err = s3.NewClient(storageConfig)
+		if err != nil {
+			logger.Error(err, "Failed to create S3 storage client")
+			os.Exit(1)
+		}
+		logger.Info("S3 storage client initialized", "bucket", s3Bucket)
+	} else {
+		logger.Info("No S3 bucket configured, log streaming from storage will be disabled")
+	}
+
 	// Create HTTP router
 	mux := http.NewServeMux()
 
 	// Initialize handlers
 	pipelineConfigHandler := handlers.NewPipelineConfigHandler(k8sClient)
 	pipelineRunHandler := handlers.NewPipelineRunHandler(k8sClient)
-	logsHandler := handlers.NewLogsHandler(clientset, k8sClient)
+	logsHandler := handlers.NewLogsHandler(clientset, k8sClient, storageClient)
 
 	// Register API routes
 	// PipelineConfig endpoints
