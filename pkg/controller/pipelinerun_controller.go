@@ -67,6 +67,22 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		"phase", pipelineRun.Status.Phase,
 	)
 
+	// Handle deletion with finalizer
+	if !pipelineRun.DeletionTimestamp.IsZero() {
+		return r.handleDeletion(ctx, pipelineRun)
+	}
+
+	// Add finalizer if not present
+	if !containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
+		logger.Info("Adding finalizer to PipelineRun")
+		pipelineRun.Finalizers = append(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
+		if err := r.Update(ctx, pipelineRun); err != nil {
+			logger.Error(err, "Failed to add finalizer")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// Skip reconciliation if pipeline is in terminal state
 	if r.isTerminalPhase(pipelineRun.Status.Phase) {
 		logger.Info("PipelineRun in terminal phase, skipping reconciliation",
@@ -220,6 +236,76 @@ func (r *PipelineRunReconciler) isTerminalPhase(phase c8sv1alpha1.PipelineRunPha
 	return phase == c8sv1alpha1.PipelineRunPhaseSucceeded ||
 		phase == c8sv1alpha1.PipelineRunPhaseFailed ||
 		phase == c8sv1alpha1.PipelineRunPhaseCancelled
+}
+
+// handleDeletion handles cleanup when a PipelineRun is being deleted
+func (r *PipelineRunReconciler) handleDeletion(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	if containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
+		logger.Info("Cleaning up resources for PipelineRun")
+
+		// Delete all Jobs owned by this PipelineRun
+		jobList := &batchv1.JobList{}
+		if err := r.List(ctx, jobList,
+			client.InNamespace(pipelineRun.Namespace),
+			client.MatchingLabels{
+				ctypes.LabelPipelineRun: pipelineRun.Name,
+			},
+		); err != nil {
+			logger.Error(err, "Failed to list Jobs for cleanup")
+			return ctrl.Result{}, err
+		}
+
+		// Delete each Job
+		for i := range jobList.Items {
+			job := &jobList.Items[i]
+			logger.Info("Deleting Job", "job", job.Name)
+			if err := r.Delete(ctx, job, client.PropagationPolicy("Background")); err != nil {
+				if !apierrors.IsNotFound(err) {
+					logger.Error(err, "Failed to delete Job", "job", job.Name)
+					return ctrl.Result{}, err
+				}
+			}
+		}
+
+		// Wait a moment for Jobs to be deleted (they may have finalizers too)
+		// In a real implementation, you might want to check if all Jobs are gone
+		// before removing the finalizer
+		logger.Info("Jobs cleanup initiated", "count", len(jobList.Items))
+
+		// Remove finalizer
+		pipelineRun.Finalizers = removeString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
+		if err := r.Update(ctx, pipelineRun); err != nil {
+			logger.Error(err, "Failed to remove finalizer")
+			return ctrl.Result{}, err
+		}
+
+		logger.Info("Finalizer removed, PipelineRun will be deleted")
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// containsString checks if a slice contains a string
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+// removeString removes a string from a slice
+func removeString(slice []string, s string) []string {
+	result := []string{}
+	for _, item := range slice {
+		if item != s {
+			result = append(result, item)
+		}
+	}
+	return result
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -34,6 +34,7 @@ const (
 	AnnotationArtifactURLs  = "c8s.dev/artifact-urls"
 
 	// Finalizer names
+	FinalizerPipelineRun = "c8s.dev/pipelinerun"
 	FinalizerCleanupJobs = "c8s.dev/cleanup-jobs"
 	FinalizerCleanupLogs = "c8s.dev/cleanup-logs"
 
