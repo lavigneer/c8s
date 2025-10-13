@@ -222,7 +222,7 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Step 7.5: Collect and upload logs for completed Jobs
 	if r.LogCollector != nil {
-		if err := r.collectLogsForCompletedJobs(ctx, pipelineRun, jobsByStep); err != nil {
+		if err := r.collectLogsForCompletedJobs(ctx, pipelineRun, pipelineConfig, jobsByStep); err != nil {
 			logger.Error(err, "Failed to collect logs for completed jobs")
 			// Continue even if log collection fails - don't block pipeline progress
 		}
@@ -242,7 +242,7 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 // collectLogsForCompletedJobs collects logs from completed Job Pods and uploads them
-func (r *PipelineRunReconciler) collectLogsForCompletedJobs(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, jobsByStep map[string]*batchv1.Job) error {
+func (r *PipelineRunReconciler) collectLogsForCompletedJobs(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, pipelineConfig *c8sv1alpha1.PipelineConfig, jobsByStep map[string]*batchv1.Job) error {
 	logger := log.FromContext(ctx)
 	statusUpdated := false
 
@@ -295,9 +295,9 @@ func (r *PipelineRunReconciler) collectLogsForCompletedJobs(ctx context.Context,
 			continue
 		}
 
-		// Collect and upload logs
+		// Collect and upload logs (with secret masking)
 		logger.Info("Collecting logs for step", "step", step.Name, "pod", pod.Name)
-		logURL, err := r.LogCollector.CollectAndUpload(ctx, pod, pipelineRun, step.Name)
+		logURL, err := r.LogCollector.CollectAndUpload(ctx, pod, pipelineRun, step.Name, pipelineConfig)
 		if err != nil {
 			logger.Error(err, "Failed to collect and upload logs", "step", step.Name)
 			// Continue to next step - don't block on log collection failures

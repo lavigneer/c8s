@@ -7,10 +7,12 @@ import (
 	"io"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/secrets"
 	"github.com/org/c8s/pkg/storage"
 )
 
@@ -85,7 +87,8 @@ func (lc *LogCollector) CollectLogs(ctx context.Context, pod *corev1.Pod) ([]byt
 }
 
 // UploadLogsToStorage uploads logs to S3 and returns the log URL
-func (lc *LogCollector) UploadLogsToStorage(ctx context.Context, pipelineRun *v1alpha1.PipelineRun, stepName string, logs []byte) (string, error) {
+// Logs are masked before upload to ensure secrets are never persisted
+func (lc *LogCollector) UploadLogsToStorage(ctx context.Context, pipelineRun *v1alpha1.PipelineRun, stepName string, logs []byte, pipelineConfig *v1alpha1.PipelineConfig) (string, error) {
 	logger := log.FromContext(ctx)
 
 	if lc.storageClient == nil {
@@ -93,14 +96,30 @@ func (lc *LogCollector) UploadLogsToStorage(ctx context.Context, pipelineRun *v1
 		return "", nil
 	}
 
+	// Fetch secret values for masking
+	secretValues, err := lc.fetchSecretValues(ctx, pipelineRun.Namespace, pipelineConfig, stepName)
+	if err != nil {
+		logger.Error(err, "failed to fetch secret values for masking", "step", stepName)
+		// Continue with upload but log the error
+	}
+
+	// Mask secrets in logs before uploading
+	maskedLogs := secrets.MaskSecrets(logs, secretValues)
+
+	// Log if any secrets were redacted (for audit purposes)
+	if secrets.HasRedactedContent(maskedLogs) {
+		redactionCount := secrets.CountRedactions(maskedLogs)
+		logger.Info("masked secrets in logs", "step", stepName, "redactions", redactionCount)
+	}
+
 	// Generate storage key: {namespace}/{pipelinerun-name}/{step-name}.log
 	key := fmt.Sprintf("%s/%s/%s.log", pipelineRun.Namespace, pipelineRun.Name, stepName)
 
-	// Convert logs to io.Reader
-	reader := bytes.NewReader(logs)
+	// Convert masked logs to io.Reader
+	reader := bytes.NewReader(maskedLogs)
 
-	// Upload logs to storage
-	err := lc.storageClient.UploadLog(ctx, key, reader)
+	// Upload masked logs to storage
+	err = lc.storageClient.UploadLog(ctx, key, reader)
 	if err != nil {
 		logger.Error(err, "failed to upload logs to storage", "key", key)
 		return "", fmt.Errorf("failed to upload logs: %w", err)
@@ -118,7 +137,7 @@ func (lc *LogCollector) UploadLogsToStorage(ctx context.Context, pipelineRun *v1
 }
 
 // CollectAndUpload is a convenience method that collects logs from a Pod and uploads them to storage
-func (lc *LogCollector) CollectAndUpload(ctx context.Context, pod *corev1.Pod, pipelineRun *v1alpha1.PipelineRun, stepName string) (string, error) {
+func (lc *LogCollector) CollectAndUpload(ctx context.Context, pod *corev1.Pod, pipelineRun *v1alpha1.PipelineRun, stepName string, pipelineConfig *v1alpha1.PipelineConfig) (string, error) {
 	logger := log.FromContext(ctx)
 
 	// Collect logs
@@ -127,12 +146,23 @@ func (lc *LogCollector) CollectAndUpload(ctx context.Context, pod *corev1.Pod, p
 		return "", err
 	}
 
-	// Store in circular buffer for real-time streaming
-	bufferKey := fmt.Sprintf("%s/%s/%s", pipelineRun.Namespace, pipelineRun.Name, stepName)
-	lc.bufferManager.Write(bufferKey, logs)
+	// Fetch secret values for masking
+	secretValues, err := lc.fetchSecretValues(ctx, pipelineRun.Namespace, pipelineConfig, stepName)
+	if err != nil {
+		logger.Error(err, "failed to fetch secret values for masking", "step", stepName)
+		// Continue with masked logs using empty secret map
+		secretValues = make(map[string]string)
+	}
 
-	// Upload to storage
-	logURL, err := lc.UploadLogsToStorage(ctx, pipelineRun, stepName, logs)
+	// Mask secrets in logs before storing in buffer
+	maskedLogs := secrets.MaskSecrets(logs, secretValues)
+
+	// Store masked logs in circular buffer for real-time streaming
+	bufferKey := fmt.Sprintf("%s/%s/%s", pipelineRun.Namespace, pipelineRun.Name, stepName)
+	lc.bufferManager.Write(bufferKey, maskedLogs)
+
+	// Upload to storage (masking happens again inside for safety)
+	logURL, err := lc.UploadLogsToStorage(ctx, pipelineRun, stepName, maskedLogs, pipelineConfig)
 	if err != nil {
 		// Log the error but don't fail - logs are still in buffer
 		logger.Error(err, "failed to upload logs, but they are available in buffer", "step", stepName)
@@ -140,6 +170,47 @@ func (lc *LogCollector) CollectAndUpload(ctx context.Context, pod *corev1.Pod, p
 	}
 
 	return logURL, nil
+}
+
+// fetchSecretValues fetches all secret values referenced by a pipeline step for masking purposes
+func (lc *LogCollector) fetchSecretValues(ctx context.Context, namespace string, pipelineConfig *v1alpha1.PipelineConfig, stepName string) (map[string]string, error) {
+	logger := log.FromContext(ctx)
+	secretValues := make(map[string]string)
+
+	if pipelineConfig == nil {
+		return secretValues, nil
+	}
+
+	// Find the step in the pipeline config
+	var targetStep *v1alpha1.PipelineStep
+	for i := range pipelineConfig.Spec.Steps {
+		if pipelineConfig.Spec.Steps[i].Name == stepName {
+			targetStep = &pipelineConfig.Spec.Steps[i]
+			break
+		}
+	}
+
+	if targetStep == nil {
+		return secretValues, fmt.Errorf("step %s not found in pipeline config", stepName)
+	}
+
+	// Fetch all referenced secrets
+	for _, secretRef := range targetStep.Secrets {
+		secret, err := lc.client.CoreV1().Secrets(namespace).Get(ctx, secretRef.SecretRef, metav1.GetOptions{})
+		if err != nil {
+			logger.Error(err, "failed to fetch secret for masking", "secret", secretRef.SecretRef)
+			continue
+		}
+
+		// Extract the specific key value
+		if value, ok := secret.Data[secretRef.Key]; ok {
+			// Use the secret name and key as the identifier
+			identifier := fmt.Sprintf("%s:%s", secretRef.SecretRef, secretRef.Key)
+			secretValues[identifier] = string(value)
+		}
+	}
+
+	return secretValues, nil
 }
 
 // GetLogBuffer returns the log buffer manager for real-time streaming

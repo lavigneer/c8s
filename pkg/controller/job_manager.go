@@ -235,7 +235,27 @@ func (jm *JobManager) buildStepContainer(
 		}
 	}
 
-	// TODO: Add secret injection in Phase 5 (User Story 3)
+	// Add secret injection (User Story 3)
+	for _, secret := range step.Secrets {
+		// If EnvVar is not specified, use the key name as the environment variable name
+		envVarName := secret.EnvVar
+		if envVarName == "" {
+			envVarName = secret.Key
+		}
+
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name: envVarName,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.SecretRef,
+					},
+					Key: secret.Key,
+				},
+			},
+		})
+	}
+
 	// TODO: Add artifact upload sidecar in Phase 4 (User Story 2)
 
 	return container

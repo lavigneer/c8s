@@ -58,7 +58,7 @@ rules:
       - patch
       - delete
 
-  # Kubernetes Pods (monitored for job status)
+  # Kubernetes Pods (monitored for job status and log collection)
   - apiGroups:
       - ""
     resources:
@@ -68,7 +68,20 @@ rules:
       - list
       - watch
 
-  # Kubernetes Secrets (injected into steps)
+  # Kubernetes Pod logs (for log collection)
+  - apiGroups:
+      - ""
+    resources:
+      - pods/log
+    verbs:
+      - get
+
+  # Kubernetes Secrets (read-only access for injection and masking)
+  # Controller needs to:
+  # - Inject secrets as environment variables into Job Pods (read secret values)
+  # - Fetch secret values for log masking (read secret values)
+  # - Validate secret references in admission webhooks (check existence)
+  # Note: Controller does NOT have create/update/delete permissions on Secrets
   - apiGroups:
       - ""
     resources:
