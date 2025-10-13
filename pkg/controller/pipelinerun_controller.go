@@ -18,14 +18,19 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/scheduler"
+	ctypes "github.com/org/c8s/pkg/types"
 )
 
 // PipelineRunReconciler reconciles a PipelineRun object
@@ -62,17 +67,159 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		"phase", pipelineRun.Status.Phase,
 	)
 
-	// TODO: Implement reconciliation logic in Phase 3
-	// 1. Fetch referenced PipelineConfig
-	// 2. If phase is Pending, initialize status and set to Running
-	// 3. Parse pipeline steps and build dependency graph (DAG)
-	// 4. Create Jobs for steps that are ready to run
-	// 5. Watch Jobs and update step status based on Job status
-	// 6. Update PipelineRun phase based on overall step completion
-	// 7. Handle log collection and artifact upload to S3
-	// 8. Set completion time and final phase (Succeeded/Failed/Cancelled)
+	// Skip reconciliation if pipeline is in terminal state
+	if r.isTerminalPhase(pipelineRun.Status.Phase) {
+		logger.Info("PipelineRun in terminal phase, skipping reconciliation",
+			"phase", pipelineRun.Status.Phase,
+		)
+		return ctrl.Result{}, nil
+	}
+
+	// Step 1: Fetch referenced PipelineConfig
+	pipelineConfig := &c8sv1alpha1.PipelineConfig{}
+	configKey := types.NamespacedName{
+		Name:      pipelineRun.Spec.PipelineConfigRef,
+		Namespace: pipelineRun.Namespace,
+	}
+	if err := r.Get(ctx, configKey, pipelineConfig); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Error(err, "PipelineConfig not found",
+				"config", pipelineRun.Spec.PipelineConfigRef,
+			)
+			// Update status to Failed
+			pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
+			if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
+				logger.Error(updateErr, "Failed to update PipelineRun status")
+			}
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+
+	// Step 2: Initialize status if needed
+	if pipelineRun.Status.Phase == "" {
+		logger.Info("Initializing PipelineRun status")
+		pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhasePending
+		if err := r.Status().Update(ctx, pipelineRun); err != nil {
+			logger.Error(err, "Failed to initialize PipelineRun status")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Step 3: Build execution schedule using DAG scheduler
+	schedule, err := scheduler.BuildSchedule(pipelineConfig)
+	if err != nil {
+		logger.Error(err, "Failed to build execution schedule")
+		pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
+		if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
+			logger.Error(updateErr, "Failed to update PipelineRun status")
+		}
+		return ctrl.Result{}, nil
+	}
+
+	logger.Info("Built execution schedule",
+		"totalSteps", schedule.TotalSteps(),
+		"layers", schedule.LayerCount(),
+	)
+
+	// Step 4: Get completed steps to determine which steps are ready
+	completedSteps := GetCompletedSteps(pipelineRun)
+	logger.Info("Completed steps", "count", len(completedSteps))
+
+	// Step 5: Create Jobs for steps that are ready to execute
+	jobManager := NewJobManager(pipelineConfig.Spec.Repository)
+	readySteps := schedule.GetReadySteps(completedSteps)
+
+	for _, step := range readySteps {
+		// Check if Job already exists
+		jobName := GetJobForStep(pipelineRun.Name, step.Name)
+		existingJob := &batchv1.Job{}
+		jobKey := types.NamespacedName{
+			Name:      jobName,
+			Namespace: pipelineRun.Namespace,
+		}
+
+		err := r.Get(ctx, jobKey, existingJob)
+		if err == nil {
+			// Job already exists, skip creation
+			logger.Info("Job already exists", "step", step.Name, "job", jobName)
+			continue
+		}
+
+		if !apierrors.IsNotFound(err) {
+			// Real error occurred
+			logger.Error(err, "Failed to check if Job exists", "step", step.Name)
+			continue
+		}
+
+		// Job doesn't exist, create it
+		logger.Info("Creating Job for step", "step", step.Name)
+		job, err := jobManager.CreateJobForStep(step, pipelineRun, pipelineConfig)
+		if err != nil {
+			logger.Error(err, "Failed to create Job spec", "step", step.Name)
+			continue
+		}
+
+		if err := r.Create(ctx, job); err != nil {
+			logger.Error(err, "Failed to create Job", "step", step.Name, "job", job.Name)
+			continue
+		}
+
+		logger.Info("Successfully created Job", "step", step.Name, "job", job.Name)
+	}
+
+	// Step 6: List all Jobs owned by this PipelineRun
+	jobList := &batchv1.JobList{}
+	if err := r.List(ctx, jobList,
+		client.InNamespace(pipelineRun.Namespace),
+		client.MatchingLabels{
+			ctypes.LabelPipelineRun: pipelineRun.Name,
+		},
+	); err != nil {
+		logger.Error(err, "Failed to list Jobs")
+		return ctrl.Result{}, err
+	}
+
+	// Build map of jobs by step name
+	jobsByStep := make(map[string]*batchv1.Job)
+	for i := range jobList.Items {
+		job := &jobList.Items[i]
+		if stepName, ok := job.Labels[ctypes.LabelStepName]; ok {
+			jobsByStep[stepName] = job
+		}
+	}
+
+	logger.Info("Found Jobs for PipelineRun",
+		"totalJobs", len(jobsByStep),
+		"expectedSteps", schedule.TotalSteps(),
+	)
+
+	// Step 7: Update PipelineRun status based on Job statuses
+	statusUpdater := NewStatusUpdater(r.Client)
+	if err := statusUpdater.UpdatePipelineRunStatus(ctx, pipelineRun, jobsByStep); err != nil {
+		logger.Error(err, "Failed to update PipelineRun status")
+		return ctrl.Result{}, err
+	}
+
+	// Step 8: Requeue if not in terminal state
+	if !r.isTerminalPhase(pipelineRun.Status.Phase) {
+		logger.Info("PipelineRun still running, requeuing")
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
+	logger.Info("PipelineRun reconciliation complete",
+		"finalPhase", pipelineRun.Status.Phase,
+	)
 
 	return ctrl.Result{}, nil
+}
+
+// isTerminalPhase returns true if the phase is terminal (no further transitions)
+func (r *PipelineRunReconciler) isTerminalPhase(phase c8sv1alpha1.PipelineRunPhase) bool {
+	return phase == c8sv1alpha1.PipelineRunPhaseSucceeded ||
+		phase == c8sv1alpha1.PipelineRunPhaseFailed ||
+		phase == c8sv1alpha1.PipelineRunPhaseCancelled
 }
 
 // SetupWithManager sets up the controller with the Manager.

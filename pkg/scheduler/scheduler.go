@@ -40,8 +40,8 @@ type Layer struct {
 	StepNames []string
 }
 
-// Schedule creates an execution schedule from a PipelineConfig
-func Schedule(config *c8sv1alpha1.PipelineConfig) (*Schedule, error) {
+// BuildSchedule creates an execution schedule from a PipelineConfig
+func BuildSchedule(config *c8sv1alpha1.PipelineConfig) (*Schedule, error) {
 	// Build DAG from steps
 	dag, err := BuildDAG(config.Spec.Steps)
 	if err != nil {
