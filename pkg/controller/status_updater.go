@@ -42,16 +42,17 @@ func (su *StatusUpdater) UpdatePipelineRunStatus(
 	ctx context.Context,
 	pipelineRun *c8sv1alpha1.PipelineRun,
 	jobs map[string]*batchv1.Job,
+	expectedStepCount int,
 ) error {
 	// Initialize status if needed
 	if pipelineRun.Status.Phase == "" {
 		pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhasePending
 	}
 
-	// Update step statuses from jobs
-	stepStatusMap := make(map[string]*c8sv1alpha1.StepStatus)
+	// Build map of existing step statuses by name
+	stepStatusMap := make(map[string]int) // Map step name to index in slice
 	for i := range pipelineRun.Status.Steps {
-		stepStatusMap[pipelineRun.Status.Steps[i].Name] = &pipelineRun.Status.Steps[i]
+		stepStatusMap[pipelineRun.Status.Steps[i].Name] = i
 	}
 
 	// Track overall status
@@ -66,16 +67,21 @@ func (su *StatusUpdater) UpdatePipelineRunStatus(
 
 	// Update status for each job
 	for stepName, job := range jobs {
-		status, exists := stepStatusMap[stepName]
-		if !exists {
+		var status *c8sv1alpha1.StepStatus
+
+		if idx, exists := stepStatusMap[stepName]; exists {
+			// Update existing status
+			status = &pipelineRun.Status.Steps[idx]
+		} else {
 			// Create new status entry
-			status = &c8sv1alpha1.StepStatus{
+			newStatus := c8sv1alpha1.StepStatus{
 				Name:    stepName,
 				Phase:   c8sv1alpha1.StepPhasePending,
 				JobName: job.Name,
 			}
-			stepStatusMap[stepName] = status
-			pipelineRun.Status.Steps = append(pipelineRun.Status.Steps, *status)
+			pipelineRun.Status.Steps = append(pipelineRun.Status.Steps, newStatus)
+			// Get pointer to the newly appended status
+			status = &pipelineRun.Status.Steps[len(pipelineRun.Status.Steps)-1]
 		}
 
 		// Update from job
@@ -106,6 +112,7 @@ func (su *StatusUpdater) UpdatePipelineRunStatus(
 		runningSteps,
 		succeededSteps,
 		failedSteps,
+		expectedStepCount,
 	)
 
 	// Handle phase transitions
@@ -168,6 +175,7 @@ func (su *StatusUpdater) updateStepStatusFromJob(status *c8sv1alpha1.StepStatus,
 func (su *StatusUpdater) calculateOverallPhase(
 	currentPhase c8sv1alpha1.PipelineRunPhase,
 	totalSteps, pendingSteps, runningSteps, succeededSteps, failedSteps int,
+	expectedStepCount int,
 ) c8sv1alpha1.PipelineRunPhase {
 	// If already in terminal state, don't change
 	if su.isTerminalPhase(currentPhase) {
@@ -179,8 +187,9 @@ func (su *StatusUpdater) calculateOverallPhase(
 		return c8sv1alpha1.PipelineRunPhaseFailed
 	}
 
-	// If all steps succeeded, pipeline succeeds
-	if succeededSteps == totalSteps && totalSteps > 0 {
+	// If all expected steps succeeded, pipeline succeeds
+	// Use expectedStepCount, not totalSteps (which is only jobs that exist)
+	if succeededSteps == expectedStepCount && expectedStepCount > 0 {
 		return c8sv1alpha1.PipelineRunPhaseSucceeded
 	}
 
@@ -190,11 +199,16 @@ func (su *StatusUpdater) calculateOverallPhase(
 	}
 
 	// If we have steps but none are running/succeeded/failed, still pending
-	if pendingSteps == totalSteps {
+	if pendingSteps == totalSteps && totalSteps > 0 {
 		return c8sv1alpha1.PipelineRunPhasePending
 	}
 
-	// Mixed state, consider running
+	// If we have some succeeded steps but not all expected steps, still running
+	if succeededSteps > 0 && succeededSteps < expectedStepCount {
+		return c8sv1alpha1.PipelineRunPhaseRunning
+	}
+
+	// Mixed state or waiting for more jobs, consider running
 	return c8sv1alpha1.PipelineRunPhaseRunning
 }
 

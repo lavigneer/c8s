@@ -213,7 +213,7 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Step 7: Update PipelineRun status based on Job statuses
 	statusUpdater := NewStatusUpdater(r.Client)
-	if err := statusUpdater.UpdatePipelineRunStatus(ctx, pipelineRun, jobsByStep); err != nil {
+	if err := statusUpdater.UpdatePipelineRunStatus(ctx, pipelineRun, jobsByStep, schedule.TotalSteps()); err != nil {
 		logger.Error(err, "Failed to update PipelineRun status")
 		return ctrl.Result{}, err
 	}

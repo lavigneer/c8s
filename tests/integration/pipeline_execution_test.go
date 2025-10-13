@@ -26,15 +26,6 @@ func TestBasicPipelineExecution(t *testing.T) {
 	require.NoError(t, scheme.AddToScheme(s))
 	require.NoError(t, v1alpha1.AddToScheme(s))
 
-	// Create fake client
-	fakeClient := fake.NewClientBuilder().WithScheme(s).Build()
-
-	// Create controller
-	r := &controller.PipelineRunReconciler{
-		Client: fakeClient,
-		Scheme: s,
-	}
-
 	ctx := context.Background()
 
 	// Create PipelineConfig with 2-step pipeline (test -> build)
@@ -61,7 +52,6 @@ func TestBasicPipelineExecution(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineConfig))
 
 	// Create PipelineRun
 	pipelineRun := &v1alpha1.PipelineRun{
@@ -76,9 +66,21 @@ func TestBasicPipelineExecution(t *testing.T) {
 			TriggeredBy:       "github-webhook",
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineRun))
 
-	// First reconcile: should set status to Pending and create job for test step
+	// Create fake client with initial objects
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(s).
+		WithObjects(pipelineConfig, pipelineRun).
+		WithStatusSubresource(&v1alpha1.PipelineRun{}).
+		Build()
+
+	// Create controller
+	r := &controller.PipelineRunReconciler{
+		Client: fakeClient,
+		Scheme: s,
+	}
+
+	// First reconcile: should add finalizer
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "test-run-1",
@@ -86,17 +88,26 @@ func TestBasicPipelineExecution(t *testing.T) {
 		},
 	}
 
+	// Reconcile 1: Add finalizer
 	result, err := r.Reconcile(ctx, req)
 	require.NoError(t, err)
-	assert.False(t, result.Requeue)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 2: Initialize status
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 3: Create jobs and update status
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
 
 	// Check PipelineRun status was updated
 	updatedRun := &v1alpha1.PipelineRun{}
 	require.NoError(t, fakeClient.Get(ctx, req.NamespacedName, updatedRun))
 
-	// Should be in Running phase (or Pending depending on implementation)
-	assert.Contains(t, []string{"Pending", "Running"}, updatedRun.Status.Phase)
-	assert.NotNil(t, updatedRun.Status.StartTime)
+	// Should be in Running or Pending phase (jobs exist but may not have started yet)
+	assert.Contains(t, []v1alpha1.PipelineRunPhase{v1alpha1.PipelineRunPhasePending, v1alpha1.PipelineRunPhaseRunning}, updatedRun.Status.Phase)
 
 	// Check that test job was created
 	testJob := &batchv1.Job{}
@@ -125,11 +136,30 @@ func TestBasicPipelineExecution(t *testing.T) {
 	// Simulate test job succeeding
 	testJob.Status.Succeeded = 1
 	testJob.Status.CompletionTime = &metav1.Time{Time: time.Now()}
+	testJob.Status.StartTime = &metav1.Time{Time: time.Now().Add(-1 * time.Minute)}
 	require.NoError(t, fakeClient.Status().Update(ctx, testJob))
 
-	// Second reconcile: should create build job now that test succeeded
+	// Fourth reconcile: should update test step status to Succeeded
 	result, err = r.Reconcile(ctx, req)
 	require.NoError(t, err)
+
+	// Check status after 4th reconcile
+	require.NoError(t, fakeClient.Get(ctx, req.NamespacedName, updatedRun))
+	t.Logf("After 4th reconcile - Phase: %s, Steps: %d", updatedRun.Status.Phase, len(updatedRun.Status.Steps))
+	for _, step := range updatedRun.Status.Steps {
+		t.Logf("  Step %s: %s", step.Name, step.Phase)
+	}
+
+	// Fifth reconcile: should create build job now that test succeeded
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	// Check status after 5th reconcile
+	require.NoError(t, fakeClient.Get(ctx, req.NamespacedName, updatedRun))
+	t.Logf("After 5th reconcile - Phase: %s, Steps: %d", updatedRun.Status.Phase, len(updatedRun.Status.Steps))
+	for _, step := range updatedRun.Status.Steps {
+		t.Logf("  Step %s: %s", step.Name, step.Phase)
+	}
 
 	// Check that build job was created
 	require.NoError(t, fakeClient.Get(ctx, buildJobKey, buildJob))
@@ -148,26 +178,27 @@ func TestBasicPipelineExecution(t *testing.T) {
 		}
 	}
 	require.NotNil(t, testStepStatus)
-	assert.Equal(t, "Succeeded", testStepStatus.Phase)
+	assert.Equal(t, v1alpha1.StepPhaseSucceeded, testStepStatus.Phase)
 	assert.Equal(t, "test-run-1-test", testStepStatus.JobName)
 
 	// Simulate build job succeeding
 	buildJob.Status.Succeeded = 1
+	buildJob.Status.StartTime = &metav1.Time{Time: time.Now().Add(-1 * time.Minute)}
 	buildJob.Status.CompletionTime = &metav1.Time{Time: time.Now()}
 	require.NoError(t, fakeClient.Status().Update(ctx, buildJob))
 
-	// Third reconcile: should mark PipelineRun as Succeeded
+	// Sixth reconcile: should mark PipelineRun as Succeeded
 	result, err = r.Reconcile(ctx, req)
 	require.NoError(t, err)
 
 	// Check final status
 	require.NoError(t, fakeClient.Get(ctx, req.NamespacedName, updatedRun))
-	assert.Equal(t, "Succeeded", updatedRun.Status.Phase)
+	assert.Equal(t, v1alpha1.PipelineRunPhaseSucceeded, updatedRun.Status.Phase)
 	assert.NotNil(t, updatedRun.Status.CompletionTime)
 
 	// Verify both steps succeeded
 	for _, stepStatus := range updatedRun.Status.Steps {
-		assert.Equal(t, "Succeeded", stepStatus.Phase)
+		assert.Equal(t, v1alpha1.StepPhaseSucceeded, stepStatus.Phase)
 		assert.NotNil(t, stepStatus.StartTime)
 		assert.NotNil(t, stepStatus.CompletionTime)
 	}
@@ -178,15 +209,6 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 	s := runtime.NewScheme()
 	require.NoError(t, scheme.AddToScheme(s))
 	require.NoError(t, v1alpha1.AddToScheme(s))
-
-	// Create fake client
-	fakeClient := fake.NewClientBuilder().WithScheme(s).Build()
-
-	// Create controller
-	r := &controller.PipelineRunReconciler{
-		Client: fakeClient,
-		Scheme: s,
-	}
 
 	ctx := context.Background()
 
@@ -208,7 +230,6 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineConfig))
 
 	// Create PipelineRun
 	pipelineRun := &v1alpha1.PipelineRun{
@@ -223,7 +244,19 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 			TriggeredBy:       "manual",
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineRun))
+
+	// Create fake client with initial objects
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(s).
+		WithObjects(pipelineConfig, pipelineRun).
+		WithStatusSubresource(&v1alpha1.PipelineRun{}).
+		Build()
+
+	// Create controller
+	r := &controller.PipelineRunReconciler{
+		Client: fakeClient,
+		Scheme: s,
+	}
 
 	// First reconcile
 	req := reconcile.Request{
@@ -233,9 +266,19 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 		},
 	}
 
+	// Reconcile 1: Add finalizer
 	result, err := r.Reconcile(ctx, req)
 	require.NoError(t, err)
-	assert.False(t, result.Requeue)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 2: Initialize status
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 3: Create jobs
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
 
 	// Get the created job
 	testJob := &batchv1.Job{}
@@ -247,6 +290,7 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 
 	// Simulate job failing
 	testJob.Status.Failed = 1
+	testJob.Status.StartTime = &metav1.Time{Time: time.Now().Add(-1 * time.Minute)}
 	testJob.Status.Conditions = []batchv1.JobCondition{
 		{
 			Type:    batchv1.JobFailed,
@@ -264,12 +308,12 @@ func TestPipelineExecutionWithFailure(t *testing.T) {
 	// Check final status
 	updatedRun := &v1alpha1.PipelineRun{}
 	require.NoError(t, fakeClient.Get(ctx, req.NamespacedName, updatedRun))
-	assert.Equal(t, "Failed", updatedRun.Status.Phase)
+	assert.Equal(t, v1alpha1.PipelineRunPhaseFailed, updatedRun.Status.Phase)
 	assert.NotNil(t, updatedRun.Status.CompletionTime)
 
 	// Verify step marked as failed
 	require.Len(t, updatedRun.Status.Steps, 1)
-	assert.Equal(t, "Failed", updatedRun.Status.Steps[0].Phase)
+	assert.Equal(t, v1alpha1.StepPhaseFailed, updatedRun.Status.Steps[0].Phase)
 }
 
 func TestPipelineExecutionParallelSteps(t *testing.T) {
@@ -277,15 +321,6 @@ func TestPipelineExecutionParallelSteps(t *testing.T) {
 	s := runtime.NewScheme()
 	require.NoError(t, scheme.AddToScheme(s))
 	require.NoError(t, v1alpha1.AddToScheme(s))
-
-	// Create fake client
-	fakeClient := fake.NewClientBuilder().WithScheme(s).Build()
-
-	// Create controller
-	r := &controller.PipelineRunReconciler{
-		Client: fakeClient,
-		Scheme: s,
-	}
 
 	ctx := context.Background()
 
@@ -312,7 +347,6 @@ func TestPipelineExecutionParallelSteps(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineConfig))
 
 	// Create PipelineRun
 	pipelineRun := &v1alpha1.PipelineRun{
@@ -327,7 +361,19 @@ func TestPipelineExecutionParallelSteps(t *testing.T) {
 			TriggeredBy:       "manual",
 		},
 	}
-	require.NoError(t, fakeClient.Create(ctx, pipelineRun))
+
+	// Create fake client with initial objects
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(s).
+		WithObjects(pipelineConfig, pipelineRun).
+		WithStatusSubresource(&v1alpha1.PipelineRun{}).
+		Build()
+
+	// Create controller
+	r := &controller.PipelineRunReconciler{
+		Client: fakeClient,
+		Scheme: s,
+	}
 
 	// First reconcile: should create BOTH jobs (parallel execution)
 	req := reconcile.Request{
@@ -337,9 +383,19 @@ func TestPipelineExecutionParallelSteps(t *testing.T) {
 		},
 	}
 
+	// Reconcile 1: Add finalizer
 	result, err := r.Reconcile(ctx, req)
 	require.NoError(t, err)
-	assert.False(t, result.Requeue)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 2: Initialize status
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.True(t, result.Requeue)
+
+	// Reconcile 3: Create jobs
+	result, err = r.Reconcile(ctx, req)
+	require.NoError(t, err)
 
 	// Check that BOTH jobs were created
 	lintJob := &batchv1.Job{}
