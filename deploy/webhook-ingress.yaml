@@ -1,0 +1,79 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: c8s-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-webhook
+  annotations:
+    # Example annotations for common ingress controllers
+    # Uncomment and adjust based on your ingress controller
+
+    # For nginx-ingress:
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # For cert-manager with Let's Encrypt:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+    # For AWS ALB:
+    # kubernetes.io/ingress.class: "alb"
+    # alb.ingress.kubernetes.io/scheme: "internet-facing"
+    # alb.ingress.kubernetes.io/target-type: "ip"
+
+    # Rate limiting (adjust as needed):
+    # nginx.ingress.kubernetes.io/limit-rps: "10"
+spec:
+  ingressClassName: nginx  # Adjust to your ingress class
+  rules:
+  - host: webhooks.c8s.example.com  # Replace with your domain
+    http:
+      paths:
+      - path: /webhooks
+        pathType: Prefix
+        backend:
+          service:
+            name: c8s-webhook
+            port:
+              name: http
+  tls:
+  - hosts:
+    - webhooks.c8s.example.com  # Replace with your domain
+    secretName: c8s-webhook-tls  # TLS certificate secret
+---
+# Optional: NetworkPolicy to restrict webhook access
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: c8s-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-webhook
+spec:
+  podSelector:
+    matchLabels:
+      app: c8s-webhook
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector: {}  # Allow from ingress controller namespace
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443  # Kubernetes API
+    - protocol: TCP
+      port: 6443  # Kubernetes API (alternative port)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53  # DNS
+    - protocol: UDP
+      port: 53  # DNS
