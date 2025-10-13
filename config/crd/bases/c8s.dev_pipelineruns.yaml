@@ -68,6 +68,7 @@ spec:
                 type: string
               branch:
                 description: Branch is the branch name
+                pattern: ^[a-zA-Z0-9._/-]+$
                 type: string
               commit:
                 description: Commit is the Git commit SHA
@@ -174,6 +175,21 @@ spec:
                 - Failed
                 - Cancelled
                 type: string
+              resourceUsage:
+                description: ResourceUsage tracks actual resource consumption for
+                  capacity planning
+                properties:
+                  cpu:
+                    description: CPU is the total CPU time consumed in core-seconds
+                    type: string
+                  duration:
+                    description: Duration is the total wall-clock duration in seconds
+                    format: int64
+                    type: integer
+                  memory:
+                    description: Memory is the average memory usage in bytes
+                    type: string
+                type: object
               startTime:
                 description: StartTime is when the run started executing
                 format: date-time

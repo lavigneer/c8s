@@ -1,137 +1,79 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: c8s-controller-role
-  labels:
-    app.kubernetes.io/name: c8s
-    app.kubernetes.io/component: controller
+  name: controller-role
 rules:
-  # C8S CRD permissions
-  - apiGroups:
-      - c8s.dev
-    resources:
-      - pipelineconfigs
-      - pipelineruns
-      - repositoryconnections
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-
-  # C8S CRD status subresource permissions
-  - apiGroups:
-      - c8s.dev
-    resources:
-      - pipelineconfigs/status
-      - pipelineruns/status
-      - repositoryconnections/status
-    verbs:
-      - get
-      - update
-      - patch
-
-  # C8S CRD finalizers
-  - apiGroups:
-      - c8s.dev
-    resources:
-      - pipelineconfigs/finalizers
-      - pipelineruns/finalizers
-      - repositoryconnections/finalizers
-    verbs:
-      - update
-
-  # Kubernetes Jobs (created by controller for each step)
-  - apiGroups:
-      - batch
-    resources:
-      - jobs
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-
-  # Kubernetes Pods (monitored for job status and log collection)
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-
-  # Kubernetes Pod logs (for log collection)
-  - apiGroups:
-      - ""
-    resources:
-      - pods/log
-    verbs:
-      - get
-
-  # Kubernetes Secrets (read-only access for injection and masking)
-  # Controller needs to:
-  # - Inject secrets as environment variables into Job Pods (read secret values)
-  # - Fetch secret values for log masking (read secret values)
-  # - Validate secret references in admission webhooks (check existence)
-  # Note: Controller does NOT have create/update/delete permissions on Secrets
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-
-  # Kubernetes ConfigMaps (for pipeline configuration)
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-
-  # Kubernetes Events (for status updates)
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
-
-  # Kubernetes ResourceQuotas (for quota enforcement)
-  - apiGroups:
-      - ""
-    resources:
-      - resourcequotas
-    verbs:
-      - get
-      - list
-
-  # Leader election (for HA controller)
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns/status
+  verbs:
+  - get
+  - patch
+  - update

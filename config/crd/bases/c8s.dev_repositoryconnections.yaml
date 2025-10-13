@@ -68,6 +68,7 @@ spec:
               branches:
                 description: Branches are branch patterns to filter webhook events
                 items:
+                  pattern: ^[a-zA-Z0-9._/*-]+$
                   type: string
                 type: array
               events:
@@ -173,6 +174,7 @@ spec:
                 properties:
                   branch:
                     description: Branch is the branch name from the event
+                    pattern: ^[a-zA-Z0-9._/-]+$
                     type: string
                   commit:
                     description: Commit is the commit SHA from the event

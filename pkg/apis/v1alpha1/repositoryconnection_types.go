@@ -64,6 +64,7 @@ type RepositoryConnectionSpec struct {
 	Events []string `json:"events,omitempty"`
 
 	// Branches are branch patterns to filter webhook events
+	// +kubebuilder:validation:items:Pattern=`^[a-zA-Z0-9._/*-]+$`
 	// +optional
 	Branches []string `json:"branches,omitempty"`
 
@@ -102,6 +103,7 @@ type WebhookEvent struct {
 	Commit string `json:"commit,omitempty"`
 
 	// Branch is the branch name from the event
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9._/-]+$`
 	// +optional
 	Branch string `json:"branch,omitempty"`
 

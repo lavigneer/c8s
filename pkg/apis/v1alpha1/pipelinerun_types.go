@@ -66,6 +66,7 @@ type PipelineRunSpec struct {
 	Commit string `json:"commit"`
 
 	// Branch is the branch name
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9._/-]+$`
 	// +optional
 	Branch string `json:"branch,omitempty"`
 

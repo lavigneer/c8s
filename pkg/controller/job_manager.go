@@ -114,26 +114,18 @@ func (jm *JobManager) CreateJobForStep(
 }
 
 // buildGitCloneContainer creates the init container for git clone
+// Uses environment variables to prevent command injection
 func (jm *JobManager) buildGitCloneContainer(pipelineRun *c8sv1alpha1.PipelineRun) corev1.Container {
-	cloneCmd := fmt.Sprintf(`
-set -e
-echo "Cloning repository: %s"
-echo "Branch: %s"
-echo "Commit: %s"
-git clone --depth=1 --single-branch --branch %s %s %s
-cd %s
-git checkout %s
-echo "Repository cloned successfully"
-`,
-		jm.repository,
-		pipelineRun.Spec.Branch,
-		pipelineRun.Spec.Commit,
-		pipelineRun.Spec.Branch,
-		jm.repository,
-		types.MountPathWorkspace,
-		types.MountPathWorkspace,
-		pipelineRun.Spec.Commit,
-	)
+	// Use a shell script with environment variables instead of string interpolation
+	// This prevents command injection even if branch/commit values contain special characters
+	cloneScript := `set -e
+echo "Cloning repository: $REPO_URL"
+echo "Branch: $BRANCH"
+echo "Commit: $COMMIT"
+git clone --depth=1 --single-branch --branch "$BRANCH" "$REPO_URL" "$WORKSPACE"
+cd "$WORKSPACE"
+git checkout "$COMMIT"
+echo "Repository cloned successfully"`
 
 	return corev1.Container{
 		Name:  types.ContainerNameGitClone,
@@ -141,7 +133,7 @@ echo "Repository cloned successfully"
 		Command: []string{
 			"/bin/sh",
 			"-c",
-			cloneCmd,
+			cloneScript,
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
@@ -150,6 +142,22 @@ echo "Repository cloned successfully"
 			},
 		},
 		Env: []corev1.EnvVar{
+			{
+				Name:  "REPO_URL",
+				Value: jm.repository,
+			},
+			{
+				Name:  "BRANCH",
+				Value: pipelineRun.Spec.Branch,
+			},
+			{
+				Name:  "COMMIT",
+				Value: pipelineRun.Spec.Commit,
+			},
+			{
+				Name:  "WORKSPACE",
+				Value: types.MountPathWorkspace,
+			},
 			{
 				Name:  types.EnvCommitSHA,
 				Value: pipelineRun.Spec.Commit,
