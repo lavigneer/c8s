@@ -162,10 +162,14 @@ func main() {
 	// Dashboard routes (if enabled)
 	if enableDashboard {
 		logger.Info("Dashboard enabled")
-		dashboardHandler := handlers.NewDashboardHandler(k8sClient)
-		mux.HandleFunc("/", dashboardHandler.ServeDashboard)
-		mux.HandleFunc("/runs", dashboardHandler.ServeRuns)
-		mux.HandleFunc("/logs/{namespace}/{name}/{step}", dashboardHandler.ServeLogs)
+		dashboardHandler, err := handlers.NewDashboardHandler(k8sClient, "web/templates")
+		if err != nil {
+			logger.Error(err, "Failed to initialize dashboard handler")
+			os.Exit(1)
+		}
+		mux.HandleFunc("/dashboard", dashboardHandler.ServeDashboard)
+		mux.HandleFunc("/dashboard/runs", dashboardHandler.ServeRuns)
+		mux.HandleFunc("/dashboard/logs", dashboardHandler.ServeLogs)
 	}
 
 	// Health check endpoint

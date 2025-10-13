@@ -1,0 +1,186 @@
+{{define "content"}}
+<div class="px-4 sm:px-0">
+    <div class="sm:flex sm:items-center mb-6">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Pipeline Run Logs</h1>
+            <p class="mt-2 text-sm text-gray-700">
+                Run: <span class="font-medium text-gray-900">{{.RunName}}</span>
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <a href="/dashboard/runs" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                ← Back to Runs
+            </a>
+        </div>
+    </div>
+
+    <!-- Pipeline Run Status Overview -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6 mb-6"
+         hx-get="/api/v1/namespaces/{{.Namespace}}/pipelineruns/{{.RunName}}"
+         hx-trigger="load, every 2s"
+         hx-target="#run-status">
+        <div id="run-status">
+            <div class="flex justify-center py-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step Execution Status -->
+    <div class="space-y-4">
+        <h2 class="text-lg font-semibold text-gray-900">Steps</h2>
+
+        <div id="steps-list"
+             hx-get="/api/v1/namespaces/{{.Namespace}}/pipelineruns/{{.RunName}}/steps"
+             hx-trigger="load, every 2s"
+             hx-target="#steps-list">
+            <!-- Steps will be loaded here -->
+            <div class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Viewer -->
+    <div id="log-viewer" class="mt-8">
+        <!-- Initially hidden, shown when a step is selected -->
+    </div>
+</div>
+
+<!-- Step Card Template (rendered by server) -->
+<template id="step-card-template">
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-4 hover:border-blue-300 cursor-pointer transition-colors">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    <!-- Status icon -->
+                    <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-900">Step Name</h3>
+                    <p class="text-xs text-gray-500">Image: alpine:latest</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">Duration</p>
+                    <p class="text-sm font-medium text-gray-900">2m 34s</p>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium phase-running">
+                    Running
+                </span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    let currentStepWebSocket = null;
+
+    // Handle step click to view logs
+    document.addEventListener('click', function(e) {
+        const stepCard = e.target.closest('[data-step-name]');
+        if (stepCard) {
+            const stepName = stepCard.getAttribute('data-step-name');
+            const runName = '{{.RunName}}';
+            const namespace = '{{.Namespace}}';
+            showStepLogs(namespace, runName, stepName);
+        }
+    });
+
+    function showStepLogs(namespace, runName, stepName) {
+        const logViewer = document.getElementById('log-viewer');
+
+        // Close existing WebSocket if any
+        if (currentStepWebSocket) {
+            currentStepWebSocket.close();
+        }
+
+        // Create log viewer UI
+        logViewer.innerHTML = `
+            <div class="bg-gray-900 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">Logs: ${stepName}</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="downloadLogs('${namespace}', '${runName}', '${stepName}')"
+                                class="inline-flex items-center px-3 py-1.5 border border-gray-600 text-xs font-medium rounded text-gray-200 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Download
+                        </button>
+                        <button onclick="closeLogViewer()"
+                                class="inline-flex items-center px-3 py-1.5 border border-gray-600 text-xs font-medium rounded text-gray-200 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Close
+                        </button>
+                    </div>
+                </div>
+                <div id="log-content"
+                     class="bg-black rounded p-4 font-mono text-xs text-green-400 h-96 overflow-y-auto">
+                    <div class="text-gray-500">Connecting to log stream...</div>
+                </div>
+            </div>
+        `;
+
+        // Connect to WebSocket for live logs
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/api/v1/namespaces/${namespace}/pipelineruns/${runName}/logs/${stepName}?follow=true`;
+
+        currentStepWebSocket = new WebSocket(wsUrl);
+        const logContent = document.getElementById('log-content');
+
+        currentStepWebSocket.onopen = function() {
+            logContent.innerHTML = '<div class="text-gray-500">Streaming logs...</div>';
+        };
+
+        currentStepWebSocket.onmessage = function(event) {
+            // Append new log lines
+            const lines = event.data.split('\n');
+            let html = logContent.innerHTML;
+
+            // Remove "Connecting..." or "Streaming..." message on first log
+            if (html.includes('Connecting') || html.includes('Streaming')) {
+                html = '';
+            }
+
+            lines.forEach(line => {
+                if (line.trim()) {
+                    html += `<div>${escapeHtml(line)}</div>`;
+                }
+            });
+
+            logContent.innerHTML = html;
+
+            // Auto-scroll to bottom
+            logContent.scrollTop = logContent.scrollHeight;
+        };
+
+        currentStepWebSocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            logContent.innerHTML += '<div class="text-red-400">Error: Connection failed</div>';
+        };
+
+        currentStepWebSocket.onclose = function() {
+            logContent.innerHTML += '<div class="text-gray-500">[Stream closed]</div>';
+        };
+    }
+
+    function closeLogViewer() {
+        if (currentStepWebSocket) {
+            currentStepWebSocket.close();
+            currentStepWebSocket = null;
+        }
+        document.getElementById('log-viewer').innerHTML = '';
+    }
+
+    function downloadLogs(namespace, runName, stepName) {
+        const url = `/api/v1/namespaces/${namespace}/pipelineruns/${runName}/logs/${stepName}`;
+        window.open(url, '_blank');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{{end}}

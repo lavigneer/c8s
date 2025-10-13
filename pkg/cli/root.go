@@ -57,11 +57,10 @@ func Execute() error {
 		return getCommand(commandArgs)
 	case "validate":
 		return validateCommand(commandArgs)
-	// TODO: Implement logs command (Phase 4 - User Story 2)
-	// case "logs":
-	// 	return logsCommand(commandArgs)
+	case "logs":
+		return logsCommand(commandArgs)
 	default:
-		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate", command)
+		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate, logs", command)
 	}
 }
 

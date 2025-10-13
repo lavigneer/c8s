@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - C8S Dashboard</title>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/ws.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .phase-pending { @apply bg-gray-100 text-gray-800; }
+        .phase-running { @apply bg-yellow-100 text-yellow-800; }
+        .phase-succeeded { @apply bg-green-100 text-green-800; }
+        .phase-failed { @apply bg-red-100 text-red-800; }
+        .phase-cancelled { @apply bg-gray-100 text-gray-800; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-blue-600">C8S</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/dashboard" class="{{if eq .Active "pipelines"}}border-blue-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{{end}} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Pipelines
+                        </a>
+                        <a href="/dashboard/runs" class="{{if eq .Active "runs"}}border-blue-500 text-gray-900{{else}}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{{end}} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Runs
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-500">Namespace: <span class="font-medium text-gray-900">{{.Namespace}}</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {{template "content" .}}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">
+                C8S - Kubernetes-Native CI System
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Global WebSocket handler for live updates
+        document.body.addEventListener('htmx:wsError', function(evt) {
+            console.error('WebSocket error:', evt.detail);
+        });
+
+        // Auto-reconnect WebSocket on disconnect
+        document.body.addEventListener('htmx:wsClose', function(evt) {
+            console.log('WebSocket closed, attempting reconnect in 5s...');
+            setTimeout(function() {
+                htmx.process(document.body);
+            }, 5000);
+        });
+
+        // Format timestamps
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return Math.floor(diff / 86400000) + 'd ago';
+        }
+
+        // Update all timestamps every minute
+        setInterval(function() {
+            document.querySelectorAll('[data-timestamp]').forEach(function(el) {
+                el.textContent = formatTimestamp(el.getAttribute('data-timestamp'));
+            });
+        }, 60000);
+    </script>
+</body>
+</html>
