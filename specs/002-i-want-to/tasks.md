@@ -38,7 +38,7 @@
   - Create `tests/unit/localenv/`
   - Create `config/samples/`
 
-- [ ] T002 [P] Update go.mod with required dependencies
+- [x] T002 [P] Update go.mod with required dependencies
   - Add k3d Go client library (if available) or exec wrapper dependencies
   - Add cobra/pflag for CLI (should already exist)
   - Add validation libraries
