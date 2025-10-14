@@ -329,5 +329,6 @@ All design artifacts completed:
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | Three separate services (controller, API, webhook) | Separation of concerns: controller shouldn't expose HTTP, webhook needs independent scaling | Single binary would violate K8s controller best practices and prevent independent horizontal scaling |
-| Dual storage (in-memory + S3) for logs | Real-time streaming (<500ms) + 30-day persistence | S3-only has 100-200ms+ latency, cannot meet real-time streaming requirement |
+| Dual storage (in-memory + S3) for logs | Real-time streaming (<500ms latency per SC-003) + 30-day persistence (SC-003) | S3-only has 100-200ms+ latency, cannot meet real-time streaming requirement; In-memory-only violates 30-day retention requirement |
 | Custom admission webhook | Atomic quota enforcement at PipelineRun creation before Jobs created | Controller-based quota checking is racy - Jobs might already be created |
+| In-memory circular buffer (pkg/storage/buffer.go) | Real-time log streaming with <500ms latency (SC-003) while controller collects logs | Direct S3 streaming has 100-200ms+ latency per write operation, cannot achieve real-time requirement |

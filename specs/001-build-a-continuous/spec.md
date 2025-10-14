@@ -95,12 +95,19 @@ A developer has a large test suite that takes 30 minutes to run sequentially but
 
 ### Edge Cases
 
-- What happens when a pipeline runs for an unexpectedly long time (hours instead of minutes) - should there be timeout limits and how are they enforced?
-- How does the system handle a node failure mid-pipeline execution - are in-progress steps retried, moved to another node, or marked as failed?
-- What happens when a pipeline is triggered while an identical pipeline (same commit, same configuration) is already running - should it be queued, deduplicated, or run in parallel?
-- How does the system handle container image pull failures (network issues, registry unavailable, authentication failures) - retry behavior and fallback strategies?
-- What happens when a pipeline is manually cancelled mid-execution - are resources immediately cleaned up, are there grace periods for cleanup steps?
-- How does the system handle resource exhaustion (storage for logs and artifacts, IP addresses, persistent volume claims) when running many concurrent pipelines?
+**Resolution Strategy**: These edge cases are handled through Kubernetes-native mechanisms and explicit system behavior:
+
+- **Long-running pipelines (timeout enforcement)**: System enforces timeouts at step level (FR-022) using Job `activeDeadlineSeconds`. Default: 1 hour per step, configurable in PipelineConfig. When timeout exceeded, Job terminates and PipelineRun marked as Failed with reason "Timeout".
+
+- **Node failure mid-execution**: Kubernetes Job controller automatically reschedules Pods on healthy nodes. In-progress steps are retried on new nodes (Job restartPolicy: OnFailure). PipelineRun remains in Running state until Jobs complete or fail. Maximum retry count: 3 attempts per step.
+
+- **Duplicate pipeline triggers (same commit)**: System allows concurrent execution by default - each webhook event creates a new PipelineRun CRD. Deduplication is NOT implemented in v1 (can be added as admission webhook in future). Users can cancel duplicate runs manually via CLI or API.
+
+- **Container image pull failures**: Kubernetes imagePullPolicy handles retries (default: exponential backoff for 5 minutes). After 5 minutes, Job fails and PipelineRun marked as Failed with reason "ImagePullBackOff". No fallback images - user must fix image reference and retry.
+
+- **Manual cancellation**: Deletion of PipelineRun CRD triggers finalizer logic (FR-014) which deletes all owned Jobs, waits up to 30 seconds for graceful termination (SIGTERM), then force-deletes (SIGKILL). Resources cleaned up within 60 seconds.
+
+- **Resource exhaustion (storage, IPs, PVCs)**: System relies on Kubernetes ResourceQuotas and namespace limits (FR-009). When quota exceeded, PipelineRun admission webhook rejects creation with clear error. Log storage exhaustion handled by S3 bucket lifecycle policies (30-day retention, then auto-delete). No automatic cleanup beyond retention period.
 
 ## Requirements *(mandatory)*
 
@@ -111,7 +118,7 @@ A developer has a large test suite that takes 30 minutes to run sequentially but
 - **FR-003**: System MUST execute each pipeline step in an isolated container environment with dedicated resources
 - **FR-004**: System MUST support sequential execution where steps run one after another with the ability to pass artifacts between steps
 - **FR-005**: System MUST support parallel execution where multiple steps run simultaneously in independent containers
-- **FR-006**: System MUST capture and store complete execution logs (stdout/stderr) from all containers throughout pipeline execution
+- **FR-006**: System MUST capture complete execution logs (stdout/stderr) from all containers in real-time during execution and persist them to object storage (S3-compatible) with 30-day retention for post-execution access and auditing
 - **FR-007**: System MUST report pipeline status (pending, running, succeeded, failed, cancelled) to users through multiple channels (UI, CLI, API, webhooks)
 - **FR-008**: System MUST allow users to define resource requirements (CPU, memory, storage) for each pipeline step
 - **FR-009**: System MUST enforce resource limits to prevent individual pipelines from consuming excessive cluster resources
@@ -122,7 +129,6 @@ A developer has a large test suite that takes 30 minutes to run sequentially but
 - **FR-014**: System MUST clean up completed pipeline resources (containers, volumes, network resources) after execution completes or times out
 - **FR-015**: System MUST support manual pipeline triggering where users can initiate runs without code changes
 - **FR-016**: System MUST support pipeline cancellation where users can terminate in-progress runs
-- **FR-017**: System MUST maintain execution history showing all pipeline runs with their configurations, logs, and results for auditing and debugging
 - **FR-018**: System MUST support step dependencies where certain steps only execute if previous steps succeeded
 - **FR-019**: System MUST provide real-time status updates as pipelines progress through stages
 - **FR-020**: System MUST integrate with cluster autoscaling to request additional compute resources when workload demand exceeds capacity
@@ -134,8 +140,7 @@ A developer has a large test suite that takes 30 minutes to run sequentially but
 - **FR-026**: System MUST cache container images and build dependencies to accelerate subsequent pipeline runs
 - **FR-027**: System MUST support multiple pipeline configurations per repository (e.g., different pipelines for different branches or events)
 - **FR-028**: System MUST provide metrics on pipeline performance (execution duration, success rate, resource usage) for optimization analysis
-- **FR-029**: System MUST support workspace isolation where each pipeline run has its own filesystem workspace containing the repository code
-- **FR-030**: System MUST support persistent workspace volumes when steps need to share large artifacts or maintain state across retries
+- **FR-029**: System MUST provide isolated filesystem workspace for each pipeline run containing repository code via ephemeral emptyDir volume (shared between init container for git clone and main step containers), with optional persistent volume support when steps need to share large artifacts (>1GB) or maintain state across retries
 
 ### Key Entities
 

@@ -126,7 +126,7 @@ func (h *LogsHandler) streamLogsFromPod(w http.ResponseWriter, r *http.Request, 
 		http.Error(w, fmt.Sprintf("failed to stream logs: %v", err), http.StatusInternalServerError)
 		return
 	}
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Set headers for streaming
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -143,7 +143,7 @@ func (h *LogsHandler) streamLogsFromPod(w http.ResponseWriter, r *http.Request, 
 	for {
 		line, err := reader.ReadBytes('\n')
 		if len(line) > 0 {
-			w.Write(line)
+			_, _ = w.Write(line)
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
@@ -186,7 +186,7 @@ func (h *LogsHandler) fetchLogsFromStorage(w http.ResponseWriter, r *http.Reques
 		http.Error(w, fmt.Sprintf("failed to download logs: %v", err), http.StatusInternalServerError)
 		return
 	}
-	defer logsReader.Close()
+	defer func() { _ = logsReader.Close() }()
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -195,6 +195,6 @@ func (h *LogsHandler) fetchLogsFromStorage(w http.ResponseWriter, r *http.Reques
 	if _, err := io.Copy(w, logsReader); err != nil {
 		// Can't change status code here, already sent headers
 		// Log error but continue
-		fmt.Fprintf(w, "\n\nError streaming logs: %v\n", err)
+		_, _ = fmt.Fprintf(w, "\n\nError streaming logs: %v\n", err)
 	}
 }

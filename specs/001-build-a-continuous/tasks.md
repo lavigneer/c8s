@@ -213,9 +213,12 @@ This document provides dependency-ordered implementation tasks for building the 
 ### T020: [P] Implement S3 storage client interface
 - Create `pkg/storage/interface.go` with `StorageClient` interface
 - Define methods: `UploadLog(ctx, key, content)`, `DownloadLog(ctx, key)`, `GenerateSignedURL(ctx, key, expiry)`
-- Create `pkg/storage/s3/client.go` implementing interface using AWS SDK
-- Add configuration struct for bucket, region, credentials
-- **File**: `pkg/storage/interface.go`, `pkg/storage/s3/client.go`
+- Create `pkg/storage/s3/client.go` implementing interface using AWS SDK v2
+- Add configuration struct for: bucket, region, endpoint (for MinIO), credentials source
+- Credential resolution order: (1) K8s Secret referenced by env var, (2) IAM role (IRSA/Workload Identity), (3) AWS credential chain
+- Add retry policy: exponential backoff, max 3 retries, 30s timeout per upload
+- Support S3-compatible storage (MinIO, GCS, Ceph) via custom endpoint configuration
+- **File**: `pkg/storage/interface.go`, `pkg/storage/s3/client.go`, `pkg/storage/s3/config.go`
 - **Depends on**: T003
 
 ### T021: [P] Implement pipeline YAML parser
@@ -403,9 +406,12 @@ This document provides dependency-ordered implementation tasks for building the 
 - Create helper function in `pkg/controller/job_manager.go`
 - Generate init container spec with:
   - Image: `alpine/git:latest` or similar
-  - Command: `git clone <repo> --branch <branch> --single-branch /workspace && cd /workspace && git checkout <commit>`
+  - Command: Use `exec.Command()` with separate args (NOT shell string) to prevent command injection
+  - Validate inputs: commit SHA matches `^[a-f0-9]{40}$`, branch matches `^[a-zA-Z0-9/_.-]+$`, repo URL is valid HTTPS
+  - Args: `["git", "clone", "--branch", <validated-branch>, "--single-branch", <validated-repo>, "/workspace"]` followed by `["git", "-C", "/workspace", "checkout", <validated-commit>]`
   - Volume mount: `/workspace` (emptyDir shared with main container)
-  - Handle authentication if RepositoryConnection.spec.authSecretRef is set
+  - Handle authentication if RepositoryConnection.spec.authSecretRef is set (inject as GIT_USERNAME/GIT_PASSWORD env vars)
+  - SECURITY: Never concatenate user input into shell commands - always use separate command args
 - **File**: `pkg/controller/job_manager.go` (update)
 - **Depends on**: T025
 

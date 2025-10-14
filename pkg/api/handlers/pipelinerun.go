@@ -98,7 +98,9 @@ func (h *PipelineRunHandler) listPipelineRuns(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runs)
+	if err := json.NewEncoder(w).Encode(runs); err != nil {
+		http.Error(w, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func (h *PipelineRunHandler) getPipelineRun(w http.ResponseWriter, r *http.Request, namespace, name string) {
@@ -114,7 +116,9 @@ func (h *PipelineRunHandler) getPipelineRun(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(run)
+	if err := json.NewEncoder(w).Encode(run); err != nil {
+		http.Error(w, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func (h *PipelineRunHandler) createPipelineRun(w http.ResponseWriter, r *http.Request, namespace string) {
@@ -123,7 +127,7 @@ func (h *PipelineRunHandler) createPipelineRun(w http.ResponseWriter, r *http.Re
 		http.Error(w, "failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var run v1alpha1.PipelineRun
 	if err := json.Unmarshal(body, &run); err != nil {
@@ -140,7 +144,9 @@ func (h *PipelineRunHandler) createPipelineRun(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(run)
+	if err := json.NewEncoder(w).Encode(run); err != nil {
+		_, _ = fmt.Fprintf(w, `{"error": "failed to encode response: %v"}`, err)
+	}
 }
 
 func (h *PipelineRunHandler) deletePipelineRun(w http.ResponseWriter, r *http.Request, namespace, name string) {

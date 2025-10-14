@@ -88,7 +88,9 @@ func (h *PipelineConfigHandler) listPipelineConfigs(w http.ResponseWriter, r *ht
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(configs)
+	if err := json.NewEncoder(w).Encode(configs); err != nil {
+		http.Error(w, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func (h *PipelineConfigHandler) getPipelineConfig(w http.ResponseWriter, r *http.Request, namespace, name string) {
@@ -104,7 +106,9 @@ func (h *PipelineConfigHandler) getPipelineConfig(w http.ResponseWriter, r *http
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(config)
+	if err := json.NewEncoder(w).Encode(config); err != nil {
+		http.Error(w, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func (h *PipelineConfigHandler) createPipelineConfig(w http.ResponseWriter, r *http.Request, namespace string) {
@@ -113,7 +117,7 @@ func (h *PipelineConfigHandler) createPipelineConfig(w http.ResponseWriter, r *h
 		http.Error(w, "failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var config v1alpha1.PipelineConfig
 	if err := json.Unmarshal(body, &config); err != nil {
@@ -130,7 +134,10 @@ func (h *PipelineConfigHandler) createPipelineConfig(w http.ResponseWriter, r *h
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(config)
+	if err := json.NewEncoder(w).Encode(config); err != nil {
+		// Status already written, log error
+		_, _ = fmt.Fprintf(w, `{"error": "failed to encode response: %v"}`, err)
+	}
 }
 
 func (h *PipelineConfigHandler) updatePipelineConfig(w http.ResponseWriter, r *http.Request, namespace, name string) {
@@ -139,7 +146,7 @@ func (h *PipelineConfigHandler) updatePipelineConfig(w http.ResponseWriter, r *h
 		http.Error(w, "failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var config v1alpha1.PipelineConfig
 	if err := json.Unmarshal(body, &config); err != nil {
@@ -168,7 +175,9 @@ func (h *PipelineConfigHandler) updatePipelineConfig(w http.ResponseWriter, r *h
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(existingConfig)
+	if err := json.NewEncoder(w).Encode(existingConfig); err != nil {
+		http.Error(w, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func (h *PipelineConfigHandler) deletePipelineConfig(w http.ResponseWriter, r *http.Request, namespace, name string) {

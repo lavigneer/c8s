@@ -1,0 +1,1009 @@
+# C8S Kubernetes-Native CI System - Complete Installation Manifest
+# This file contains all resources needed to install C8S in a Kubernetes cluster
+#
+# Installation:
+#   kubectl apply -f install.yaml
+#
+# For development with MinIO:
+#   kubectl apply -f minio.yaml
+#   kubectl apply -f install.yaml
+#
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: c8s-system
+---
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: pipelineconfigs.c8s.dev
+spec:
+  group: c8s.dev
+  names:
+    kind: PipelineConfig
+    listKind: PipelineConfigList
+    plural: pipelineconfigs
+    shortNames:
+    - pc
+    singular: pipelineconfig
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.repository
+      name: Repository
+      type: string
+    - jsonPath: .spec.steps[*].name
+      name: Steps
+      type: integer
+    - jsonPath: .status.lastRun
+      name: Last Run
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PipelineConfig is the Schema for the pipelineconfigs API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PipelineConfigSpec defines the desired state of PipelineConfig
+            properties:
+              branches:
+                default:
+                - '*'
+                description: Branches are branch filters (glob patterns, default ["*"])
+                items:
+                  type: string
+                type: array
+              matrix:
+                description: Matrix strategy for parallel execution
+                properties:
+                  dimensions:
+                    additionalProperties:
+                      items:
+                        type: string
+                      type: array
+                    description: |-
+                      Dimensions define matrix variables and their values
+                      Example: {"os": ["ubuntu", "alpine"], "go_version": ["1.21", "1.22"]}
+                    type: object
+                  exclude:
+                    description: Exclude specific combinations
+                    items:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    type: array
+                required:
+                - dimensions
+                type: object
+              repository:
+                description: Repository is the Git repository URL (https or ssh)
+                pattern: ^(https?|git|ssh)://.*
+                type: string
+              retryPolicy:
+                description: RetryPolicy defines retry behavior for failed steps
+                properties:
+                  backoffSeconds:
+                    default: 60
+                    description: BackoffSeconds is the delay between retries
+                    minimum: 0
+                    type: integer
+                  maxRetries:
+                    default: 0
+                    description: MaxRetries is the maximum number of retry attempts
+                    maximum: 5
+                    minimum: 0
+                    type: integer
+                type: object
+              steps:
+                description: Steps are the pipeline steps in execution order
+                items:
+                  description: PipelineStep defines a single step in the pipeline
+                  properties:
+                    artifacts:
+                      description: Artifacts are file patterns to upload to artifact
+                        storage
+                      items:
+                        type: string
+                      type: array
+                    commands:
+                      description: Commands are shell commands to execute
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                    conditional:
+                      description: Conditional defines conditions for step execution
+                      properties:
+                        branch:
+                          description: Branch pattern - execute only on matching branch
+                          type: string
+                        onSuccess:
+                          default: true
+                          description: OnSuccess - execute only if previous steps
+                            succeeded
+                          type: boolean
+                      type: object
+                    dependsOn:
+                      description: DependsOn are step names that must complete before
+                        this step
+                      items:
+                        type: string
+                      type: array
+                    image:
+                      description: Image is the container image for step execution
+                      type: string
+                    name:
+                      description: Name is the step identifier (must be unique)
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                      type: string
+                    resources:
+                      description: Resources define CPU/memory requests and limits
+                      properties:
+                        cpu:
+                          default: 500m
+                          description: CPU resource request/limit (e.g., "500m", "2")
+                          pattern: ^[0-9]+m?$
+                          type: string
+                        memory:
+                          default: 1Gi
+                          description: Memory resource request/limit (e.g., "1Gi",
+                            "512Mi")
+                          pattern: ^[0-9]+(Mi|Gi)$
+                          type: string
+                      type: object
+                    secrets:
+                      description: Secrets are secret references to inject as env
+                        vars
+                      items:
+                        description: SecretReference defines how to inject a Kubernetes
+                          Secret into a step
+                        properties:
+                          envVar:
+                            description: EnvVar is the environment variable name (defaults
+                              to key)
+                            type: string
+                          key:
+                            description: Key is the key within the Secret
+                            type: string
+                          secretRef:
+                            description: SecretRef is the Kubernetes Secret name
+                            type: string
+                        required:
+                        - key
+                        - secretRef
+                        type: object
+                      type: array
+                    timeout:
+                      default: 30m
+                      description: Timeout is the step timeout (e.g., "30m", "2h")
+                      pattern: ^[0-9]+(s|m|h)$
+                      type: string
+                  required:
+                  - commands
+                  - image
+                  - name
+                  type: object
+                minItems: 1
+                type: array
+              timeout:
+                default: 1h
+                description: Timeout is the pipeline-level timeout (e.g., "30m", "2h")
+                pattern: ^[0-9]+(s|m|h)$
+                type: string
+            required:
+            - repository
+            - steps
+            type: object
+          status:
+            description: PipelineConfigStatus defines the observed state of PipelineConfig
+            properties:
+              lastRun:
+                description: LastRun is the timestamp of the last pipeline run
+                format: date-time
+                type: string
+              successRate:
+                description: SuccessRate is the percentage of successful runs
+                type: number
+              totalRuns:
+                description: TotalRuns is the total number of pipeline runs
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: pipelineruns.c8s.dev
+spec:
+  group: c8s.dev
+  names:
+    kind: PipelineRun
+    listKind: PipelineRunList
+    plural: pipelineruns
+    shortNames:
+    - pr
+    singular: pipelinerun
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .spec.pipelineConfigRef
+      name: Config
+      type: string
+    - jsonPath: .spec.commit
+      name: Commit
+      priority: 1
+      type: string
+    - jsonPath: .spec.branch
+      name: Branch
+      priority: 1
+      type: string
+    - jsonPath: .status.startTime
+      name: Started
+      priority: 1
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PipelineRun is the Schema for the pipelineruns API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PipelineRunSpec defines the desired state of PipelineRun
+            properties:
+              author:
+                description: Author is the commit author email
+                type: string
+              branch:
+                description: Branch is the branch name
+                pattern: ^[a-zA-Z0-9._/-]+$
+                type: string
+              commit:
+                description: Commit is the Git commit SHA
+                pattern: ^[a-f0-9]{7,40}$
+                type: string
+              commitMessage:
+                description: CommitMessage is the git commit message
+                type: string
+              matrixIndex:
+                additionalProperties:
+                  type: string
+                description: MatrixIndex contains matrix variable values for this
+                  specific run
+                type: object
+              pipelineConfigRef:
+                description: PipelineConfigRef is the reference to the PipelineConfig
+                  name
+                type: string
+              triggeredAt:
+                description: TriggeredAt is the time when the run was triggered
+                format: date-time
+                type: string
+              triggeredBy:
+                default: system
+                description: TriggeredBy is the user or system that triggered the
+                  run
+                type: string
+            required:
+            - commit
+            - pipelineConfigRef
+            type: object
+          status:
+            description: PipelineRunStatus defines the observed state of PipelineRun
+            properties:
+              completionTime:
+                description: CompletionTime is when the run completed (succeeded,
+                  failed, or cancelled)
+                format: date-time
+                type: string
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the run's state
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              phase:
+                description: Phase is the current phase of the pipeline run
+                enum:
+                - Pending
+                - Running
+                - Succeeded
+                - Failed
+                - Cancelled
+                type: string
+              resourceUsage:
+                description: ResourceUsage tracks actual resource consumption for
+                  capacity planning
+                properties:
+                  cpu:
+                    description: CPU is the total CPU time consumed in core-seconds
+                    type: string
+                  duration:
+                    description: Duration is the total wall-clock duration in seconds
+                    format: int64
+                    type: integer
+                  memory:
+                    description: Memory is the average memory usage in bytes
+                    type: string
+                type: object
+              startTime:
+                description: StartTime is when the run started executing
+                format: date-time
+                type: string
+              steps:
+                description: Steps contains the status of each step in the pipeline
+                items:
+                  description: StepStatus represents the status of a single step in
+                    the pipeline
+                  properties:
+                    artifactURLs:
+                      description: ArtifactURLs are the object storage URLs for step
+                        artifacts
+                      items:
+                        type: string
+                      type: array
+                    completionTime:
+                      description: CompletionTime is when the step completed
+                      format: date-time
+                      type: string
+                    exitCode:
+                      description: ExitCode is the exit code of the step's main container
+                      format: int32
+                      type: integer
+                    jobName:
+                      description: JobName is the Kubernetes Job name for this step
+                      type: string
+                    logURL:
+                      description: LogURL is the object storage URL for the step's
+                        logs
+                      type: string
+                    message:
+                      description: Message provides additional context about the step
+                        status
+                      type: string
+                    name:
+                      description: Name is the step identifier
+                      type: string
+                    phase:
+                      description: Phase is the current phase of the step
+                      enum:
+                      - Pending
+                      - Running
+                      - Succeeded
+                      - Failed
+                      - Skipped
+                      type: string
+                    startTime:
+                      description: StartTime is when the step started executing
+                      format: date-time
+                      type: string
+                  required:
+                  - name
+                  - phase
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: repositoryconnections.c8s.dev
+spec:
+  group: c8s.dev
+  names:
+    kind: RepositoryConnection
+    listKind: RepositoryConnectionList
+    plural: repositoryconnections
+    shortNames:
+    - rc
+    singular: repositoryconnection
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.repository
+      name: Repository
+      type: string
+    - jsonPath: .spec.provider
+      name: Provider
+      type: string
+    - jsonPath: .status.webhookRegistered
+      name: Registered
+      type: boolean
+    - jsonPath: .status.lastEvent.timestamp
+      name: Last Event
+      priority: 1
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RepositoryConnection is the Schema for the repositoryconnections
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RepositoryConnectionSpec defines the desired state of RepositoryConnection
+            properties:
+              authSecretRef:
+                description: |-
+                  AuthSecretRef is the Kubernetes Secret containing Git credentials
+                  For HTTPS: must contain "username" and "password" keys
+                  For SSH: must contain "ssh-key" key
+                type: string
+              branches:
+                description: Branches are branch patterns to filter webhook events
+                items:
+                  pattern: ^[a-zA-Z0-9._/*-]+$
+                  type: string
+                type: array
+              events:
+                description: Events are the webhook event types to handle (push, pull_request,
+                  etc.)
+                items:
+                  type: string
+                type: array
+              pipelineConfigRef:
+                description: PipelineConfigRef is the default PipelineConfig to use
+                  for this repository
+                type: string
+              provider:
+                description: Provider is the version control provider
+                enum:
+                - github
+                - gitlab
+                - bitbucket
+                type: string
+              repository:
+                description: Repository is the Git repository URL
+                pattern: ^(https?|git|ssh)://.*
+                type: string
+              tags:
+                description: Tags are tag patterns to filter webhook events
+                items:
+                  type: string
+                type: array
+              webhookSecretRef:
+                description: |-
+                  WebhookSecretRef is the Kubernetes Secret containing webhook signature secret
+                  The secret must contain a "webhook-secret" key
+                type: string
+            required:
+            - provider
+            - repository
+            type: object
+          status:
+            description: RepositoryConnectionStatus defines the observed state of
+              RepositoryConnection
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the connection's state
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              lastEvent:
+                description: LastEvent contains information about the last received
+                  webhook event
+                properties:
+                  branch:
+                    description: Branch is the branch name from the event
+                    pattern: ^[a-zA-Z0-9._/-]+$
+                    type: string
+                  commit:
+                    description: Commit is the commit SHA from the event
+                    type: string
+                  timestamp:
+                    description: Timestamp is when the event was received
+                    format: date-time
+                    type: string
+                  type:
+                    description: Type is the event type (push, pull_request, etc.)
+                    type: string
+                type: object
+              webhookRegistered:
+                description: WebhookRegistered indicates whether the webhook is successfully
+                  registered
+                type: boolean
+              webhookURL:
+                description: WebhookURL is the webhook endpoint URL to configure in
+                  the provider
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: c8s-controller-rolebinding
+  labels:
+    app.kubernetes.io/name: c8s
+    app.kubernetes.io/component: controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: c8s-controller-role
+subjects:
+  - kind: ServiceAccount
+    name: c8s-controller
+    namespace: c8s-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: controller-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - c8s.dev
+  resources:
+  - pipelineruns/status
+  verbs:
+  - get
+  - patch
+  - update
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: c8s-controller
+  namespace: c8s-system
+  labels:
+    app.kubernetes.io/name: c8s
+    app.kubernetes.io/component: controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c8s-controller
+  namespace: c8s-system
+  labels:
+    app: c8s-controller
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c8s-controller
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        app: c8s-controller
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: c8s-controller
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: manager
+        image: c8s-controller:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /controller
+        args:
+        - --metrics-addr=:8080
+        - --leader-election
+        - --leader-election-id=c8s-controller
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c8s-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: c8s-webhook
+  template:
+    metadata:
+      labels:
+        app: c8s-webhook
+    spec:
+      serviceAccountName: c8s-webhook
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: webhook
+        image: c8s-webhook:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /webhook
+        args:
+        - --port=8080
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10
+apiVersion: v1
+kind: Service
+metadata:
+  name: c8s-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-webhook
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  selector:
+    app: c8s-webhook
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: c8s-webhook
+  namespace: c8s-system
+  labels:
+    app: c8s-webhook
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: c8s-webhook
+  labels:
+    app: c8s-webhook
+rules:
+- apiGroups:
+  - c8s.io
+  resources:
+  - pipelineruns
+  - pipelineconfigs
+  - repositoryconnections
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: c8s-webhook
+  labels:
+    app: c8s-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: c8s-webhook
+subjects:
+- kind: ServiceAccount
+  name: c8s-webhook
+  namespace: c8s-system
