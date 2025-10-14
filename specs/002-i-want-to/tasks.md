@@ -72,7 +72,7 @@
   - Define NodeStatus struct (name, role, status, version)
   - Add JSON struct tags
 
-- [ ] T006 [P] Implement configuration validation in `pkg/localenv/validation.go`
+- [x] T006 [P] Implement configuration validation in `pkg/localenv/validation.go`
   - Validate cluster name pattern (lowercase alphanumeric + hyphens)
   - Validate port ranges (1024-65535 for host ports)
   - Validate Kubernetes version format
