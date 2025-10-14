@@ -26,7 +26,7 @@
 
 **Purpose**: Project initialization and basic structure for local environment tooling
 
-- [ ] T001 Create directory structure for local environment packages
+- [x] T001 Create directory structure for local environment packages
   - Create `pkg/localenv/`
   - Create `pkg/localenv/cluster/`
   - Create `pkg/localenv/deploy/`
