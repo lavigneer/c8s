@@ -44,7 +44,7 @@
   - Add validation libraries
   - Run `go mod tidy`
 
-- [ ] T003 [P] Create base CLI command structure in `cmd/c8s/commands/dev/dev.go`
+- [x] T003 [P] Create base CLI command structure in `cmd/c8s/commands/dev/dev.go`
   - Define `dev` root command using cobra
   - Add global flags (--verbose, --quiet, --no-color)
   - Setup command group structure (cluster, deploy, test subcommands)

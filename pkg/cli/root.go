@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/org/c8s/cmd/c8s/commands/dev"
+	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -17,6 +19,7 @@ var (
 	namespace  string
 	clientset  *kubernetes.Clientset
 	restConfig *rest.Config
+	rootCmd    *cobra.Command
 )
 
 func init() {
@@ -27,16 +30,31 @@ func init() {
 		flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.StringVar(&namespace, "namespace", "default", "kubernetes namespace")
+
+	// Initialize root command for cobra-based commands
+	rootCmd = &cobra.Command{
+		Use:   "c8s",
+		Short: "Kubernetes-native CI system",
+	}
+
+	// Add dev command
+	rootCmd.AddCommand(dev.NewDevCommand())
 }
 
 // Execute is the entry point for the CLI
 func Execute() error {
+	// Check if this is a cobra command (starts with "dev")
+	if len(os.Args) > 1 && os.Args[1] == "dev" {
+		return rootCmd.Execute()
+	}
+
+	// Legacy flag-based command handling
 	flag.Parse()
 
 	// Get subcommand
 	args := flag.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("no command specified. Available commands: run, get, validate")
+		return fmt.Errorf("no command specified. Available commands: run, get, validate, logs, dev")
 	}
 
 	command := args[0]
@@ -60,7 +78,7 @@ func Execute() error {
 	case "logs":
 		return logsCommand(commandArgs)
 	default:
-		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate, logs", command)
+		return fmt.Errorf("unknown command: %s. Available commands: run, get, validate, logs, dev", command)
 	}
 }
 
