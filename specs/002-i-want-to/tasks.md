@@ -86,13 +86,13 @@
   - Add error handling and output parsing
   - Add Docker availability check
 
-- [ ] T008 [P] Implement kubectl wrapper in `pkg/localenv/cluster/kubectl.go`
+- [x] T008 [P] Implement kubectl wrapper in `pkg/localenv/cluster/kubectl.go`
   - Define KubectlClient interface (ApplyManifest, DeleteResource, GetResource, WaitForReady, GetLogs methods)
   - Implement using kubectl command-line execution
   - Add context switching logic
   - Add timeout handling
 
-- [ ] T009 [P] Create health check utilities in `pkg/localenv/health/checks.go`
+- [x] T009 [P] Create health check utilities in `pkg/localenv/health/checks.go`
   - Check Docker daemon availability (docker info command)
   - Check kubectl installation
   - Check cluster readiness (nodes Ready, API accessible)
