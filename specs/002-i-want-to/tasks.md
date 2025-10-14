@@ -67,7 +67,7 @@
   - Add JSON/YAML struct tags for serialization
   - Add validation tags
 
-- [ ] T005 [P] Create cluster status structures in `pkg/localenv/status.go`
+- [x] T005 [P] Create cluster status structures in `pkg/localenv/status.go`
   - Define ClusterStatus struct (name, state, nodes, kubeconfig, apiEndpoint, registryEndpoint, createdAt, uptime)
   - Define NodeStatus struct (name, role, status, version)
   - Add JSON struct tags
