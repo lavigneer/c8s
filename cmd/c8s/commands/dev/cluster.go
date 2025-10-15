@@ -111,21 +111,45 @@ and optionally with a local container registry.`,
 			}
 
 			// Create cluster
+			if IsVerbose() {
+				printInfo("[DEBUG] Creating cluster with config:")
+				printInfo("[DEBUG]   Name: %s", config.Name)
+				printInfo("[DEBUG]   K8s Version: %s", config.KubernetesVersion)
+				printInfo("[DEBUG]   Servers: %d, Agents: %d", servers, agents)
+				printInfo("[DEBUG]   Registry: %v", registry)
+				printInfo("[DEBUG]   Timeout: %s", timeout)
+			}
+
 			printInfo("Creating cluster '%s'...", config.Name)
 			status, err := cluster.Create(ctx, opts)
 			if err != nil {
-				if _, ok := err.(*cluster.ClusterAlreadyExistsError); ok {
+				// Enhance error with suggestions
+				enhancedErr := cluster.EnhanceError(err, "create")
+
+				if cluster.IsClusterAlreadyExistsError(err) {
 					printError("Cluster '%s' already exists", config.Name)
 					printInfo("Run 'c8s dev cluster delete %s' to remove it first", config.Name)
 					return exitWithCode(2)
 				}
-				if _, ok := err.(*cluster.DockerNotAvailableError); ok {
+				if cluster.IsDockerNotAvailableError(err) {
 					printError("Docker is not available")
 					printInfo("Please ensure Docker is installed and running")
+					printInfo("Verify with: docker info")
 					return exitWithCode(4)
 				}
-				printError("Failed to create cluster: %v", err)
+				if cluster.IsTimeoutError(err) {
+					printError("Cluster creation timed out")
+					printInfo("The cluster may still be starting. Check status with: c8s dev cluster status %s", config.Name)
+					printInfo("Or try again with a longer timeout: --timeout 5m")
+					return exitWithCode(3)
+				}
+				printError("Failed to create cluster: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Cluster created successfully")
+				printInfo("[DEBUG] Status: %+v", status)
 			}
 
 			// Display success message
@@ -382,19 +406,29 @@ This will remove the cluster, Docker containers, and kubeconfig context.`,
 			}
 
 			// Delete cluster
+			if IsVerbose() {
+				printInfo("[DEBUG] Deleting cluster: %s (force=%v)", name, force)
+			}
+
 			printInfo("Deleting cluster '%s'...", name)
 			err := cluster.Delete(ctx, cluster.DeleteOptions{
 				Name:  name,
 				Force: force,
 			})
 			if err != nil {
-				if _, ok := err.(*cluster.ClusterNotFoundError); ok {
+				enhancedErr := cluster.EnhanceError(err, "delete")
+
+				if cluster.IsClusterNotFoundError(err) {
 					printError("Cluster '%s' not found", name)
 					printInfo("Run 'c8s dev cluster list' to see available clusters")
 					return exitWithCode(2)
 				}
-				printError("Failed to delete cluster: %v", err)
+				printError("Failed to delete cluster: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Cluster deleted successfully")
 			}
 
 			printSuccess("Cluster '%s' deleted successfully", name)
@@ -445,14 +479,25 @@ Shows cluster state, nodes, API endpoint, and other details.`,
 			}
 
 			// Get status
+			if IsVerbose() {
+				printInfo("[DEBUG] Getting status for cluster: %s", name)
+			}
+
 			status, err := cluster.GetStatusWithUptime(ctx, name)
 			if err != nil {
-				if _, ok := err.(*cluster.ClusterNotFoundError); ok {
+				enhancedErr := cluster.EnhanceError(err, "status")
+
+				if cluster.IsClusterNotFoundError(err) {
 					printError("Cluster '%s' not found", name)
+					printInfo("List available clusters with: c8s dev cluster list")
 					return exitWithCode(2)
 				}
-				printError("Failed to get cluster status: %v", err)
+				printError("Failed to get cluster status: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Retrieved status: state=%s, nodes=%d", status.State, len(status.Nodes))
 			}
 
 			// Format output
@@ -527,12 +572,21 @@ By default, shows only c8s clusters. Use --all to show all k3d clusters.`,
 			ctx := context.Background()
 
 			// List clusters
+			if IsVerbose() {
+				printInfo("[DEBUG] Listing clusters (all=%v)", all)
+			}
+
 			clusters, err := cluster.List(ctx, cluster.ListOptions{
 				All: all,
 			})
 			if err != nil {
-				printError("Failed to list clusters: %v", err)
+				enhancedErr := cluster.EnhanceError(err, "list")
+				printError("Failed to list clusters: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Found %d clusters", len(clusters))
 			}
 
 			// Format output
@@ -613,6 +667,10 @@ The cluster state and data will be preserved.`,
 			}
 
 			// Start cluster
+			if IsVerbose() {
+				printInfo("[DEBUG] Starting cluster: %s (wait=%v, timeout=%s)", name, wait, timeout)
+			}
+
 			printInfo("Starting cluster '%s'...", name)
 			err = cluster.Start(ctx, cluster.StartOptions{
 				Name:    name,
@@ -620,15 +678,24 @@ The cluster state and data will be preserved.`,
 				Timeout: timeoutDuration,
 			})
 			if err != nil {
-				if _, ok := err.(*cluster.ClusterNotFoundError); ok {
+				enhancedErr := cluster.EnhanceError(err, "start")
+
+				if cluster.IsClusterNotFoundError(err) {
 					printError("Cluster '%s' not found", name)
+					printInfo("List available clusters with: c8s dev cluster list")
 					return exitWithCode(2)
 				}
-				printError("Failed to start cluster: %v", err)
-				if strings.Contains(err.Error(), "timeout") {
+				if cluster.IsTimeoutError(err) {
+					printError("Cluster start timed out")
+					printInfo("The cluster may still be starting. Check status with: c8s dev cluster status %s", name)
 					return exitWithCode(3)
 				}
+				printError("Failed to start cluster: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Cluster started successfully")
 			}
 
 			printSuccess("Cluster '%s' started successfully", name)
@@ -667,17 +734,28 @@ The cluster state and data will be preserved and can be restarted later.`,
 			}
 
 			// Stop cluster
+			if IsVerbose() {
+				printInfo("[DEBUG] Stopping cluster: %s", name)
+			}
+
 			printInfo("Stopping cluster '%s'...", name)
 			err := cluster.Stop(ctx, cluster.StopOptions{
 				Name: name,
 			})
 			if err != nil {
-				if _, ok := err.(*cluster.ClusterNotFoundError); ok {
+				enhancedErr := cluster.EnhanceError(err, "stop")
+
+				if cluster.IsClusterNotFoundError(err) {
 					printError("Cluster '%s' not found", name)
+					printInfo("List available clusters with: c8s dev cluster list")
 					return exitWithCode(2)
 				}
-				printError("Failed to stop cluster: %v", err)
+				printError("Failed to stop cluster: %v", enhancedErr)
 				return exitWithCode(1)
+			}
+
+			if IsVerbose() {
+				printInfo("[DEBUG] Cluster stopped successfully")
 			}
 
 			printSuccess("Cluster '%s' stopped successfully", name)
