@@ -35,8 +35,8 @@ and run end-to-end pipeline tests without requiring cloud infrastructure.`,
 	cmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress non-error output")
 	cmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 
-	// Add subcommand placeholders (will be implemented in subsequent tasks)
-	// cmd.AddCommand(newClusterCommand())
+	// Add subcommands
+	cmd.AddCommand(newClusterCommand())
 	// cmd.AddCommand(newDeployCommand())
 	// cmd.AddCommand(newTestCommand())
 
