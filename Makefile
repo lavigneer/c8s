@@ -229,15 +229,30 @@ dev-cluster-list: build-cli ## List all local clusters
 dev-cluster-reset: dev-cluster-delete dev-cluster-create ## Reset local test cluster
 
 .PHONY: dev-deploy
-dev-deploy: build-cli ## Deploy operator to local cluster
-	$(CLI_BINARY) dev deploy operator
+dev-deploy: build-cli ## Deploy operator to local cluster (Phase 4 - not yet implemented)
+	@echo "⚠️  Operator deployment not yet implemented (Phase 4)"
+	@echo "Coming soon: $(CLI_BINARY) dev deploy operator"
 
 .PHONY: dev-test
-dev-test: build-cli ## Run end-to-end tests on local cluster
-	$(CLI_BINARY) dev test run
+dev-test: build-cli ## Run end-to-end tests on local cluster (Phase 5 - not yet implemented)
+	@echo "⚠️  E2E testing not yet implemented (Phase 5)"
+	@echo "Coming soon: $(CLI_BINARY) dev test run"
 
 .PHONY: dev-reload
-dev-reload: build-cli dev-deploy dev-test ## Quick iteration: rebuild, redeploy, test
+dev-reload: build-cli ## Quick iteration: rebuild CLI (deploy/test coming in later phases)
+	@echo "✓ CLI rebuilt successfully"
+	@echo ""
+	@echo "⚠️  Full reload workflow not yet available"
+	@echo "Available now:"
+	@echo "  - make dev-cluster-create"
+	@echo "  - make dev-cluster-status"
+	@echo "  - make dev-cluster-delete"
+	@echo ""
+	@echo "Coming in Phase 4:"
+	@echo "  - make dev-deploy (operator deployment)"
+	@echo ""
+	@echo "Coming in Phase 5:"
+	@echo "  - make dev-test (end-to-end tests)"
 
 .PHONY: clean-clusters
 clean-clusters: ## Delete all c8s test clusters
