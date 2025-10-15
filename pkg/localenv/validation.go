@@ -201,3 +201,17 @@ func validateDuration(fl validator.FieldLevel) bool {
 	_, err := ParseDuration(duration)
 	return err == nil
 }
+
+// Package-level validation functions for convenience
+
+var defaultValidator = NewValidator()
+
+// ValidateClusterConfig is a convenience function that validates using the default validator
+func ValidateClusterConfig(config *ClusterConfig) error {
+	return defaultValidator.ValidateClusterConfig(config)
+}
+
+// ValidateEnvironmentConfig is a convenience function that validates using the default validator
+func ValidateEnvironmentConfig(config *EnvironmentConfig) error {
+	return defaultValidator.ValidateEnvironmentConfig(config)
+}
