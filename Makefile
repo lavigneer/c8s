@@ -63,8 +63,12 @@ test-integration: envtest ## Run integration tests with envtest
 	KUBEBUILDER_ASSETS="$(shell setup-envtest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
 
 .PHONY: test-contract
-test-contract: ## Run API contract tests
-	$(GO) test -timeout $(TEST_TIMEOUT) ./tests/contract/...
+test-contract: ## Run API contract tests (requires Docker and k3d)
+	$(GO) test -v -timeout 30m ./tests/contract/...
+
+.PHONY: test-contract-short
+test-contract-short: ## Run contract tests (short version)
+	$(GO) test -v -short -timeout $(TEST_TIMEOUT) ./tests/contract/...
 
 .PHONY: coverage
 coverage: test ## Generate coverage report
@@ -100,6 +104,9 @@ install: build-cli ## Install CLI to $GOPATH/bin
 clean: ## Clean build artifacts
 	rm -rf $(BUILD_DIR)
 	rm -f $(COVERAGE_FILE) coverage.html
+
+.PHONY: clean-all
+clean-all: clean clean-clusters ## Clean everything including test clusters
 
 ##@ Docker
 
@@ -175,6 +182,19 @@ golangci-lint: ## Ensure golangci-lint is installed
 .PHONY: tools
 tools: controller-gen envtest golangci-lint ## Install all development tools
 
+.PHONY: check-deps
+check-deps: ## Check if required dependencies are installed
+	@echo "Checking dependencies..."
+	@command -v docker >/dev/null 2>&1 || { echo "⚠ Docker is not installed"; exit 1; }
+	@echo "  ✓ Docker installed"
+	@docker info >/dev/null 2>&1 || { echo "⚠ Docker daemon is not running"; exit 1; }
+	@echo "  ✓ Docker daemon running"
+	@command -v kubectl >/dev/null 2>&1 || { echo "⚠ kubectl is not installed"; exit 1; }
+	@echo "  ✓ kubectl installed"
+	@command -v k3d >/dev/null 2>&1 || { echo "⚠ k3d is not installed"; exit 1; }
+	@echo "  ✓ k3d installed"
+	@echo "All dependencies are installed"
+
 ##@ Local Development
 
 .PHONY: run-controller
@@ -188,6 +208,41 @@ run-api-server: ## Run API server locally
 .PHONY: run-webhook
 run-webhook: ## Run webhook server locally
 	$(GO) run ./cmd/webhook/main.go --port=9443
+
+.PHONY: dev-cluster-create
+dev-cluster-create: build-cli ## Create local test cluster
+	$(CLI_BINARY) dev cluster create c8s-dev
+
+.PHONY: dev-cluster-delete
+dev-cluster-delete: build-cli ## Delete local test cluster
+	$(CLI_BINARY) dev cluster delete c8s-dev --force
+
+.PHONY: dev-cluster-status
+dev-cluster-status: build-cli ## Show local test cluster status
+	$(CLI_BINARY) dev cluster status c8s-dev
+
+.PHONY: dev-cluster-list
+dev-cluster-list: build-cli ## List all local clusters
+	$(CLI_BINARY) dev cluster list
+
+.PHONY: dev-cluster-reset
+dev-cluster-reset: dev-cluster-delete dev-cluster-create ## Reset local test cluster
+
+.PHONY: dev-deploy
+dev-deploy: build-cli ## Deploy operator to local cluster
+	$(CLI_BINARY) dev deploy operator
+
+.PHONY: dev-test
+dev-test: build-cli ## Run end-to-end tests on local cluster
+	$(CLI_BINARY) dev test run
+
+.PHONY: dev-reload
+dev-reload: build-cli dev-deploy dev-test ## Quick iteration: rebuild, redeploy, test
+
+.PHONY: clean-clusters
+clean-clusters: ## Delete all c8s test clusters
+	@k3d cluster list -o json 2>/dev/null | grep -o '"name":"c8s-[^"]*"' | cut -d'"' -f4 | xargs -I {} k3d cluster delete {} 2>/dev/null || true
+	@echo "All c8s clusters deleted"
 
 ##@ Help
 
