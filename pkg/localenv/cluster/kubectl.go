@@ -35,8 +35,8 @@ type KubectlClient interface {
 	// GetCurrentContext gets the current kubectl context
 	GetCurrentContext(ctx context.Context) (string, error)
 
-	// GetNodes gets cluster nodes status
-	GetNodes(ctx context.Context) ([]byte, error)
+	// GetNodes gets cluster nodes status for a specific cluster
+	GetNodes(ctx context.Context, clusterName string) ([]KubeNode, error)
 }
 
 // kubectlClientImpl implements KubectlClient using kubectl command-line tool
@@ -145,9 +145,58 @@ func (k *kubectlClientImpl) GetCurrentContext(ctx context.Context) (string, erro
 	return strings.TrimSpace(string(output)), nil
 }
 
-// GetNodes gets cluster nodes status
-func (k *kubectlClientImpl) GetNodes(ctx context.Context) ([]byte, error) {
-	return k.runKubectlCommandWithOutput(ctx, "get", "nodes", "-o", "json")
+// KubeNode represents a Kubernetes node
+type KubeNode struct {
+	Name    string
+	Role    string
+	Status  string
+	Version string
+}
+
+// GetNodes gets cluster nodes status for a specific cluster
+func (k *kubectlClientImpl) GetNodes(ctx context.Context, clusterName string) ([]KubeNode, error) {
+	// Set context to the cluster
+	contextName := fmt.Sprintf("k3d-%s", clusterName)
+	args := []string{"get", "nodes", "--context", contextName, "-o", "wide", "--no-headers"}
+
+	output, err := k.runKubectlCommandWithOutput(ctx, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseNodesOutput(string(output)), nil
+}
+
+// parseNodesOutput parses kubectl get nodes output
+func parseNodesOutput(output string) []KubeNode {
+	var nodes []KubeNode
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			continue
+		}
+
+		// Extract role from labels/roles
+		role := "agent"
+		if strings.Contains(line, "control-plane") || strings.Contains(line, "master") {
+			role = "server"
+		}
+
+		nodes = append(nodes, KubeNode{
+			Name:    fields[0],
+			Status:  fields[1],
+			Role:    role,
+			Version: fields[4],
+		})
+	}
+
+	return nodes
 }
 
 // runKubectlCommand executes a kubectl command and returns error if it fails
