@@ -135,11 +135,12 @@ func TestParallelSteps(t *testing.T) {
 
 // TestComplexDAGMixedParallelSequential verifies complex DAG with mixed parallel/sequential
 // Topology:
-//       lint    test
-//         \    /   \
-//          build    integration
-//            \      /
-//             deploy
+//
+//	lint    test
+//	  \    /   \
+//	   build    integration
+//	     \      /
+//	      deploy
 func TestComplexDAGMixedParallelSequential(t *testing.T) {
 	steps := []c8sv1alpha1.PipelineStep{
 		{

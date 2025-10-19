@@ -873,10 +873,10 @@ func TestSelfReferencingStep(t *testing.T) {
 			Repository: "https://github.com/org/repo",
 			Steps: []c8sv1alpha1.PipelineStep{
 				{
-					Name:       "test",
-					Image:      "golang:1.21",
-					Commands:   []string{"go test"},
-					DependsOn:  []string{"test"}, // self-reference
+					Name:      "test",
+					Image:     "golang:1.21",
+					Commands:  []string{"go test"},
+					DependsOn: []string{"test"}, // self-reference
 				},
 			},
 		},

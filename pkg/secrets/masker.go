@@ -118,15 +118,15 @@ func IsLikelySecretValue(value string) bool {
 
 	// Check for common secret patterns
 	patterns := []string{
-		`^[A-Za-z0-9+/]{40,}={0,2}$`,           // Base64-like
-		`^[a-f0-9]{32,}$`,                      // Hex tokens (MD5, SHA-like)
-		`^[A-Z0-9_]{20,}$`,                     // API keys
-		`^sk-[a-zA-Z0-9]{32,}$`,                // OpenAI-style keys
-		`^gh[ps]_[a-zA-Z0-9]{36,}$`,            // GitHub tokens
-		`^xox[baprs]-[a-zA-Z0-9-]{10,}$`,       // Slack tokens
-		`^AKIA[0-9A-Z]{16}$`,                   // AWS Access Key ID
-		`^[a-zA-Z0-9/+=]{40}$`,                 // AWS Secret Access Key
-		`^ya29\.[a-zA-Z0-9_-]{50,}$`,           // Google OAuth tokens
+		`^[A-Za-z0-9+/]{40,}={0,2}$`,            // Base64-like
+		`^[a-f0-9]{32,}$`,                       // Hex tokens (MD5, SHA-like)
+		`^[A-Z0-9_]{20,}$`,                      // API keys
+		`^sk-[a-zA-Z0-9]{32,}$`,                 // OpenAI-style keys
+		`^gh[ps]_[a-zA-Z0-9]{36,}$`,             // GitHub tokens
+		`^xox[baprs]-[a-zA-Z0-9-]{10,}$`,        // Slack tokens
+		`^AKIA[0-9A-Z]{16}$`,                    // AWS Access Key ID
+		`^[a-zA-Z0-9/+=]{40}$`,                  // AWS Secret Access Key
+		`^ya29\.[a-zA-Z0-9_-]{50,}$`,            // Google OAuth tokens
 		`^eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+`, // JWT tokens
 	}
 

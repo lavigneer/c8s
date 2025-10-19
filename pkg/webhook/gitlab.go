@@ -47,10 +47,10 @@ type GitLabPushEvent struct {
 	Ref        string `json:"ref"`
 	After      string `json:"after"`
 	Project    struct {
-		Name            string `json:"name"`
+		Name              string `json:"name"`
 		PathWithNamespace string `json:"path_with_namespace"`
-		GitHTTPURL      string `json:"git_http_url"`
-		GitSSHURL       string `json:"git_ssh_url"`
+		GitHTTPURL        string `json:"git_http_url"`
+		GitSSHURL         string `json:"git_ssh_url"`
 	} `json:"project"`
 	Commits []struct {
 		ID        string `json:"id"`

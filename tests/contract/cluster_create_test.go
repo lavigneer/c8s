@@ -374,8 +374,8 @@ func TestClusterCreateOutputFormats(t *testing.T) {
 			},
 		},
 		{
-			name:  "quiet output",
-			flags: []string{"--quiet"},
+			name:     "quiet output",
+			flags:    []string{"--quiet"},
 			checkFor: []string{
 				// Should have minimal output, but errors still shown
 			},

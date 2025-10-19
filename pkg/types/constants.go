@@ -67,12 +67,12 @@ const (
 	EnvC8SNamespace = "C8S_NAMESPACE"
 
 	// Storage configuration
-	StorageBucketEnv         = "C8S_STORAGE_BUCKET"
-	StorageRegionEnv         = "C8S_STORAGE_REGION"
-	StorageEndpointEnv       = "C8S_STORAGE_ENDPOINT"
-	StorageAccessKeyEnv      = "AWS_ACCESS_KEY_ID"
-	StorageSecretKeyEnv      = "AWS_SECRET_ACCESS_KEY"
-	StorageLogPrefix         = "c8s-logs"
-	StorageArtifactPrefix    = "c8s-artifacts"
-	StorageURLExpirySeconds  = 3600 // 1 hour
+	StorageBucketEnv        = "C8S_STORAGE_BUCKET"
+	StorageRegionEnv        = "C8S_STORAGE_REGION"
+	StorageEndpointEnv      = "C8S_STORAGE_ENDPOINT"
+	StorageAccessKeyEnv     = "AWS_ACCESS_KEY_ID"
+	StorageSecretKeyEnv     = "AWS_SECRET_ACCESS_KEY"
+	StorageLogPrefix        = "c8s-logs"
+	StorageArtifactPrefix   = "c8s-artifacts"
+	StorageURLExpirySeconds = 3600 // 1 hour
 )
