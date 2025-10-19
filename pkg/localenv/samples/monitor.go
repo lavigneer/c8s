@@ -21,13 +21,13 @@ type ExecutionStatus struct {
 
 // StepExecutionStatus tracks the status of individual pipeline steps
 type StepExecutionStatus struct {
-	Name       string
-	Status     string // Running, Succeeded, Failed
-	StartTime  time.Time
-	EndTime    time.Time
-	Duration   time.Duration
-	Retries    int
-	ErrorMsg   string
+	Name      string
+	Status    string // Running, Succeeded, Failed
+	StartTime time.Time
+	EndTime   time.Time
+	Duration  time.Duration
+	Retries   int
+	ErrorMsg  string
 }
 
 // PipelineExecutionMonitor monitors pipeline execution

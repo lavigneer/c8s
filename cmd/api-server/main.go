@@ -35,9 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/api/handlers"
 	"github.com/org/c8s/pkg/api/middleware"
+	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/storage"
 	"github.com/org/c8s/pkg/storage/s3"
 )

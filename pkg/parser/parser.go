@@ -27,12 +27,12 @@ import (
 
 // PipelineYAML represents the structure of a .c8s.yaml file
 type PipelineYAML struct {
-	Version string          `yaml:"version"`
-	Name    string          `yaml:"name"`
+	Version string             `yaml:"version"`
+	Name    string             `yaml:"name"`
 	Steps   []PipelineStepYAML `yaml:"steps"`
-	Timeout string          `yaml:"timeout,omitempty"`
-	Matrix  *MatrixYAML     `yaml:"matrix,omitempty"`
-	Retry   *RetryPolicyYAML `yaml:"retryPolicy,omitempty"`
+	Timeout string             `yaml:"timeout,omitempty"`
+	Matrix  *MatrixYAML        `yaml:"matrix,omitempty"`
+	Retry   *RetryPolicyYAML   `yaml:"retryPolicy,omitempty"`
 }
 
 // PipelineStepYAML is the YAML representation of a pipeline step
@@ -69,8 +69,8 @@ type ConditionalYAML struct {
 
 // MatrixYAML is the YAML representation of matrix strategy
 type MatrixYAML struct {
-	Dimensions map[string][]string   `yaml:"dimensions"`
-	Exclude    []map[string]string   `yaml:"exclude,omitempty"`
+	Dimensions map[string][]string `yaml:"dimensions"`
+	Exclude    []map[string]string `yaml:"exclude,omitempty"`
 }
 
 // RetryPolicyYAML is the YAML representation of retry policy
@@ -112,14 +112,14 @@ func convertSteps(yamlSteps []PipelineStepYAML) []c8sv1alpha1.PipelineStep {
 	steps := make([]c8sv1alpha1.PipelineStep, len(yamlSteps))
 	for i, ys := range yamlSteps {
 		steps[i] = c8sv1alpha1.PipelineStep{
-			Name:      ys.Name,
-			Image:     ys.Image,
-			Commands:  ys.Commands,
-			DependsOn: ys.DependsOn,
-			Resources: convertResources(ys.Resources),
-			Timeout:   ys.Timeout,
-			Artifacts: ys.Artifacts,
-			Secrets:   convertSecrets(ys.Secrets),
+			Name:        ys.Name,
+			Image:       ys.Image,
+			Commands:    ys.Commands,
+			DependsOn:   ys.DependsOn,
+			Resources:   convertResources(ys.Resources),
+			Timeout:     ys.Timeout,
+			Artifacts:   ys.Artifacts,
+			Secrets:     convertSecrets(ys.Secrets),
 			Conditional: convertConditional(ys.Conditional),
 		}
 	}

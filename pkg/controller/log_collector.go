@@ -23,17 +23,17 @@ const (
 
 // LogCollector handles collecting logs from Job Pods
 type LogCollector struct {
-	client         kubernetes.Interface
-	storageClient  storage.StorageClient
-	bufferManager  *LogBufferManager
+	client        kubernetes.Interface
+	storageClient storage.StorageClient
+	bufferManager *LogBufferManager
 }
 
 // NewLogCollector creates a new LogCollector
 func NewLogCollector(client kubernetes.Interface, storageClient storage.StorageClient) *LogCollector {
 	return &LogCollector{
-		client:         client,
-		storageClient:  storageClient,
-		bufferManager:  NewLogBufferManager(),
+		client:        client,
+		storageClient: storageClient,
+		bufferManager: NewLogBufferManager(),
 	}
 }
 

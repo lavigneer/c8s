@@ -27,14 +27,14 @@ type AggregatedResult struct {
 
 // MatrixRunSummary provides a summary of a single matrix run
 type MatrixRunSummary struct {
-	Name        string
-	Phase       c8sv1alpha1.PipelineRunPhase
-	MatrixVars  map[string]string
-	StartTime   *metav1.Time
+	Name           string
+	Phase          c8sv1alpha1.PipelineRunPhase
+	MatrixVars     map[string]string
+	StartTime      *metav1.Time
 	CompletionTime *metav1.Time
-	Duration    time.Duration
-	StepCount   int
-	FailedSteps int
+	Duration       time.Duration
+	StepCount      int
+	FailedSteps    int
 }
 
 // AggregateMatrixResults aggregates results from multiple matrix PipelineRuns

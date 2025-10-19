@@ -57,12 +57,12 @@ func (su *StatusUpdater) UpdatePipelineRunStatus(
 
 	// Track overall status
 	var (
-		totalSteps      int
-		pendingSteps    int
-		runningSteps    int
-		succeededSteps  int
-		failedSteps     int
-		hasStarted      bool
+		totalSteps     int
+		pendingSteps   int
+		runningSteps   int
+		succeededSteps int
+		failedSteps    int
+		hasStarted     bool
 	)
 
 	// Update status for each job

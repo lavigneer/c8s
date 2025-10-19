@@ -9,12 +9,12 @@ import (
 
 // Workload represents an active workload in the cluster
 type Workload struct {
-	Name       string
-	Type       string // PipelineRun, Job, Pod
-	Namespace  string
-	Status     string
-	Age        time.Duration
-	CreatedAt  time.Time
+	Name      string
+	Type      string // PipelineRun, Job, Pod
+	Namespace string
+	Status    string
+	Age       time.Duration
+	CreatedAt time.Time
 }
 
 // WorkloadStatus contains information about active workloads

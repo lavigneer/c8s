@@ -51,11 +51,11 @@ type VolumeMount struct {
 
 // ClusterOptions contains advanced cluster configuration options
 type ClusterOptions struct {
-	WaitTimeout            string   `json:"waitTimeout,omitempty" yaml:"waitTimeout,omitempty" validate:"omitempty,duration"`
+	WaitTimeout             string   `json:"waitTimeout,omitempty" yaml:"waitTimeout,omitempty" validate:"omitempty,duration"`
 	UpdateDefaultKubeconfig bool     `json:"updateDefaultKubeconfig,omitempty" yaml:"updateDefaultKubeconfig,omitempty"`
-	SwitchContext          bool     `json:"switchContext,omitempty" yaml:"switchContext,omitempty"`
-	DisableLoadBalancer    bool     `json:"disableLoadBalancer,omitempty" yaml:"disableLoadBalancer,omitempty"`
-	K3sArgs                []string `json:"k3sArgs,omitempty" yaml:"k3sArgs,omitempty"`
+	SwitchContext           bool     `json:"switchContext,omitempty" yaml:"switchContext,omitempty"`
+	DisableLoadBalancer     bool     `json:"disableLoadBalancer,omitempty" yaml:"disableLoadBalancer,omitempty"`
+	K3sArgs                 []string `json:"k3sArgs,omitempty" yaml:"k3sArgs,omitempty"`
 }
 
 // EnvironmentConfig represents a complete local test environment (cluster + operator deployment)
@@ -105,11 +105,11 @@ func DefaultClusterConfig() ClusterConfig {
 			HostPort: 5000,
 		},
 		Options: ClusterOptions{
-			WaitTimeout:            "60s",
+			WaitTimeout:             "60s",
 			UpdateDefaultKubeconfig: true,
-			SwitchContext:          true,
-			DisableLoadBalancer:    false,
-			K3sArgs:                []string{"--disable=traefik"},
+			SwitchContext:           true,
+			DisableLoadBalancer:     false,
+			K3sArgs:                 []string{"--disable=traefik"},
 		},
 	}
 }

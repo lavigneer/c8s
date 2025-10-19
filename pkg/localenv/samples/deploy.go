@@ -11,11 +11,11 @@ import (
 
 // SampleDeploymentStatus contains information about sample deployment
 type SampleDeploymentStatus struct {
-	Success        bool
+	Success         bool
 	SamplesDeployed []string
-	Namespace      string
-	Message        string
-	Timestamp      time.Time
+	Namespace       string
+	Message         string
+	Timestamp       time.Time
 }
 
 // DeploySamples deploys sample PipelineConfigs to the cluster

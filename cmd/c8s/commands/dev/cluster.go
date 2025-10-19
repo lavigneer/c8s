@@ -46,14 +46,14 @@ Create, delete, start, stop, and inspect local k3d clusters.`,
 // newClusterCreateCommand creates the cluster create subcommand
 func newClusterCreateCommand() *cobra.Command {
 	var (
-		configPath    string
-		k8sVersion    string
-		servers       int
-		agents        int
-		registry      bool
-		registryPort  int
-		timeout       string
-		wait          bool
+		configPath   string
+		k8sVersion   string
+		servers      int
+		agents       int
+		registry     bool
+		registryPort int
+		timeout      string
+		wait         bool
 	)
 
 	cmd := &cobra.Command{
@@ -201,10 +201,10 @@ func buildClusterConfigFromFlags(name, k8sVersion string, servers, agents int, r
 			{Type: "agent", Count: agents},
 		},
 		Options: localenv.ClusterOptions{
-			WaitTimeout:            "60s",
+			WaitTimeout:             "60s",
 			UpdateDefaultKubeconfig: true,
-			SwitchContext:          true,
-			K3sArgs:                []string{"--disable=traefik"},
+			SwitchContext:           true,
+			K3sArgs:                 []string{"--disable=traefik"},
 		},
 	}
 

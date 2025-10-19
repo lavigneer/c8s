@@ -32,7 +32,7 @@ func IsTimeoutError(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "timeout") ||
-	       strings.Contains(err.Error(), "deadline exceeded")
+		strings.Contains(err.Error(), "deadline exceeded")
 }
 
 // ErrorWithSuggestion wraps an error with an actionable suggestion
@@ -89,21 +89,21 @@ func EnhanceError(err error, operation string) error {
 
 	// Port conflicts
 	if strings.Contains(err.Error(), "address already in use") ||
-	   strings.Contains(err.Error(), "port") && strings.Contains(err.Error(), "in use") {
+		strings.Contains(err.Error(), "port") && strings.Contains(err.Error(), "in use") {
 		return NewErrorWithSuggestion(err,
 			"A port is already in use. Check for conflicting services or try a different port")
 	}
 
 	// Kubectl not found
 	if strings.Contains(err.Error(), "kubectl") &&
-	   (strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "executable")) {
+		(strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "executable")) {
 		return NewErrorWithSuggestion(err,
 			"kubectl is not installed. Install it from: https://kubernetes.io/docs/tasks/tools/")
 	}
 
 	// k3d not found
 	if strings.Contains(err.Error(), "k3d") &&
-	   (strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "executable")) {
+		(strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "executable")) {
 		return NewErrorWithSuggestion(err,
 			"k3d is not installed. Install it from: https://k3d.io/")
 	}
@@ -116,7 +116,7 @@ func EnhanceError(err error, operation string) error {
 
 	// Out of disk space
 	if strings.Contains(err.Error(), "no space left") ||
-	   strings.Contains(err.Error(), "disk full") {
+		strings.Contains(err.Error(), "disk full") {
 		return NewErrorWithSuggestion(err,
 			"Free up disk space and try again. Check: df -h")
 	}

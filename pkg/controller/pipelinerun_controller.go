@@ -37,8 +37,8 @@ import (
 // PipelineRunReconciler reconciles a PipelineRun object
 type PipelineRunReconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	LogCollector  *LogCollector
+	Scheme       *runtime.Scheme
+	LogCollector *LogCollector
 }
 
 // +kubebuilder:rbac:groups=c8s.dev,resources=pipelineruns,verbs=get;list;watch;create;update;patch;delete
@@ -289,8 +289,8 @@ func (r *PipelineRunReconciler) collectLogsForCompletedJobs(ctx context.Context,
 
 		// Skip if Pod is not in a state where we can collect logs
 		if pod.Status.Phase != corev1.PodSucceeded &&
-		   pod.Status.Phase != corev1.PodFailed &&
-		   pod.Status.Phase != corev1.PodRunning {
+			pod.Status.Phase != corev1.PodFailed &&
+			pod.Status.Phase != corev1.PodRunning {
 			logger.Info("Pod not ready for log collection", "pod", pod.Name, "phase", pod.Status.Phase)
 			continue
 		}

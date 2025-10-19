@@ -54,6 +54,36 @@ Developer views results via CLI/API/Dashboard
 
 See [quickstart.md](./specs/001-build-a-continuous/quickstart.md) for complete installation and usage guide.
 
+### Local Development
+
+For developers working on C8S or testing locally, use the built-in development environment:
+
+```bash
+# Create a local cluster
+c8s dev cluster create my-dev --wait
+
+# Deploy the operator and samples
+c8s dev deploy operator --cluster my-dev
+c8s dev deploy samples --cluster my-dev
+
+# Run end-to-end tests
+c8s dev test run --cluster my-dev
+
+# View logs
+c8s dev test logs --cluster my-dev --follow
+
+# Cleanup
+c8s dev cluster delete my-dev
+```
+
+See [QUICK_START.md](QUICK_START.md) for quick reference or [docs/local-testing.md](docs/local-testing.md) for comprehensive guide.
+
+**Requirements for local development:**
+- Docker (27.3.1+)
+- k3d (5.8.3+)
+- kubectl (1.28+)
+- Go 1.25+ (for building from source)
+
 ### Install CRDs
 
 ```bash

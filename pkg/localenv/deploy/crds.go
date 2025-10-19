@@ -14,10 +14,10 @@ import (
 
 // CRDDeploymentStatus contains information about CRD deployment
 type CRDDeploymentStatus struct {
-	Success      bool
+	Success       bool
 	CRDsInstalled []string
-	Message      string
-	Timestamp    time.Time
+	Message       string
+	Timestamp     time.Time
 }
 
 // InstallCRDs installs all CRD manifests to the cluster

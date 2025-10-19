@@ -42,7 +42,7 @@ func extractResourceName(r *http.Request) string {
 		lastPart := parts[len(parts)-1]
 		// Check if this is a collection endpoint (ends with resource type)
 		if lastPart == "pipelineconfigs" || lastPart == "pipelineruns" ||
-		   lastPart == "repositoryconnections" || lastPart == "logs" {
+			lastPart == "repositoryconnections" || lastPart == "logs" {
 			return ""
 		}
 		return lastPart

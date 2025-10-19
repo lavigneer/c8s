@@ -10,11 +10,11 @@ import (
 
 // CleanupStatus contains information about cluster cleanup
 type CleanupStatus struct {
-	Success          bool
+	Success            bool
 	OrphanedContainers []string
 	OrphanedVolumes    []string
 	OrphanedContexts   []string
-	Message          string
+	Message            string
 }
 
 // VerifyCleanupStatus checks for orphaned resources after cluster deletion

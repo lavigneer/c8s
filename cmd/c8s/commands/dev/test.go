@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/org/c8s/pkg/localenv/samples"
+	"github.com/spf13/cobra"
 )
 
 // newTestCommand creates the test subcommand
@@ -36,12 +36,12 @@ Use 'c8s dev test run' to execute tests and 'c8s dev test logs' to view results.
 // newTestRunCommand creates the test run subcommand
 func newTestRunCommand() *cobra.Command {
 	var (
-		clusterName   string
+		clusterName    string
 		pipelineFilter string
-		namespace     string
-		timeout       int
-		watch         bool
-		outputFormat  string
+		namespace      string
+		timeout        int
+		watch          bool
+		outputFormat   string
 	)
 
 	cmd := &cobra.Command{
@@ -104,12 +104,12 @@ Example:
 // newTestLogsCommand creates the test logs subcommand
 func newTestLogsCommand() *cobra.Command {
 	var (
-		clusterName   string
+		clusterName    string
 		pipelineFilter string
-		namespace     string
-		follow        bool
-		tail          int
-		outputFormat  string
+		namespace      string
+		follow         bool
+		tail           int
+		outputFormat   string
 	)
 
 	cmd := &cobra.Command{

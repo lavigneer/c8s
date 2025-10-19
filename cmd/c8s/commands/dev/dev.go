@@ -6,9 +6,9 @@ import (
 
 var (
 	// Global flags for dev commands
-	verbose  bool
-	quiet    bool
-	noColor  bool
+	verbose bool
+	quiet   bool
+	noColor bool
 )
 
 // NewDevCommand creates the dev command with subcommands

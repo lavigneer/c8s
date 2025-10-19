@@ -11,17 +11,17 @@ import (
 
 // LogFetcher handles fetching and streaming logs from pipeline runs
 type LogFetcher struct {
-	namespace  string
-	follow     bool
-	tailLines  int
+	namespace string
+	follow    bool
+	tailLines int
 }
 
 // NewLogFetcher creates a new log fetcher
 func NewLogFetcher(namespace string, follow bool, tailLines int) *LogFetcher {
 	return &LogFetcher{
-		namespace:  namespace,
-		follow:     follow,
-		tailLines:  tailLines,
+		namespace: namespace,
+		follow:    follow,
+		tailLines: tailLines,
 	}
 }
 

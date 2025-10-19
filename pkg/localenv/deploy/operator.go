@@ -14,12 +14,12 @@ import (
 
 // OperatorDeploymentStatus contains information about operator deployment
 type OperatorDeploymentStatus struct {
-	Success      bool
-	Namespace    string
-	Message      string
+	Success        bool
+	Namespace      string
+	Message        string
 	DeploymentName string
-	PodCount     int
-	Timestamp    time.Time
+	PodCount       int
+	Timestamp      time.Time
 }
 
 // DeployOperator deploys the C8S operator to the cluster

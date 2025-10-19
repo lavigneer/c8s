@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/org/c8s/pkg/localenv/cluster"
 	"github.com/org/c8s/pkg/localenv/deploy"
 	"github.com/org/c8s/pkg/localenv/samples"
+	"github.com/spf13/cobra"
 )
 
 // newDeployCommand creates the deploy subcommand
@@ -37,14 +37,14 @@ Use 'c8s dev deploy operator' to deploy the operator and 'c8s dev deploy samples
 // newDeployOperatorCommand creates the deploy operator subcommand
 func newDeployOperatorCommand() *cobra.Command {
 	var (
-		clusterName              string
-		deployOperatorImage      string
+		clusterName               string
+		deployOperatorImage       string
 		deployOperatorImagePolicy string
-		deployOperatorNamespace  string
-		deployOperatorCRDsPath   string
-		deployOperatorManifests  string
-		wait                     bool
-		timeout                  int
+		deployOperatorNamespace   string
+		deployOperatorCRDsPath    string
+		deployOperatorManifests   string
+		wait                      bool
+		timeout                   int
 	)
 
 	cmd := &cobra.Command{
@@ -151,10 +151,10 @@ Example:
 // newDeploySamplesCommand creates the deploy samples subcommand
 func newDeploySamplesCommand() *cobra.Command {
 	var (
-		clusterName           string
-		deploySamplesNamespace string
+		clusterName              string
+		deploySamplesNamespace   string
 		deploySamplesSamplesPath string
-		deploySamplesSelect    string
+		deploySamplesSelect      string
 	)
 
 	cmd := &cobra.Command{
