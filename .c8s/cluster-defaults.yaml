@@ -1,0 +1,63 @@
+# C8S Default Cluster Configuration
+#
+# This file defines default settings for local cluster creation.
+# Copy and customize as needed.
+#
+# Usage: c8s dev cluster create my-cluster --config .c8s/cluster-defaults.yaml
+
+# Cluster name (can be overridden by CLI)
+name: c8s-dev
+
+# Kubernetes version to use
+kubernetesVersion: v1.28.15
+
+# Node configuration
+servers: 1          # Number of server (control-plane) nodes
+agents: 2           # Number of agent (worker) nodes
+
+# Registry configuration
+registry:
+  enabled: true     # Enable local Docker registry
+  hostPort: 5000    # Port to expose registry on host
+
+# Port mappings (optional)
+# Expose ports from cluster to host
+ports:
+  # - hostPort: 80
+  #   containerPort: 80
+  #   protocol: TCP
+  # - hostPort: 443
+  #   containerPort: 443
+  #   protocol: TCP
+
+# Cluster options
+options:
+  waitTimeout: 3m             # How long to wait for cluster to be ready
+  updateDefaultKubeconfig: true  # Update ~/.kube/config automatically
+  switchContext: true         # Switch to new cluster context after creation
+  k3sArgs: []                 # Additional k3s server/agent arguments
+    # - --no-deploy=traefik   # Don't deploy traefik ingress
+
+# Resource limits (optional)
+# resources:
+#   cpu: 2
+#   memory: 4Gi
+
+# Network configuration
+# network:
+#   name: c8s-network
+#   ipRange: 172.18.0.0/16
+
+# Labels and annotations (optional)
+# labels:
+#   team: platform
+#   environment: dev
+
+# Advanced: Custom k3d image
+# k3dImage: ghcr.io/k3d-io/k3d-proxy:v5.8.3
+
+# Development notes:
+# - Registry is enabled by default for local image testing
+# - Cluster is created with kubeconfig automatically configured
+# - Default K8s version matches production version
+# - Adjust CPU/memory if you have limited resources

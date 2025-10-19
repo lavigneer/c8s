@@ -261,6 +261,26 @@ clean-clusters: ## Delete all c8s test clusters
 
 ##@ Help
 
+.PHONY: dev-help
+dev-help: ## Show development commands
+	@echo ""
+	@echo "Development Workflow:"
+	@echo "  make dev-cluster-create    # Create local test cluster"
+	@echo "  make dev-deploy            # Deploy operator (Phase 4 - not yet implemented)"
+	@echo "  make dev-test              # Run end-to-end tests (Phase 5 - not yet implemented)"
+	@echo "  make dev-cluster-reset     # Reset cluster (delete and recreate)"
+	@echo "  make dev-cluster-delete    # Delete test cluster"
+	@echo ""
+	@echo "Quick Iteration:"
+	@echo "  make build                 # Build all binaries"
+	@echo "  make test                  # Run all unit tests"
+	@echo "  make test-contract-short   # Run contract tests (fast)"
+	@echo "  make lint                  # Run linter"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  open docs/local-testing.md # View local testing guide"
+	@echo ""
+
 .PHONY: help
 help: ## Display this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

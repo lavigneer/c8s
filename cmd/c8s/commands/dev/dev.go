@@ -18,16 +18,43 @@ func NewDevCommand() *cobra.Command {
 		Short: "Development environment management for local testing",
 		Long: `Manage local Kubernetes test environments for C8S operator development.
 
-The dev command provides tools to create local clusters, deploy the operator,
-and run end-to-end pipeline tests without requiring cloud infrastructure.`,
-		Example: `  # Create a local cluster
-  c8s dev cluster create
+The dev command provides a complete local development workflow:
+- Create isolated k3d Kubernetes clusters for testing
+- Deploy the C8S operator and sample pipelines
+- Run end-to-end tests and view results
+- Manage cluster lifecycle (stop, start, delete)
 
-  # Deploy operator to local cluster
-  c8s dev deploy operator
+All operations handle kubeconfig management automatically.
 
-  # Run pipeline tests
-  c8s dev test run`,
+Workflows:
+
+  Create and test complete setup:
+    $ c8s dev cluster create dev-env
+    $ c8s dev deploy operator --cluster dev-env
+    $ c8s dev deploy samples --cluster dev-env
+    $ c8s dev test run --cluster dev-env
+
+  Manage cluster state:
+    $ c8s dev cluster stop dev-env    # Pause cluster
+    $ c8s dev cluster start dev-env   # Resume cluster
+    $ c8s dev cluster delete dev-env  # Clean up
+
+  Development iteration:
+    $ c8s dev test run --cluster dev-env --output json
+    $ c8s dev test logs --cluster dev-env --follow`,
+		Example: `  # Create and setup local environment
+  c8s dev cluster create my-env
+  c8s dev deploy operator --cluster my-env
+  c8s dev deploy samples --cluster my-env
+
+  # Run tests
+  c8s dev test run --cluster my-env
+
+  # View logs
+  c8s dev test logs --cluster my-env --follow
+
+  # Cleanup
+  c8s dev cluster delete my-env`,
 	}
 
 	// Add global flags
