@@ -1,0 +1,58 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: matrix-build
+  namespace: default
+spec:
+  repository: https://github.com/example-org/example-repo
+  branches: ["main"]
+
+  # Matrix strategy for parallel execution across different configurations
+  matrix:
+    strategy:
+      - dimension: os
+        values: ["linux", "darwin"]
+      - dimension: version
+        values: ["1.20", "1.21"]
+    exclusions:
+      - os: darwin
+        version: 1.20
+
+  steps:
+    - name: build
+      image: alpine:latest
+      commands:
+        - echo "Building for OS=$OS VERSION=$VERSION"
+        - sleep 1
+        - echo "Build complete"
+      env:
+        - name: OS
+          value: "{{matrix.os}}"
+        - name: VERSION
+          value: "{{matrix.version}}"
+      resources:
+        cpu: 100m
+        memory: 128Mi
+      timeout: 2m
+
+    - name: test
+      image: alpine:latest
+      commands:
+        - echo "Testing OS=$OS VERSION=$VERSION"
+        - sleep 1
+        - echo "Tests passed"
+      env:
+        - name: OS
+          value: "{{matrix.os}}"
+        - name: VERSION
+          value: "{{matrix.version}}"
+      dependsOn: [build]
+      resources:
+        cpu: 100m
+        memory: 128Mi
+      timeout: 2m
+
+  timeout: 15m
+  retryPolicy:
+    maxRetries: 1
+    backoffSeconds: 30

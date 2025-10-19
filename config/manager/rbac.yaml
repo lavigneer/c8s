@@ -1,0 +1,87 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: c8s-controller
+  labels:
+    app: c8s-controller
+rules:
+# PipelineConfig permissions
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineconfigs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineconfigs/status"]
+  verbs: ["get", "update", "patch"]
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineconfigs/finalizers"]
+  verbs: ["update"]
+
+# PipelineRun permissions
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineruns"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineruns/status"]
+  verbs: ["get", "update", "patch"]
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineruns/finalizers"]
+  verbs: ["update"]
+
+# RepositoryConnection permissions
+- apiGroups: ["c8s.dev"]
+  resources: ["repositoryconnections"]
+  verbs: ["get", "list", "watch"]
+
+# Job permissions
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+# Pod permissions
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+
+# ConfigMap permissions
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+# Secret permissions (for credentials)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+# ServiceAccount permissions
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["get", "list", "create", "update", "patch"]
+
+# RBAC permissions
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["get", "list", "create", "update", "patch"]
+
+# Event permissions
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: c8s-controller
+  labels:
+    app: c8s-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: c8s-controller
+subjects:
+- kind: ServiceAccount
+  name: c8s-controller
+  namespace: c8s-system

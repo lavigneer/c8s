@@ -1,0 +1,47 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: multi-step
+  namespace: default
+spec:
+  repository: https://github.com/example-org/example-repo
+  branches: ["main"]
+  steps:
+    - name: setup
+      image: alpine:latest
+      commands:
+        - echo "Setting up environment"
+        - sleep 1
+      resources:
+        cpu: 100m
+        memory: 128Mi
+      timeout: 2m
+
+    - name: build
+      image: alpine:latest
+      commands:
+        - echo "Building application"
+        - sleep 1
+        - echo "Build complete"
+      dependsOn: [setup]
+      resources:
+        cpu: 200m
+        memory: 256Mi
+      timeout: 2m
+
+    - name: test
+      image: alpine:latest
+      commands:
+        - echo "Running tests"
+        - sleep 1
+        - echo "Tests passed"
+      dependsOn: [build]
+      resources:
+        cpu: 200m
+        memory: 256Mi
+      timeout: 2m
+
+  timeout: 10m
+  retryPolicy:
+    maxRetries: 1
+    backoffSeconds: 30

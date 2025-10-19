@@ -1,0 +1,24 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: simple-build
+  namespace: default
+spec:
+  repository: https://github.com/example-org/example-repo
+  branches: ["main"]
+  steps:
+    - name: build
+      image: alpine:latest
+      commands:
+        - echo "Starting build"
+        - sleep 1
+        - echo "Build complete"
+      resources:
+        cpu: 100m
+        memory: 128Mi
+      timeout: 2m
+
+  timeout: 5m
+  retryPolicy:
+    maxRetries: 1
+    backoffSeconds: 30

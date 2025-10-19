@@ -37,7 +37,7 @@ and run end-to-end pipeline tests without requiring cloud infrastructure.`,
 
 	// Add subcommands
 	cmd.AddCommand(newClusterCommand())
-	// cmd.AddCommand(newDeployCommand())
+	cmd.AddCommand(newDeployCommand())
 	// cmd.AddCommand(newTestCommand())
 
 	return cmd
