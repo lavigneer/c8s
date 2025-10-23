@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -54,7 +55,6 @@ var (
 
 func init() {
 	flag.IntVar(&port, "port", 8080, "API server port")
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to kubeconfig file (leave empty for in-cluster config)")
 	flag.BoolVar(&enableDashboard, "enable-dashboard", false, "Enable HTMX dashboard")
 	flag.BoolVar(&enableCORS, "enable-cors", true, "Enable CORS middleware")
 	flag.StringVar(&s3Bucket, "s3-bucket", "", "S3 bucket for logs (env: C8S_S3_BUCKET)")
@@ -66,10 +66,7 @@ func main() {
 	flag.Parse()
 
 	// Setup logger
-	opts := zap.Options{
-		Development: true,
-	}
-	logger := zap.New(zap.UseFlagOptions(&opts))
+	logger := zap.New(zap.UseDevMode(true))
 	ctrl.SetLogger(logger)
 	ctx := log.IntoContext(context.Background(), logger)
 
@@ -80,7 +77,15 @@ func main() {
 	)
 
 	// Create Kubernetes client config
-	config, err := getKubeConfig(kubeconfig)
+	// Use kubeconfig from env or default location if not in-cluster
+	kubeconfigPath := os.Getenv("KUBECONFIG")
+	if kubeconfigPath == "" {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			kubeconfigPath = filepath.Join(home, ".kube", "config")
+		}
+	}
+	config, err := getKubeConfig(kubeconfigPath)
 	if err != nil {
 		logger.Error(err, "Failed to get kubeconfig")
 		os.Exit(1)
