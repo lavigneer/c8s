@@ -95,6 +95,7 @@ metadata:
   name: minio-setup
   namespace: c8s-system
 spec:
+  backoffLimit: 3
   template:
     spec:
       containers:
@@ -112,4 +113,3 @@ spec:
             - name: MC_HOST_minio
               value: "http://minioadmin:minioadmin@minio:9000"
       restartPolicy: OnFailure
-      backoffLimit: 3

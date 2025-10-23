@@ -3,7 +3,7 @@
 
 # Variables
 PROJECT_NAME := c8s
-ORG := github.com/org
+ORG := github.com/lavigneer
 MODULE := $(ORG)/$(PROJECT_NAME)
 
 # Build configuration
@@ -159,7 +159,12 @@ uninstall-crds: manifests ## Uninstall CRDs from cluster
 
 .PHONY: deploy
 deploy: manifests ## Deploy controller, webhook, and API server to cluster
-	kubectl apply -f deploy/
+	kubectl create namespace c8s-system --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -f deploy/install.yaml
+	kubectl apply -f deploy/admission-webhook-deployment.yaml
+	kubectl apply -f deploy/webhook-deployment.yaml
+	kubectl apply -f deploy/webhook-service.yaml
+	kubectl apply -f deploy/webhook-ingress.yaml
 
 .PHONY: undeploy
 undeploy: ## Remove controller, webhook, and API server from cluster

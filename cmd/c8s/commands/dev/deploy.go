@@ -182,6 +182,12 @@ Example:
 				deploySamplesSelect,
 			)
 			if err != nil {
+				if verbose {
+					fmt.Fprintf(os.Stderr, "Deploy error details: %v\n", err)
+				}
+				if samplesStatus != nil && samplesStatus.Message != "" {
+					return fmt.Errorf("failed to deploy samples: %s", samplesStatus.Message)
+				}
 				return fmt.Errorf("failed to deploy samples: %w", err)
 			}
 

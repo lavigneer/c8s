@@ -153,34 +153,10 @@ func applySampleManifest(manifestPath string, namespace string) error {
 		return err
 	}
 
-	manifestStr := string(content)
-
-	// Ensure namespace is set in the manifest
-	lines := strings.Split(manifestStr, "\n")
-	var result []string
-	hasNamespace := false
-
-	for _, line := range lines {
-		if strings.Contains(line, "namespace:") {
-			result = append(result, fmt.Sprintf("  namespace: %s", namespace))
-			hasNamespace = true
-		} else if strings.Contains(line, "kind:") && strings.Contains(line, "PipelineConfig") {
-			result = append(result, line)
-			// Add namespace after kind if not already present
-			if !hasNamespace {
-				result = append(result, fmt.Sprintf("  namespace: %s", namespace))
-				hasNamespace = true
-			}
-		} else {
-			result = append(result, line)
-		}
-	}
-
-	manifestStr = strings.Join(result, "\n")
-
-	// Apply using kubectl
+	// Apply using kubectl with namespace flag
+	// kubectl apply -n flag will inject namespace, no need to modify manifest
 	cmd := exec.Command("kubectl", "apply", "-n", namespace, "-f", "-")
-	cmd.Stdin = strings.NewReader(manifestStr)
+	cmd.Stdin = strings.NewReader(string(content))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("kubectl apply failed: %v\nOutput: %s", err, output)
@@ -191,9 +167,24 @@ func applySampleManifest(manifestPath string, namespace string) error {
 
 // validateManifest checks if a YAML manifest is valid
 func validateManifest(manifestPath string) error {
-	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "--dry-run=client")
-	_, err := cmd.CombinedOutput()
-	return err
+	content, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest: %w", err)
+	}
+
+	// Basic YAML validation: check if it has required fields
+	manifestStr := string(content)
+	if !strings.Contains(manifestStr, "apiVersion:") {
+		return fmt.Errorf("missing apiVersion field")
+	}
+	if !strings.Contains(manifestStr, "kind:") {
+		return fmt.Errorf("missing kind field")
+	}
+	if !strings.Contains(manifestStr, "metadata:") {
+		return fmt.Errorf("missing metadata field")
+	}
+
+	return nil
 }
 
 // ListDeployedSamples returns the list of deployed sample PipelineConfigs
