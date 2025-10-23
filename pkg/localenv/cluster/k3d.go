@@ -61,15 +61,15 @@ type PortMapping struct {
 
 // ClusterInfo holds information about a k3d cluster
 type ClusterInfo struct {
-	Name            string `json:"name"`
-	Network         string `json:"network"`
-	Token           string `json:"token"`
-	Servers         int    `json:"serversCount"`
-	ServersRunning  int    `json:"serversRunning"`
-	Agents          int    `json:"agentsCount"`
-	AgentsRunning   int    `json:"agentsRunning"`
-	HasLoadBalancer bool   `json:"hasLoadBalancer"`
-	ImageVolume     string `json:"imageVolume"`
+	Name            string          `json:"name"`
+	Network         json.RawMessage `json:"network"`
+	Token           string          `json:"token"`
+	Servers         int             `json:"serversCount"`
+	ServersRunning  int             `json:"serversRunning"`
+	Agents          int             `json:"agentsCount"`
+	AgentsRunning   int             `json:"agentsRunning"`
+	HasLoadBalancer bool            `json:"hasLoadbalancer"`
+	ImageVolume     string          `json:"imageVolume"`
 }
 
 // k3dClientImpl implements K3dClient using k3d command-line tool

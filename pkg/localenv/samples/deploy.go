@@ -37,9 +37,20 @@ func DeploySamples(
 	// Create namespace if it doesn't exist
 	createNSCmd := exec.Command("kubectl", "create", "namespace", namespace, "--dry-run=client", "-o", "yaml")
 	createNSPipeCmd := exec.Command("kubectl", "apply", "-f", "-")
-	createNSPipeCmd.Stdin, _ = createNSCmd.StdoutPipe()
-	createNSPipeCmd.Run()
-	createNSCmd.Run()
+	pipe, err := createNSCmd.StdoutPipe()
+	if err != nil {
+		return status, fmt.Errorf("failed to create pipe: %w", err)
+	}
+	createNSPipeCmd.Stdin = pipe
+	if err := createNSCmd.Start(); err != nil {
+		return status, fmt.Errorf("failed to start namespace creation: %w", err)
+	}
+	if err := createNSPipeCmd.Run(); err != nil {
+		// Ignore error if namespace already exists
+		_ = createNSCmd.Wait()
+	} else {
+		_ = createNSCmd.Wait()
+	}
 
 	// Resolve samples path
 	if samplesPath == "" {
@@ -62,9 +73,18 @@ func DeploySamples(
 		return status, err
 	}
 
+	// Parse comma-separated select filters
+	var selectFilters []string
+	if selectFilter != "" {
+		selectFilters = strings.Split(selectFilter, ",")
+		for i := range selectFilters {
+			selectFilters[i] = strings.TrimSpace(selectFilters[i])
+		}
+	}
+
 	// Find all YAML files in the directory
 	var sampleFiles []string
-	err := filepath.Walk(samplesPath, func(path string, info os.FileInfo, err error) error {
+	walkErr := filepath.Walk(samplesPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -72,8 +92,15 @@ func DeploySamples(
 			filename := filepath.Base(path)
 
 			// Apply select filter if specified
-			if selectFilter != "" {
-				if !strings.Contains(filename, selectFilter) {
+			if len(selectFilters) > 0 {
+				matches := false
+				for _, filter := range selectFilters {
+					if strings.Contains(filename, filter) {
+						matches = true
+						break
+					}
+				}
+				if !matches {
 					return nil
 				}
 			}
@@ -83,9 +110,9 @@ func DeploySamples(
 		return nil
 	})
 
-	if err != nil {
-		status.Message = fmt.Sprintf("Failed to scan samples directory: %v", err)
-		return status, err
+	if walkErr != nil {
+		status.Message = fmt.Sprintf("Failed to scan samples directory: %v", walkErr)
+		return status, walkErr
 	}
 
 	if len(sampleFiles) == 0 {
