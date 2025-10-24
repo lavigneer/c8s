@@ -42,7 +42,7 @@ else:
     print('Using existing k3d cluster: ' + cluster_name)
 
 # Set kubeconfig context
-os.environ['KUBECONFIG'] = os.path.expanduser('~/.k3d/' + cluster_name + '/kubeconfig.yaml')
+# Note: Tilt will handle kubeconfig automatically, no need to set it explicitly
 
 # Set default namespace
 default_registry(image_registry)
