@@ -2,11 +2,9 @@
 # Provides automatic code change detection, component rebuilding, and unified logging
 # for local development of the C8S continuous integration system.
 
-# Tilt version check
-min_tilt_version('0.33.0')
-
 # Load Tilt libraries for utilities
-load('ext://restart_process', 'docker_build_with_restart')
+# Note: ext://restart_process is optional - comment out if not available
+# load('ext://restart_process', 'docker_build_with_restart')
 
 # Configuration
 config.define_bool('with_samples', True, 'Deploy sample pipelines')
