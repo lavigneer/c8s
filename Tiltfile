@@ -52,8 +52,7 @@ k8s_context(cluster_name)
 # Namespace Setup
 # ============================================================================
 
-# Ensure namespace exists
-k8s_resource('namespace', objects=[''])
+# Ensure namespace exists (created via local_resource)
 local_resource(
     'namespace_setup',
     'kubectl create namespace ' + k8s_namespace + ' --dry-run=client -o yaml | kubectl apply -f -',
