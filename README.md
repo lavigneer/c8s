@@ -54,29 +54,32 @@ Developer views results via CLI/API/Dashboard
 
 See [quickstart.md](./specs/001-build-a-continuous/quickstart.md) for complete installation and usage guide.
 
-### Local Development
+### Local Development with Tilt
 
-For developers working on C8S or testing locally, use the built-in development environment:
+For developers working on C8S, use **Tilt** for rapid local Kubernetes development:
 
 ```bash
-# Create a local cluster
-c8s dev cluster create my-dev --wait
+# Install prerequisites (if needed)
+brew install tilt k3d kubectl
 
-# Deploy the operator and samples
-c8s dev deploy operator --cluster my-dev
-c8s dev deploy samples --cluster my-dev
+# Start development environment (one command!)
+tilt up
 
-# Run end-to-end tests
-c8s dev test run --cluster my-dev
+# Tilt will:
+# 1. Create a local k3d cluster
+# 2. Install CRDs and configuration
+# 3. Build all components
+# 4. Deploy controller, api-server, webhook
+# 5. Open dashboard at http://localhost:10350
 
-# View logs
-c8s dev test logs --cluster my-dev --follow
+# Edit Go code - changes auto-rebuild and redeploy!
+vim cmd/controller/main.go  # Save → auto-rebuild in ~30 seconds
 
-# Cleanup
-c8s dev cluster delete my-dev
+# View logs in Tilt dashboard or via kubectl
+kubectl logs -f deployment/c8s-controller -n c8s-system
 ```
 
-See [QUICK_START.md](QUICK_START.md) for quick reference or [docs/local-testing.md](docs/local-testing.md) for comprehensive guide.
+See [TILT_README.md](TILT_README.md) for quick setup or [docs/tilt-setup.md](docs/tilt-setup.md) for comprehensive guide.
 
 **Requirements for local development:**
 - Docker (27.3.1+)
