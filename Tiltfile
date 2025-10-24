@@ -81,7 +81,7 @@ def build_component(component_name, port=None):
 
     # Build context with hot-reload capability
     build_config = docker_build(
-        ref='c8s-' + component_name,
+        ref='c8s-' + component_name + ':latest',
         context=context,
         dockerfile=dockerfile,
         target=target,
@@ -107,7 +107,7 @@ def build_component(component_name, port=None):
 # ============================================================================
 
 docker_build(
-    ref='c8s-controller',
+    ref='c8s-controller:latest',
     context='.',
     dockerfile='Dockerfile',
     target='controller',
@@ -141,7 +141,7 @@ k8s_resource(
 # ============================================================================
 
 docker_build(
-    ref='c8s-webhook',
+    ref='c8s-webhook:latest',
     context='.',
     dockerfile='Dockerfile',
     target='webhook',
