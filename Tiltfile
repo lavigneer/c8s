@@ -215,7 +215,7 @@ local_resource(
 
 if with_samples:
     k8s_yaml(['config/samples/simple-build.yaml'])
-    k8s_resource('simple-build', labels=['samples'], trigger_mode=TRIGGER_MODE_MANUAL)
+    # Note: Sample resources are deployed via k8s_yaml but not explicitly tracked
 
 # ============================================================================
 # Development Workflow Tips
