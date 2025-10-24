@@ -1,6 +1,16 @@
 # Tiltfile for C8S Local Kubernetes Development
 # Provides automatic code change detection, component rebuilding, and unified logging
 # for local development of the C8S continuous integration system.
+#
+# WORKFLOW:
+# 1. Pre-create the cluster (one-time):
+#    k3d cluster create c8s-dev --registry-create=registry:5000 -p "8080:80@loadbalancer" --servers 1 --agents 2
+# 2. Run Tilt:
+#    tilt up
+# 3. Access the Tilt dashboard:
+#    http://localhost:10350
+#
+# Alternatively, trigger cluster creation from the Tilt UI if needed.
 
 # Load Tilt libraries for utilities
 # Note: ext://restart_process is optional - comment out if not available
