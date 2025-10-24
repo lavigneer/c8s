@@ -44,8 +44,7 @@ else:
 # Set kubeconfig context
 # Note: Tilt will handle kubeconfig automatically, no need to set it explicitly
 
-# Set default namespace
-default_registry(image_registry)
+# Set Kubernetes context
 allow_k8s_contexts(cluster_name)
 k8s_context(cluster_name)
 
