@@ -6,20 +6,14 @@
 # Note: ext://restart_process is optional - comment out if not available
 # load('ext://restart_process', 'docker_build_with_restart')
 
-# Configuration with defaults
-config.define_string('with_samples', 'true', 'Deploy sample pipelines (true/false)')
-config.define_string('verbose_logs', 'false', 'Enable verbose logging for all components (true/false)')
-config.define_string('k8s_namespace', 'c8s-system', 'Kubernetes namespace for C8S components')
-config.define_string('image_registry', 'c8s-dev', 'Docker image registry/prefix for local development')
-
-cfg = config.parse()
-
-# Convert string booleans to actual booleans
-with_samples = cfg.get('with_samples', 'true').lower() == 'true'
-verbose_logs = cfg.get('verbose_logs', 'false').lower() == 'true'
+# Configuration with defaults - use simple assignments instead of config API
+with_samples = True
+verbose_logs = False
+k8s_namespace = 'c8s-system'
+image_registry = 'c8s-dev'
 
 # Environment variables for builds
-os.environ['DOCKER_REGISTRY'] = cfg.get('image_registry', 'c8s-dev')
+os.environ['DOCKER_REGISTRY'] = image_registry
 os.environ['CGO_ENABLED'] = '0'
 os.environ['GOOS'] = 'linux'
 os.environ['GOARCH'] = 'amd64'
@@ -51,7 +45,7 @@ else:
 os.environ['KUBECONFIG'] = os.path.expanduser('~/.k3d/' + cluster_name + '/kubeconfig.yaml')
 
 # Set default namespace
-default_registry(cfg.get('image_registry', 'c8s-dev'))
+default_registry(image_registry)
 allow_k8s_contexts(cluster_name)
 k8s_context(cluster_name)
 
@@ -63,7 +57,7 @@ k8s_context(cluster_name)
 k8s_resource('namespace', objects=[''])
 local_resource(
     'namespace_setup',
-    'kubectl create namespace ' + cfg.get('k8s_namespace', 'c8s-system') + ' --dry-run=client -o yaml | kubectl apply -f -',
+    'kubectl create namespace ' + k8s_namespace + ' --dry-run=client -o yaml | kubectl apply -f -',
     trigger_mode=TRIGGER_MODE_MANUAL
 )
 
@@ -126,7 +120,7 @@ def build_component(component_name, port=None):
 # ============================================================================
 
 docker_build(
-    ref=cfg.get('image_registry', 'c8s-dev') + '/c8s-controller',
+    ref=image_registry + '/c8s-controller',
     context='.',
     dockerfile='Dockerfile',
     target='controller',
@@ -155,7 +149,7 @@ k8s_resource(
 # ============================================================================
 
 docker_build(
-    ref=cfg.get('image_registry', 'c8s-dev') + '/c8s-api-server',
+    ref=image_registry + '/c8s-api-server',
     context='.',
     dockerfile='Dockerfile',
     target='api-server',
@@ -185,7 +179,7 @@ k8s_resource(
 # ============================================================================
 
 docker_build(
-    ref=cfg.get('image_registry', 'c8s-dev') + '/c8s-webhook',
+    ref=image_registry + '/c8s-webhook',
     context='.',
     dockerfile='Dockerfile',
     target='webhook',
@@ -227,7 +221,7 @@ local_resource(
 
 local_resource(
     'cluster_status',
-    'kubectl cluster-info && echo "\\n=== C8S Components ===" && kubectl get pods -n ' + cfg.get('k8s_namespace', 'c8s-system') + ' && echo "\\n=== Service Endpoints ===" && kubectl get svc -n ' + cfg.get('k8s_namespace', 'c8s-system'),
+    'kubectl cluster-info && echo "\\n=== C8S Components ===" && kubectl get pods -n ' + k8s_namespace + ' && echo "\\n=== Service Endpoints ===" && kubectl get svc -n ' + k8s_namespace,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['status'],
     allow_parallel=True
