@@ -23,7 +23,8 @@ COPY Makefile ./
 
 # Build all binaries
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/controller ./cmd/controller
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/api-server ./cmd/api-server
+# NOTE: api-server build skipped for local development (not deployed in dev environment)
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/api-server ./cmd/api-server
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/webhook ./cmd/webhook
 
 # Controller image
