@@ -134,25 +134,7 @@ k8s_resource(
 # API Server Component
 # ============================================================================
 
-docker_build(
-    ref='c8s-api-server',
-    context='.',
-    dockerfile='Dockerfile',
-    target='api-server',
-    only=[
-        'cmd/api-server/',
-        'pkg/',
-        'web/',
-        'go.mod',
-        'go.sum',
-        'Makefile',
-        'PROJECT',
-        'hack/',
-    ],
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
-)
-
-# Note: c8s-api-server deployment not yet in install.yaml, only tracked as docker_build
+# Note: c8s-api-server deployment not yet in install.yaml, so docker_build skipped for now
 
 # ============================================================================
 # Webhook Component
