@@ -94,7 +94,7 @@ def build_component(component_name, port=None):
 
     # Build context with hot-reload capability
     build_config = docker_build(
-        ref=cfg['image_registry'] + '/c8s-' + component_name,
+        ref=image_registry + '/c8s-' + component_name,
         context=context,
         dockerfile=dockerfile,
         target=target,
