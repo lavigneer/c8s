@@ -225,11 +225,7 @@ local_resource(
 
 local_resource(
     'cluster_status',
-    '''kubectl cluster-info &&
-       echo "\\n=== C8S Components ===" &&
-       kubectl get pods -n ''' + cfg['k8s_namespace'] + ''' &&
-       echo "\\n=== Service Endpoints ===" &&
-       kubectl get svc -n ''' + cfg['k8s_namespace'] + ''',
+    'kubectl cluster-info && echo "\\n=== C8S Components ===" && kubectl get pods -n ' + cfg['k8s_namespace'] + ' && echo "\\n=== Service Endpoints ===" && kubectl get svc -n ' + cfg['k8s_namespace'],
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['status'],
     allow_parallel=True
