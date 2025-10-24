@@ -71,15 +71,8 @@ local_resource(
     trigger_mode=TRIGGER_MODE_AUTO
 )
 
-# Apply manifests (includes RBAC, ServiceAccounts, and configuration)
-local_resource(
-    'install_manifests',
-    'kubectl apply -f deploy/install.yaml',
-    deps=['deploy/install.yaml'],
-    trigger_mode=TRIGGER_MODE_AUTO
-)
-
-# Also load manifests for Tilt resource tracking
+# Load manifests for Tilt resource tracking
+# This applies RBAC, ServiceAccounts, and configuration to the cluster
 k8s_yaml('deploy/install.yaml')
 
 # ============================================================================
