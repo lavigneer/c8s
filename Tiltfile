@@ -7,10 +7,10 @@
 # load('ext://restart_process', 'docker_build_with_restart')
 
 # Configuration with defaults
-config.define_string('with_samples', default='true', usage='Deploy sample pipelines (true/false)')
-config.define_string('verbose_logs', default='false', usage='Enable verbose logging for all components (true/false)')
-config.define_string('k8s_namespace', default='c8s-system', usage='Kubernetes namespace for C8S components')
-config.define_string('image_registry', default='c8s-dev', usage='Docker image registry/prefix for local development')
+config.define_string('with_samples', 'true', 'Deploy sample pipelines (true/false)')
+config.define_string('verbose_logs', 'false', 'Enable verbose logging for all components (true/false)')
+config.define_string('k8s_namespace', 'c8s-system', 'Kubernetes namespace for C8S components')
+config.define_string('image_registry', 'c8s-dev', 'Docker image registry/prefix for local development')
 
 cfg = config.parse()
 
