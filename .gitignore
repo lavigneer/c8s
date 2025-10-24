@@ -68,3 +68,9 @@ cover.out
 # CI/CD temporary files
 *.tar.gz
 *.zip
+
+# Tilt
+.tilt/
+tilt_modules/
+.tiltrc
+.tilt_log.txt
