@@ -25,21 +25,16 @@ os.environ['GOARCH'] = 'amd64'
 # Configure k3d cluster
 cluster_name = 'c8s-dev'
 
-# Check if cluster exists, create if not
-result = local('k3d cluster list | grep -q ' + cluster_name, quiet=True, echo_off=True)
-if result != 0:
-    # Cluster doesn't exist, create it with Tilt
-    print('Creating k3d cluster: ' + cluster_name)
-    local_resource(
-        'k3d_create_cluster',
-        'k3d cluster create ' + cluster_name + ' --registry-create=registry:5000 -p "8080:80@loadbalancer" --servers 1 --agents 2',
-        trigger_mode=TRIGGER_MODE_MANUAL,
-        env={
-            'PATH': os.environ['PATH'],
-        }
-    )
-else:
-    print('Using existing k3d cluster: ' + cluster_name)
+# Create or use existing k3d cluster
+# Command will succeed if cluster exists (idempotent)
+local_resource(
+    'k3d_create_cluster',
+    'k3d cluster get ' + cluster_name + ' > /dev/null 2>&1 || k3d cluster create ' + cluster_name + ' --registry-create=registry:5000 -p "8080:80@loadbalancer" --servers 1 --agents 2',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    env={
+        'PATH': os.environ['PATH'],
+    }
+)
 
 # Set kubeconfig context
 # Note: Tilt will handle kubeconfig automatically, no need to set it explicitly
