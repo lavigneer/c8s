@@ -138,7 +138,7 @@ docker_build(
 )
 
 k8s_resource(
-    'deployment/c8s-controller',
+    'c8s-controller',
     port_forwards=['6060:6060'],  # Pprof debug port
     labels=['controller'],
     trigger_mode=TRIGGER_MODE_AUTO
@@ -167,7 +167,7 @@ docker_build(
 )
 
 k8s_resource(
-    'deployment/c8s-api-server',
+    'c8s-api-server',
     port_forwards=['8080:8080'],  # API server port
     labels=['api-server'],
     trigger_mode=TRIGGER_MODE_AUTO
@@ -195,7 +195,7 @@ docker_build(
 )
 
 k8s_resource(
-    'deployment/c8s-webhook',
+    'c8s-webhook',
     port_forwards=['9443:9443'],  # Webhook HTTPS port
     labels=['webhook'],
     trigger_mode=TRIGGER_MODE_AUTO
