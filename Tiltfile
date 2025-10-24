@@ -166,12 +166,7 @@ docker_build(
     ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
 )
 
-k8s_resource(
-    'c8s-api-server',
-    port_forwards=['8080:8080'],  # API server port
-    labels=['api-server'],
-    trigger_mode=TRIGGER_MODE_AUTO
-)
+# Note: c8s-api-server deployment not yet in install.yaml, only tracked as docker_build
 
 # ============================================================================
 # Webhook Component
