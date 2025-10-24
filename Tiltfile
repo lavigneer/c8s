@@ -182,12 +182,8 @@ docker_build(
     ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
 )
 
-k8s_resource(
-    'c8s-webhook',
-    port_forwards=['9443:9443'],  # Webhook HTTPS port
-    labels=['webhook'],
-    trigger_mode=TRIGGER_MODE_AUTO
-)
+# Note: c8s-webhook is deployed via k8s_yaml but not explicitly tracked as k8s_resource
+# This is OK - it will be managed by Tilt via the manifests
 
 # ============================================================================
 # Pipeline Validation
