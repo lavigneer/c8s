@@ -77,11 +77,11 @@ local_resource(
     trigger_mode=TRIGGER_MODE_AUTO
 )
 
-# Apply RBAC configuration from deploy/rbac.yaml
+# Apply manifests (includes RBAC, ServiceAccounts, and configuration)
 local_resource(
-    'install_rbac',
-    'kubectl apply -f deploy/rbac.yaml',
-    deps=['deploy/rbac.yaml'],
+    'install_manifests',
+    'kubectl apply -f deploy/install.yaml',
+    deps=['deploy/install.yaml'],
     trigger_mode=TRIGGER_MODE_AUTO
 )
 
@@ -139,8 +139,6 @@ docker_build(
     ],
     ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
 )
-
-k8s_yaml(kustomize('./deploy'))
 
 k8s_resource(
     'c8s-controller',
@@ -242,8 +240,8 @@ local_resource(
 # ============================================================================
 
 if cfg['with_samples']:
-    k8s_yaml(['config/samples/simple-pipeline.yaml'])
-    k8s_resource('simple-pipeline', labels=['samples'], trigger_mode=TRIGGER_MODE_MANUAL)
+    k8s_yaml(['config/samples/simple-build.yaml'])
+    k8s_resource('simple-build', labels=['samples'], trigger_mode=TRIGGER_MODE_MANUAL)
 
 # ============================================================================
 # Development Workflow Tips
