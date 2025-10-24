@@ -10,10 +10,8 @@
 with_samples = True
 verbose_logs = False
 k8s_namespace = 'c8s-system'
-image_registry = 'c8s-dev'
 
 # Environment variables for builds
-os.environ['DOCKER_REGISTRY'] = image_registry
 os.environ['CGO_ENABLED'] = '0'
 os.environ['GOOS'] = 'linux'
 os.environ['GOARCH'] = 'amd64'
@@ -109,7 +107,7 @@ def build_component(component_name, port=None):
 # ============================================================================
 
 docker_build(
-    ref=image_registry + '/c8s-controller',
+    ref='c8s-controller',
     context='.',
     dockerfile='Dockerfile',
     target='controller',
@@ -137,7 +135,7 @@ k8s_resource(
 # ============================================================================
 
 docker_build(
-    ref=image_registry + '/c8s-api-server',
+    ref='c8s-api-server',
     context='.',
     dockerfile='Dockerfile',
     target='api-server',
@@ -161,7 +159,7 @@ docker_build(
 # ============================================================================
 
 docker_build(
-    ref=image_registry + '/c8s-webhook',
+    ref='c8s-webhook',
     context='.',
     dockerfile='Dockerfile',
     target='webhook',
