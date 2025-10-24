@@ -259,6 +259,32 @@ dev-reload: build-cli ## Quick iteration: rebuild CLI (deploy/test coming in lat
 	@echo "Coming in Phase 5:"
 	@echo "  - make dev-test (end-to-end tests)"
 
+##@ Tilt (Local K8s Development)
+
+.PHONY: tilt-up
+tilt-up: ## Start Tilt with local K8s development environment (creates cluster if needed)
+	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed. Install from https://docs.tilt.dev/install.html"; exit 1; }
+	@command -v k3d >/dev/null 2>&1 || { echo "⚠ k3d is not installed"; exit 1; }
+	@echo "Creating k3d cluster (if it doesn't exist)..."
+	@k3d cluster get c8s-dev > /dev/null 2>&1 || k3d cluster create c8s-dev --registry-create=registry:5000 -p "8080:80@loadbalancer" --servers 1 --agents 2
+	@echo "Starting Tilt..."
+	tilt up
+
+.PHONY: tilt-down
+tilt-down: ## Stop Tilt development environment
+	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed"; exit 1; }
+	tilt down
+
+.PHONY: tilt-logs
+tilt-logs: ## View Tilt logs
+	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed"; exit 1; }
+	tilt logs
+
+.PHONY: tilt-status
+tilt-status: ## Check Tilt status
+	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed"; exit 1; }
+	tilt status
+
 .PHONY: clean-clusters
 clean-clusters: ## Delete all c8s test clusters
 	@k3d cluster list -o json 2>/dev/null | grep -o '"name":"c8s-[^"]*"' | cut -d'"' -f4 | xargs -I {} k3d cluster delete {} 2>/dev/null || true
