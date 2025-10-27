@@ -100,6 +100,18 @@
         </div>
     </div>
 
+    <!-- Artifacts Section -->
+    {{if .Artifacts}}
+    <div class="bg-white rounded-lg shadow-md mt-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-900">Artifacts</h2>
+        </div>
+        <div class="p-6">
+            {{template "partials/artifacts_list" (dict "Artifacts" .Artifacts)}}
+        </div>
+    </div>
+    {{end}}
+
     <!-- Back Button -->
     <div class="mt-8">
         <a href="/dashboard" class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition">

@@ -1,0 +1,60 @@
+{{define "partials/artifacts_list"}}
+<div class="artifacts-section py-6">
+    <h3 class="text-xl font-bold text-gray-900 mb-4">Artifacts</h3>
+
+    {{if .Artifacts}}
+        <div class="space-y-3">
+            {{range .Artifacts}}
+            <div class="artifact-row bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition">
+                <div class="flex items-center flex-1 min-w-0">
+                    <div class="artifact-icon text-2xl mr-4">📦</div>
+                    <div class="artifact-info flex-1 min-w-0">
+                        <div class="artifact-name font-semibold text-gray-900 truncate">{{.Name}}</div>
+                        <div class="artifact-meta text-sm text-gray-600 mt-1">
+                            <span class="inline-block">{{.Type}}</span>
+                            <span class="inline-block mx-2">•</span>
+                            <span class="inline-block">{{.SizeBytes | formatBytes}}</span>
+                            <span class="inline-block mx-2">•</span>
+                            <span class="inline-block">{{.CreatedAt | formatTime}}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="artifact-actions flex gap-2 ml-4 flex-shrink-0">
+                    <a href="/api/artifacts/{{.ID}}/download" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition" download>
+                        Download
+                    </a>
+                    {{if eq .Type "report"}}
+                    <button class="btn bg-gray-200 hover:bg-gray-300 text-gray-900 px-3 py-2 rounded text-sm transition"
+                            hx-get="/api/artifacts/{{.ID}}/preview"
+                            hx-target="#artifact-preview"
+                            hx-swap="innerHTML">
+                        Preview
+                    </button>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+    {{else}}
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+            <div class="text-gray-500 text-lg">📦</div>
+            <h4 class="text-gray-900 font-semibold mt-2">No Artifacts</h4>
+            <p class="text-gray-600 text-sm mt-1">This pipeline run did not produce any artifacts.</p>
+        </div>
+    {{end}}
+</div>
+
+<!-- Artifact Preview Modal -->
+<div id="artifact-preview" class="modal hidden">
+    <div class="modal-content max-w-4xl">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900">Artifact Preview</h2>
+            <button onclick="closeModal('artifact-preview')" class="text-gray-600 hover:text-gray-900 text-2xl">×</button>
+        </div>
+        <div id="preview-content" class="bg-gray-50 rounded border border-gray-200 p-4 max-h-96 overflow-auto">
+            <!-- Preview content loaded via HTMX -->
+        </div>
+    </div>
+</div>
+
+{{end}}

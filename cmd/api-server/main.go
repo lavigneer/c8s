@@ -92,6 +92,13 @@ func main() {
 
 		// SSE endpoints (US1)
 		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
+
+		// API endpoints - Artifacts (US5)
+		r.Get("/api/runs/{runId}/artifacts", handlers.ListArtifactsHandler)
+		r.Get("/api/artifacts/{artifactId}", handlers.GetArtifactHandler)
+		r.Get("/api/artifacts/{artifactId}/download", handlers.DownloadArtifactHandler)
+		r.Get("/api/artifacts/{artifactId}/preview", handlers.PreviewArtifactHandler)
+		r.Delete("/api/artifacts/{artifactId}", handlers.DeleteArtifactHandler)
 	})
 
 	// 404 handler
