@@ -1,0 +1,19 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}C8S Dashboard{{end}}</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/sse.js"></script>
+</head>
+<body>
+    {{template "partials/nav" .}}
+    <div class="container">
+        {{block "content" .}}{{end}}
+    </div>
+</body>
+</html>
+{{end}}

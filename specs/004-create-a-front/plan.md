@@ -14,8 +14,14 @@ Implement a real-time web dashboard for C8S that enables developers to monitor p
 **Language/Version**: Go 1.24.0 (backend API server), HTML5/CSS3/JavaScript (frontend with HTMX)
 **Primary Dependencies**:
 - Backend: chi (routing), already used in C8S API server
-- Frontend: HTMX (dynamic updates), Tauri/htmx-extensions (optional WebSocket support)
+- Frontend: HTMX (dynamic updates), Server-Sent Events (SSE) for real-time streaming
 - Template engine: Go's html/template (renders pages server-side)
+
+**Real-Time Strategy** (per analysis A6):
+- **Decision**: Server-Sent Events (SSE) for real-time updates, not WebSocket
+- **Rationale**: SSE uses standard HTTP, works over existing infrastructure, simpler client-side code with HTMX, better compatibility with reverse proxies and load balancers
+- **Implementation**: Go's `http.ResponseWriter` with `text/event-stream` content type for log streaming and pipeline status updates
+- **Fallback**: Long-polling for clients that cannot use SSE (automatically handled by HTMX)
 
 **Storage**: Uses existing C8S infrastructure (Kubernetes, S3-compatible object storage for logs/artifacts)
 **Testing**:

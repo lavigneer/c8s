@@ -9,15 +9,15 @@
 
 ## Summary
 
-**Total Tasks**: 67
+**Total Tasks**: 96+ (added 3 HTTPS/security + 3 RBAC + 1 real-time list + 1 keyboard shortcuts + 1 perf benchmarking + 4 caching + 5 artifact sanitization + 5 pipeline cancellation tasks)
 **By Story**:
-- Setup/Foundation: 15 tasks
-- US1 (P1 - Pipeline History): 10 tasks
-- US2 (P1 - Step Execution & Logs): 11 tasks
+- Setup/Foundation: 21 tasks (T016-T018 for HTTPS/TLS/security headers; expanded T011 + T011a-T011c for Auth/RBAC)
+- US1 (P1 - Pipeline History): 11 tasks (T037a for HTMX SSE subscription)
+- US2 (P1 - Step Execution & Logs): 16 tasks (added T080d-T080e for pipeline cancellation)
 - US3 (P2 - Search & Filter): 8 tasks
 - US4 (P2 - Projects & Webhooks): 10 tasks
-- US5 (P3 - Artifacts): 8 tasks
-- Polish/Cross-cutting: 5 tasks
+- US5 (P3 - Artifacts): 13 tasks (added T080a-T080c for artifact sanitization)
+- Polish/Cross-cutting: 17 tasks (added T081a for keyboard shortcuts, T084a for perf benchmarking, T082-T082c for caching strategy)
 
 **Parallel Opportunities**: Tasks marked with [P] can be executed in parallel within their phase.
 
@@ -66,25 +66,25 @@ Phase 1: Setup
 ├─ T001-T015 (Foundation infrastructure)
 │
 Phase 2: Foundation (Blocking for all stories)
-├─ T016-T030 (Shared components, auth, API base)
+├─ T016-T033 (Shared components, auth, API base)
 │
 Phase 3: US1 - Pipeline History [P1] ──┐
-├─ T031-T040                            │
+├─ T034-T043                            │
 │                                       ├─ Can run in parallel
 Phase 4: US2 - Logs & Execution [P1] ──┤
-├─ T041-T051                            │
+├─ T044-T054                            │
 │                                       │
 Phase 5: US3 - Search & Filter [P2] ───┤
-├─ T052-T059 (depends on T031-T040)    │
+├─ T055-T062 (depends on T034-T043)    │
 │                                       │
 Phase 6: US4 - Projects & Webhooks [P2]│
-├─ T060-T069 (independent)             │
+├─ T063-T072 (independent)             │
 │                                       │
 Phase 7: US5 - Artifacts [P3] ─────────┘
-├─ T070-T077 (depends on T041-T051)
+├─ T073-T080 (depends on T044-T054)
 │
 Phase 8: Polish & Cross-cutting
-└─ T078-T082 (depends on all prior phases)
+└─ T081-T085 (depends on all prior phases)
 ```
 
 ---
@@ -465,7 +465,7 @@ func WriteError(w http.ResponseWriter, statusCode int, code, message string)
 ---
 
 ## T011: Create authentication middleware
-**Description**: Middleware to verify JWT/OAuth2 tokens and attach user context.
+**Description**: Middleware to verify JWT/OAuth2 tokens and attach user context. Integrates with existing C8S auth system to validate bearer tokens per FR-010.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/auth_middleware.go`
 
@@ -476,6 +476,7 @@ package handlers
 import (
     "context"
     "net/http"
+    "github.com/org/c8s/pkg/auth"
 )
 
 type contextKey string
@@ -483,31 +484,183 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 // AuthMiddleware validates bearer token and attaches user to context
-func AuthMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        token := r.Header.Get("Authorization")
-        if token == "" {
-            http.Error(w, "Unauthorized", http.StatusUnauthorized)
-            return
-        }
+func AuthMiddleware(authClient *auth.Client) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            token := extractBearerToken(r.Header.Get("Authorization"))
+            if token == "" {
+                http.Error(w, "Unauthorized", http.StatusUnauthorized)
+                return
+            }
 
-        // TODO: Validate token with existing C8S auth system
-        user := &User{ID: "user-123", Username: "alice"}
-        ctx := context.WithValue(r.Context(), userContextKey, user)
-        next.ServeHTTP(w, r.WithContext(ctx))
-    })
+            // Validate token with existing C8S auth system
+            user, err := authClient.ValidateToken(r.Context(), token)
+            if err != nil {
+                http.Error(w, "Unauthorized", http.StatusUnauthorized)
+                return
+            }
+
+            ctx := context.WithValue(r.Context(), userContextKey, user)
+            next.ServeHTTP(w, r.WithContext(ctx))
+        })
+    }
 }
 
 // GetUserFromContext extracts user from request context
 func GetUserFromContext(ctx context.Context) (*User, bool)
+
+// extractBearerToken extracts token from Authorization header
+func extractBearerToken(authHeader string) string
 ```
 
-**Acceptance**: Middleware blocks unauthenticated requests and attaches user.
+**Acceptance**:
+- Middleware validates token with auth client
+- Unauthenticated requests return 401
+- User object attached to context for downstream handlers
 
-**Dependencies**: None
+**Dependencies**: Assumes existing C8S auth.Client in pkg/auth
 **Story**: Foundation
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/auth_middleware.go`
+
+---
+
+## T011a: Implement project-based access control [P]
+**Description**: Create authorization layer to enforce per-project access control. Users should only see/access pipelines/artifacts for projects they have membership in per FR-010.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/authz_middleware.go` (new)
+
+**Functions**:
+```go
+package handlers
+
+import (
+    "context"
+    "net/http"
+    "github.com/org/c8s/pkg/dashboard"
+)
+
+// ProjectAccessMiddleware enforces per-project authorization
+func ProjectAccessMiddleware(projectSvc *dashboard.ProjectService) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            user, ok := GetUserFromContext(r.Context())
+            if !ok {
+                http.Error(w, "Unauthorized", http.StatusUnauthorized)
+                return
+            }
+
+            projectID := r.PathValue("projectID")  // Go 1.24 routing
+            if projectID == "" {
+                next.ServeHTTP(w, r)  // No project scope, proceed
+                return
+            }
+
+            // Check if user has access to this project
+            hasAccess, err := projectSvc.UserHasProjectAccess(r.Context(), user.ID, projectID)
+            if err != nil || !hasAccess {
+                http.Error(w, "Forbidden", http.StatusForbidden)
+                return
+            }
+
+            next.ServeHTTP(w, r)
+        })
+    }
+}
+
+// RoleBasedContextMiddleware attaches user role for project to context
+func RoleBasedContextMiddleware(projectSvc *dashboard.ProjectService) func(http.Handler) http.Handler {
+    // Extracts user role (admin/editor/viewer) for the project being accessed
+    // Allows handlers to render different UI based on permission level
+}
+```
+
+**Acceptance**:
+- Users can only access projects they have membership in
+- Forbidden response (403) for unauthorized access
+- User role attached to context for role-based UI rendering
+
+**Dependencies**: T011 (auth middleware prerequisite)
+**Story**: Foundation
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/authz_middleware.go`
+
+---
+
+## T011b: Create project membership checking service [P]
+**Description**: Implement service layer for checking user project membership and roles. Used by authorization middleware and handlers.
+
+**File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/project_access.go` (new)
+
+**Functions**:
+```go
+package dashboard
+
+import "context"
+
+// ProjectAccessService checks user access to projects
+type ProjectAccessService interface {
+    // UserHasProjectAccess checks if user can access project
+    UserHasProjectAccess(ctx context.Context, userID, projectID string) (bool, error)
+
+    // GetUserRoleForProject returns user's role in project (admin/editor/viewer)
+    GetUserRoleForProject(ctx context.Context, userID, projectID string) (Role, error)
+
+    // ListUserProjects returns all projects user has access to
+    ListUserProjects(ctx context.Context, userID string) ([]*Project, error)
+}
+
+type Role string
+const (
+    RoleAdmin   Role = "admin"
+    RoleEditor  Role = "editor"
+    RoleViewer  Role = "viewer"
+)
+```
+
+**Acceptance**:
+- Service queries K8s for project membership
+- Returns correct role for user-project pair
+- Caches results for performance
+
+**Dependencies**: T007 (K8s client)
+**Story**: Foundation
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/pkg/dashboard/project_access.go`
+
+---
+
+## T011c: Write authorization tests [P]
+**Description**: Create unit and integration tests for auth/authz middleware and access control service.
+
+**Files**:
+- `/Users/elavigne/workspace/c8s/tests/unit/authz_test.go`
+- `/Users/elavigne/workspace/c8s/tests/integration/authz_integration_test.go`
+
+**Tests**:
+```go
+// Unit tests
+func TestProjectAccessMiddleware_AllowedUser(t *testing.T)     // User with access succeeds
+func TestProjectAccessMiddleware_DeniedUser(t *testing.T)      // User without access gets 403
+func TestRoleBasedContext_AdminRole(t *testing.T)              // Admin role attached to context
+func TestRoleBasedContext_ViewerRole(t *testing.T)             // Viewer role attached to context
+
+// Integration tests
+func TestUserCannotViewAnotherUsersProject(t *testing.T)       // Cross-project access denied
+func TestAdminCanManageProject(t *testing.T)                   // Admin has full permissions
+func TestViewerCannotDeleteProject(t *testing.T)               // Viewer restricted to read-only
+```
+
+**Acceptance**:
+- All auth/authz tests pass
+- Authorization layer correctly prevents unauthorized access
+- Roles properly restrict UI/API capabilities
+
+**Dependencies**: T011, T011a, T011b
+**Story**: Foundation
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/unit/authz_test.go`
+- `/Users/elavigne/workspace/c8s/tests/integration/authz_integration_test.go`
 
 ---
 
@@ -575,9 +728,9 @@ func main() {
     // Dashboard routes (protected by auth)
     router.Group(func(r chi.Router) {
         r.Use(handlers.AuthMiddleware)
-        r.Get("/dashboard", handlers.DashboardHandler)          // T031
-        r.Get("/dashboard/projects", handlers.ProjectsHandler)  // T060
-        r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler) // T032
+        r.Get("/dashboard", handlers.DashboardHandler)          // T034
+        r.Get("/dashboard/projects", handlers.ProjectsHandler)  // T063
+        r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler) // T035
     })
 
     // ... existing routes ...
@@ -651,6 +804,104 @@ func TestDashboardTemplatesLoad(t *testing.T)
 **Story**: Foundation
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/dashboard_test.go`
+
+---
+
+## T016: Configure HTTPS/TLS for dashboard [P]
+**Description**: Set up HTTPS/TLS termination with certificates for secure dashboard access per FR-014. Configure Go API server to serve HTTPS on port 8443 with certificate handling.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (modifications)
+
+**Actions**:
+1. Configure TLS listener in main.go:
+   - Load certificates from environment variables or files
+   - Support self-signed certs for development; production certs via Let's Encrypt or K8s-provided certs
+   - Implement certificate reload without restart (hot-reload)
+
+2. Update server configuration:
+   - Create TLSConfig with strong cipher suites (TLS 1.2+)
+   - Set secure defaults (no weak ciphers, require client verification if needed)
+
+3. Document certificate setup:
+   - How to generate self-signed certs for local development
+   - How to configure with Let's Encrypt in production
+   - Environment variables: `TLS_CERT_PATH`, `TLS_KEY_PATH`
+
+**Acceptance**:
+- HTTPS listener starts on port 8443
+- HTTP requests redirect to HTTPS
+- TLS certificate chain loads correctly
+- Server responds with valid TLS handshake
+
+**Dependencies**: T013
+**Story**: Foundation
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
+
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/docs/HTTPS_SETUP.md`
+
+---
+
+## T017: Implement HTTP security headers [P]
+**Description**: Add security headers to all dashboard responses to prevent common attacks (XSS, clickjacking, etc.) per FR-014.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/middleware/security_headers.go` (new)
+
+**Headers to add**:
+```go
+// SecurityHeadersMiddleware adds security headers to responses
+func SecurityHeadersMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        w.Header().Set("X-Content-Type-Options", "nosniff")
+        w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+        w.Header().Set("X-XSS-Protection", "1; mode=block")
+        w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+        w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+**Acceptance**:
+- All dashboard responses include security headers
+- Integration tests verify header presence
+- HSTS header enforces HTTPS for future requests
+- CSP prevents inline script injection
+
+**Dependencies**: T013
+**Story**: Foundation
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/middleware/security_headers.go`
+
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (register middleware)
+
+---
+
+## T018: Write HTTPS/TLS security tests [P]
+**Description**: Create integration tests to verify HTTPS enforced, certificates valid, and security headers present.
+
+**File**: `/Users/elavigne/workspace/c8s/tests/integration/security_test.go` (new)
+
+**Tests**:
+```go
+func TestHTTPSEnforced(t *testing.T) // HTTP redirects to HTTPS
+func TestTLSHandshakeValid(t *testing.T) // TLS version 1.2+
+func TestSecurityHeadersPresent(t *testing.T) // All security headers present
+func TestCSPHeader(t *testing.T) // Content-Security-Policy properly formed
+```
+
+**Acceptance**:
+- All TLS/security tests pass
+- HTTP requests are rejected or redirected
+- TLS version < 1.2 rejected
+
+**Dependencies**: T016, T017
+**Story**: Foundation
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/integration/security_test.go`
 
 ---
 
@@ -768,7 +1019,7 @@ func (b *SSEBroadcaster) Broadcast(message string)
 
 ---
 
-## T019: Create pagination utility
+## T022: Create pagination utility
 **Description**: Utility functions for paginating lists (pipeline runs, artifacts).
 
 **File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/pagination.go`
@@ -806,7 +1057,7 @@ func Paginate(items interface{}, params PaginationParams) *PaginatedResult
 
 ---
 
-## T020: Create time formatting utilities
+## T023: Create time formatting utilities
 **Description**: Template functions for formatting timestamps and durations.
 
 **File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/time_utils.go`
@@ -836,7 +1087,7 @@ func IsRecent(t time.Time) bool
 
 ---
 
-## T021: Register template functions for formatting
+## T024: Register template functions for formatting
 **Description**: Register custom template functions (formatTime, formatDuration) with html/template.
 
 **File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/templates.go` (update)
@@ -860,14 +1111,14 @@ func LoadTemplates(basePath string) error {
 
 **Acceptance**: Templates can use custom functions (formatTime, eq, slice).
 
-**Dependencies**: T006, T020
+**Dependencies**: T006, T023
 **Story**: Foundation
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/pkg/dashboard/templates.go`
 
 ---
 
-## T022: Create status badge partial template [P]
+## T025: Create status badge partial template [P]
 **Description**: Reusable component for displaying status badges (running/succeeded/failed).
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/status_badge.html`
@@ -898,7 +1149,7 @@ func LoadTemplates(basePath string) error {
 
 ---
 
-## T023: Create loading spinner partial template [P]
+## T026: Create loading spinner partial template [P]
 **Description**: Reusable loading spinner for async HTMX requests.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/loading.html`
@@ -922,7 +1173,7 @@ func LoadTemplates(basePath string) error {
 
 ---
 
-## T024: Create empty state partial template [P]
+## T027: Create empty state partial template [P]
 **Description**: Reusable empty state component for when no data exists.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/empty_state.html`
@@ -950,7 +1201,7 @@ func LoadTemplates(basePath string) error {
 
 ---
 
-## T025: Write unit tests for mappers
+## T028: Write unit tests for mappers
 **Description**: Test K8s CRD → DTO transformation functions.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/unit/dashboard_mappers_test.go`
@@ -971,7 +1222,7 @@ func TestCalculateDuration(t *testing.T)
 
 ---
 
-## T026: Write unit tests for pagination
+## T029: Write unit tests for pagination
 **Description**: Test pagination utility functions.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/unit/pagination_test.go`
@@ -985,14 +1236,14 @@ func TestPaginateEmptyList(t *testing.T)
 
 **Acceptance**: Pagination tests pass, handles edge cases (empty lists, invalid pages).
 
-**Dependencies**: T019
+**Dependencies**: T022
 **Story**: Foundation
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/unit/pagination_test.go`
 
 ---
 
-## T027: Write unit tests for SSE broadcaster
+## T030: Write unit tests for SSE broadcaster
 **Description**: Test SSE pub/sub mechanism.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/unit/sse_broadcaster_test.go`
@@ -1013,7 +1264,7 @@ func TestSSEBroadcaster_Unsubscribe(t *testing.T)
 
 ---
 
-## T028: Write unit tests for time utilities
+## T031: Write unit tests for time utilities
 **Description**: Test timestamp and duration formatting functions.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/unit/time_utils_test.go`
@@ -1027,14 +1278,14 @@ func TestIsRecent(t *testing.T)
 
 **Acceptance**: Time utility tests pass, covers various time ranges.
 
-**Dependencies**: T020
+**Dependencies**: T023
 **Story**: Foundation
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/unit/time_utils_test.go`
 
 ---
 
-## T029: Write integration test for auth middleware
+## T032: Write integration test for auth middleware
 **Description**: Test authentication middleware blocks unauthenticated requests.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/auth_test.go`
@@ -1055,7 +1306,7 @@ func TestAuthMiddleware_AttachesUserToContext(t *testing.T)
 
 ---
 
-## T030: Write integration test for static file serving
+## T033: Write integration test for static file serving
 **Description**: Test static assets are served correctly from /static route.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/static_files_test.go`
@@ -1078,7 +1329,7 @@ func TestStaticFiles_Returns404ForMissingFile(t *testing.T)
 
 # Phase 3: US1 - View Pipeline History and Current Status [P1]
 
-## T031: Create pipeline list page template
+## T034: Create pipeline list page template
 **Description**: HTML template for main dashboard page listing pipeline runs.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html`
@@ -1091,14 +1342,14 @@ func TestStaticFiles_Returns404ForMissingFile(t *testing.T)
 
 **Acceptance**: Template renders with dummy data, HTMX attributes present.
 
-**Dependencies**: T003, T022, T024
+**Dependencies**: T003, T025, T027
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html`
 
 ---
 
-## T032: Implement ListPipelineRuns API handler
+## T035: Implement ListPipelineRuns API handler
 **Description**: Go handler for GET /api/projects/{projectId}/runs endpoint.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go`
@@ -1154,14 +1405,14 @@ func fetchPipelineRuns(ctx context.Context, projectID, status, branch, search st
 
 **Acceptance**: Endpoint returns paginated pipeline runs in JSON or HTML.
 
-**Dependencies**: T007, T008, T009, T010, T019
+**Dependencies**: T007, T008, T009, T010, T022
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go`
 
 ---
 
-## T033: Create DashboardHandler for main dashboard page
+## T036: Create DashboardHandler for main dashboard page
 **Description**: Handler for GET /dashboard (renders full page with pipeline list).
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go`
@@ -1215,14 +1466,14 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: /dashboard renders full page with pipeline list.
 
-**Dependencies**: T031, T032
+**Dependencies**: T034, T035
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go`
 
 ---
 
-## T034: Implement SSE endpoint for pipeline status updates
+## T037: Implement SSE endpoint for pipeline status updates
 **Description**: SSE endpoint GET /api/projects/{projectId}/runs/updates streams real-time updates.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_sse.go`
@@ -1270,14 +1521,66 @@ func subscribeToPipelineUpdates(projectID string) chan *dashboard.PipelineRunDTO
 
 **Acceptance**: SSE endpoint streams pipeline status changes in real-time.
 
-**Dependencies**: T018, T032
+**Dependencies**: T018, T035
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_sse.go`
 
 ---
 
-## T035: Create pipeline row partial template [P]
+## T037a: Implement HTMX SSE subscription for pipeline list [P]
+**Description**: Add HTMX SSE integration to pipeline list page for real-time updates (per analysis A11). When new runs are triggered, they appear at the top of the list without page refresh per spec.md:US1 Acceptance Criteria #4.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html` (modifications)
+
+**Implementation**:
+```html
+<!-- Add to pipeline_list.html base template -->
+<div id="pipeline-list-container"
+     hx-ext="sse"
+     sse-connect="/api/projects/{{.ProjectID}}/runs/updates"
+     sse-swap="run_status_changed:swap:#pipeline-list-container"
+     hx-trigger="sse:run_status_changed from:body"
+     hx-swap="innerHTML">
+
+     <!-- Pipeline list rows inserted here -->
+     <div id="pipeline-rows">
+        {{range .Runs}}
+          {{template "partials/pipeline_row" .}}
+        {{end}}
+     </div>
+</div>
+
+<script>
+  // Handle new runs: fetch fresh list and insert at top
+  document.body.addEventListener('htmx:sseMessage', function(event) {
+    if (event.detail.event === 'run_status_changed') {
+      var update = JSON.parse(event.detail.data);
+      // For new runs (not in current list), fetch updated list and swap
+      htmx.ajax('GET',
+        '/api/projects/{{.ProjectID}}/runs',
+        '#pipeline-rows'
+      );
+    }
+  });
+</script>
+```
+
+**Acceptance**:
+- HTMX SSE extension active and subscribes to pipeline updates
+- When new pipeline run created, list updates without page refresh
+- New run appears at top of list (per US1 acceptance criteria #4)
+- Existing runs update their status in real-time
+- Reconnects automatically if connection drops
+
+**Dependencies**: T037 (SSE endpoint), T034 (list template)
+**Story**: US1
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html`
+
+---
+
+## T038: Create pipeline row partial template [P]
 **Description**: Reusable template for single pipeline row (used by HTMX swaps).
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/pipeline_row.html`
@@ -1312,14 +1615,14 @@ func subscribeToPipelineUpdates(projectID string) chan *dashboard.PipelineRunDTO
 
 **Acceptance**: Pipeline row renders with status, commit info, and actions.
 
-**Dependencies**: T001, T022
+**Dependencies**: T001, T025
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/pipeline_row.html`
 
 ---
 
-## T036: Write integration test for ListPipelineRuns handler
+## T039: Write integration test for ListPipelineRuns handler
 **Description**: Test pipeline list API endpoint with various filters.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/pipeline_list_test.go`
@@ -1335,14 +1638,14 @@ func TestListPipelineRuns_Pagination(t *testing.T)
 
 **Acceptance**: All list endpoint tests pass, filtering and pagination work.
 
-**Dependencies**: T032
+**Dependencies**: T035
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/pipeline_list_test.go`
 
 ---
 
-## T037: Write E2E test for pipeline list page
+## T040: Write E2E test for pipeline list page
 **Description**: Playwright test verifying pipeline list displays and updates.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_list.spec.ts`
@@ -1357,14 +1660,14 @@ test('status filter updates list', async ({ page }) => {})
 
 **Acceptance**: E2E tests pass, pipeline list interactive and updates in real-time.
 
-**Dependencies**: T031, T032, T033, T034
+**Dependencies**: T034, T035, T036, T037
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_list.spec.ts`
 
 ---
 
-## T038: Add CSS styling for pipeline list
+## T041: Add CSS styling for pipeline list
 **Description**: Style pipeline list table, filters, and status badges.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css` (update)
@@ -1377,14 +1680,14 @@ test('status filter updates list', async ({ page }) => {})
 
 **Acceptance**: Pipeline list visually appealing and responsive.
 
-**Dependencies**: T005, T031
+**Dependencies**: T005, T034
 **Story**: US1
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css`
 
 ---
 
-## T039: Implement Kubernetes watch for pipeline updates
+## T042: Implement Kubernetes watch for pipeline updates
 **Description**: Watch Kubernetes PipelineRun resources and broadcast changes via SSE.
 
 **File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/pipeline_watcher.go`
@@ -1413,14 +1716,14 @@ func (w *PipelineWatcher) handleWatchEvent(event watch.Event)
 
 **Acceptance**: Watcher detects PipelineRun changes and broadcasts to SSE clients.
 
-**Dependencies**: T007, T018, T034
+**Dependencies**: T007, T018, T037
 **Story**: US1
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/pkg/dashboard/pipeline_watcher.go`
 
 ---
 
-## T040: Register US1 routes in main.go
+## T043: Register US1 routes in main.go
 **Description**: Add all US1 routes to API server router.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (update)
@@ -1437,7 +1740,7 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: All US1 routes registered and accessible.
 
-**Dependencies**: T032, T033, T034
+**Dependencies**: T035, T036, T037
 **Story**: US1
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
@@ -1446,7 +1749,7 @@ router.Group(func(r chi.Router) {
 
 # Phase 4: US2 - Monitor Step-by-Step Execution and Logs [P1]
 
-## T041: Create pipeline detail page template
+## T044: Create pipeline detail page template
 **Description**: Template for detailed pipeline run view with steps and logs.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html`
@@ -1459,14 +1762,14 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: Template renders with dummy data, log viewer HTMX attributes present.
 
-**Dependencies**: T003, T022
+**Dependencies**: T003, T025
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html`
 
 ---
 
-## T042: Implement GetPipelineRun API handler
+## T045: Implement GetPipelineRun API handler
 **Description**: Handler for GET /api/runs/{runId} returning full run details with steps.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go` (continue)
@@ -1506,7 +1809,7 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-## T043: Create PipelineDetailHandler for detail page
+## T046: Create PipelineDetailHandler for detail page
 **Description**: Handler for GET /dashboard/runs/{runId} rendering detail page.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go` (continue)
@@ -1540,14 +1843,14 @@ func PipelineDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: /dashboard/runs/{runId} renders detail page with steps.
 
-**Dependencies**: T041, T042
+**Dependencies**: T044, T045
 **Story**: US2
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go`
 
 ---
 
-## T044: Implement SSE log streaming endpoint
+## T047: Implement SSE log streaming endpoint
 **Description**: SSE endpoint GET /api/runs/{runId}/steps/{stepId}/logs streams live logs.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/logs.go`
@@ -1622,7 +1925,7 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-## T045: Create log viewer partial template [P]
+## T048: Create log viewer partial template [P]
 **Description**: HTMX-enhanced log viewer component with SSE streaming.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/log_viewer.html`
@@ -1654,14 +1957,14 @@ function clearLogs() {
 
 **Acceptance**: Log viewer displays streaming logs with auto-scroll.
 
-**Dependencies**: T001, T044
+**Dependencies**: T001, T047
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/log_viewer.html`
 
 ---
 
-## T046: Create step status partial template [P]
+## T049: Create step status partial template [P]
 **Description**: Reusable component for displaying step status with details.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/step_status.html`
@@ -1712,14 +2015,14 @@ function clearLogs() {
 
 **Acceptance**: Step status displays with expand/collapse and view logs action.
 
-**Dependencies**: T001, T022
+**Dependencies**: T001, T025
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/step_status.html`
 
 ---
 
-## T047: Write integration test for GetPipelineRun handler
+## T050: Write integration test for GetPipelineRun handler
 **Description**: Test pipeline detail API endpoint.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/pipeline_detail_test.go`
@@ -1733,14 +2036,14 @@ func TestGetPipelineRun_Returns404ForInvalidID(t *testing.T)
 
 **Acceptance**: Detail endpoint tests pass, returns run with steps.
 
-**Dependencies**: T042
+**Dependencies**: T045
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/pipeline_detail_test.go`
 
 ---
 
-## T048: Write integration test for log streaming endpoint
+## T051: Write integration test for log streaming endpoint
 **Description**: Test SSE log streaming.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/log_stream_test.go`
@@ -1754,14 +2057,14 @@ func TestLogStream_CompletesWhenLogsDone(t *testing.T)
 
 **Acceptance**: Log streaming tests pass, SSE events received correctly.
 
-**Dependencies**: T044
+**Dependencies**: T047
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/log_stream_test.go`
 
 ---
 
-## T049: Write E2E test for pipeline detail page
+## T052: Write E2E test for pipeline detail page
 **Description**: Playwright test for pipeline detail view with live logs.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_detail.spec.ts`
@@ -1776,14 +2079,14 @@ test('clicking step shows logs', async ({ page }) => {})
 
 **Acceptance**: E2E tests pass, logs stream and steps update.
 
-**Dependencies**: T041, T042, T043, T044
+**Dependencies**: T044, T045, T046, T047
 **Story**: US2
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_detail.spec.ts`
 
 ---
 
-## T050: Add CSS styling for pipeline detail page
+## T053: Add CSS styling for pipeline detail page
 **Description**: Style step list, log viewer, and detail layout.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css` (update)
@@ -1796,14 +2099,14 @@ test('clicking step shows logs', async ({ page }) => {})
 
 **Acceptance**: Pipeline detail page visually organized and readable.
 
-**Dependencies**: T005, T041, T045, T046
+**Dependencies**: T005, T044, T048, T049
 **Story**: US2
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css`
 
 ---
 
-## T051: Register US2 routes in main.go
+## T054: Register US2 routes in main.go
 **Description**: Add all US2 routes to API server router.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (update)
@@ -1820,7 +2123,7 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: All US2 routes registered and accessible.
 
-**Dependencies**: T042, T043, T044
+**Dependencies**: T045, T046, T047
 **Story**: US2
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
@@ -1829,7 +2132,7 @@ router.Group(func(r chi.Router) {
 
 # Phase 5: US3 - Search and Filter Pipelines [P2]
 
-## T052: Create filter panel partial template [P]
+## T055: Create filter panel partial template [P]
 **Description**: Reusable filter controls for search, branch, status, date range.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/filter_panel.html`
@@ -1909,7 +2212,7 @@ router.Group(func(r chi.Router) {
 
 ---
 
-## T053: Update ListPipelineRuns handler with filter logic
+## T056: Update ListPipelineRuns handler with filter logic
 **Description**: Enhance handler to support all filter parameters.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go` (update)
@@ -1946,14 +2249,14 @@ func fetchPipelineRunsWithFilters(ctx context.Context, projectID string, filters
 
 **Acceptance**: Filter parameters correctly filter pipeline runs.
 
-**Dependencies**: T032, T052
+**Dependencies**: T035, T055
 **Story**: US3
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go`
 
 ---
 
-## T054: Implement branch list API endpoint
+## T057: Implement branch list API endpoint
 **Description**: Endpoint GET /api/projects/{projectId}/branches returns unique branches.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_runs.go` (continue)
@@ -1997,7 +2300,7 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-## T055: Add filter panel to pipeline list template
+## T058: Add filter panel to pipeline list template
 **Description**: Integrate filter panel into main pipeline list page.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html` (update)
@@ -2019,14 +2322,14 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: Filter panel displays above pipeline list.
 
-**Dependencies**: T031, T052
+**Dependencies**: T034, T055
 **Story**: US3
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_list.html`
 
 ---
 
-## T056: Write unit tests for filter parsing
+## T059: Write unit tests for filter parsing
 **Description**: Test filter parameter parsing and validation.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/unit/filters_test.go`
@@ -2040,14 +2343,14 @@ func TestParseFilters_HandlesEmptyFilters(t *testing.T)
 
 **Acceptance**: Filter parsing tests pass, handles invalid input.
 
-**Dependencies**: T053
+**Dependencies**: T056
 **Story**: US3
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/unit/filters_test.go`
 
 ---
 
-## T057: Write integration test for filtered pipeline list
+## T060: Write integration test for filtered pipeline list
 **Description**: Test pipeline list endpoint with all filter combinations.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/pipeline_filters_test.go`
@@ -2063,14 +2366,14 @@ func TestFilteredPipelineList_CombinedFilters(t *testing.T)
 
 **Acceptance**: All filter combinations return correct results.
 
-**Dependencies**: T053
+**Dependencies**: T056
 **Story**: US3
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/pipeline_filters_test.go`
 
 ---
 
-## T058: Write E2E test for search and filter
+## T061: Write E2E test for search and filter
 **Description**: Playwright test for interactive filtering.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_filters.spec.ts`
@@ -2086,14 +2389,14 @@ test('combined filters work together', async ({ page }) => {})
 
 **Acceptance**: E2E tests pass, filters interactive and responsive.
 
-**Dependencies**: T052, T053, T055
+**Dependencies**: T055, T056, T058
 **Story**: US3
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/e2e/pipeline_filters.spec.ts`
 
 ---
 
-## T059: Register US3 routes in main.go
+## T062: Register US3 routes in main.go
 **Description**: Add branch list endpoint to router.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (update)
@@ -2108,7 +2411,7 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: Branch list endpoint accessible.
 
-**Dependencies**: T054
+**Dependencies**: T057
 **Story**: US3
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
@@ -2117,7 +2420,7 @@ router.Group(func(r chi.Router) {
 
 # Phase 6: US4 - Configure Projects and Webhooks [P2]
 
-## T060: Create projects list page template
+## T063: Create projects list page template
 **Description**: Template for listing user's projects with webhook URLs.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/projects.html`
@@ -2130,14 +2433,14 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: Template renders with project list and actions.
 
-**Dependencies**: T003, T024
+**Dependencies**: T003, T027
 **Story**: US4
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/projects.html`
 
 ---
 
-## T061: Implement ListProjects API handler
+## T064: Implement ListProjects API handler
 **Description**: Handler for GET /api/projects returning user's projects.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/projects.go`
@@ -2180,7 +2483,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-## T062: Implement CreateProject API handler
+## T065: Implement CreateProject API handler
 **Description**: Handler for POST /api/projects creating new project.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/projects.go` (continue)
@@ -2242,14 +2545,14 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: Endpoint creates project and returns webhook URL.
 
-**Dependencies**: T007, T061
+**Dependencies**: T007, T064
 **Story**: US4
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/projects.go`
 
 ---
 
-## T063: Implement GetWebhookConfig API handler
+## T066: Implement GetWebhookConfig API handler
 **Description**: Handler for GET /api/projects/{projectId}/webhook returning webhook details.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/projects.go` (continue)
@@ -2283,14 +2586,14 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: Endpoint returns webhook URL and registration instructions.
 
-**Dependencies**: T061
+**Dependencies**: T064
 **Story**: US4
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/projects.go`
 
 ---
 
-## T064: Create ProjectsHandler for projects page
+## T067: Create ProjectsHandler for projects page
 **Description**: Handler for GET /dashboard/projects rendering projects page.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go` (continue)
@@ -2327,14 +2630,14 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: /dashboard/projects renders projects list.
 
-**Dependencies**: T060, T061
+**Dependencies**: T063, T064
 **Story**: US4
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/dashboard.go`
 
 ---
 
-## T065: Create project creation form partial [P]
+## T068: Create project creation form partial [P]
 **Description**: Modal/form for creating new project.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/project_form.html`
@@ -2382,14 +2685,14 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: Form submits via HTMX and creates project.
 
-**Dependencies**: T001, T062
+**Dependencies**: T001, T065
 **Story**: US4
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/project_form.html`
 
 ---
 
-## T066: Create webhook display partial [P]
+## T069: Create webhook display partial [P]
 **Description**: Component showing webhook URL with copy-to-clipboard.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/webhook_display.html`
@@ -2435,7 +2738,7 @@ function copyWebhookURL() {
 
 ---
 
-## T067: Write integration test for projects API
+## T070: Write integration test for projects API
 **Description**: Test project CRUD operations.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/projects_test.go`
@@ -2450,14 +2753,14 @@ func TestGetWebhookConfig_ReturnsWebhookURL(t *testing.T)
 
 **Acceptance**: Project API tests pass, CRUD operations work.
 
-**Dependencies**: T061, T062, T063
+**Dependencies**: T064, T065, T066
 **Story**: US4
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/projects_test.go`
 
 ---
 
-## T068: Write E2E test for project management
+## T071: Write E2E test for project management
 **Description**: Playwright test for project creation and webhook display.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/projects.spec.ts`
@@ -2472,14 +2775,14 @@ test('project appears in list after creation', async ({ page }) => {})
 
 **Acceptance**: E2E tests pass, project management interactive.
 
-**Dependencies**: T060, T061, T062, T064
+**Dependencies**: T063, T064, T065, T067
 **Story**: US4
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/e2e/projects.spec.ts`
 
 ---
 
-## T069: Register US4 routes in main.go
+## T072: Register US4 routes in main.go
 **Description**: Add all US4 routes to router.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (update)
@@ -2497,7 +2800,7 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: All US4 routes registered and accessible.
 
-**Dependencies**: T061, T062, T063, T064
+**Dependencies**: T064, T065, T066, T067
 **Story**: US4
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
@@ -2506,7 +2809,7 @@ router.Group(func(r chi.Router) {
 
 # Phase 7: US5 - View and Manage Artifacts [P3]
 
-## T070: Create artifacts list partial template [P]
+## T073: Create artifacts list partial template [P]
 **Description**: Component displaying artifacts for a pipeline run.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/artifacts_list.html`
@@ -2546,14 +2849,14 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: Artifacts list renders with download and preview actions.
 
-**Dependencies**: T001, T024
+**Dependencies**: T001, T027
 **Story**: US5
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/artifacts_list.html`
 
 ---
 
-## T071: Implement ListArtifacts API handler
+## T074: Implement ListArtifacts API handler
 **Description**: Handler for GET /api/runs/{runId}/artifacts returning artifact list.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go`
@@ -2600,7 +2903,7 @@ func extractArtifactsFromRun(run *v1alpha1.PipelineRun, stepFilter, typeFilter s
 
 ---
 
-## T072: Implement DownloadArtifact handler
+## T075: Implement DownloadArtifact handler
 **Description**: Handler for GET /api/artifacts/{artifactId}/download streaming artifact file.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go` (continue)
@@ -2638,14 +2941,14 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 **Acceptance**: Artifact downloads successfully with correct headers.
 
-**Dependencies**: T071
+**Dependencies**: T074
 **Story**: US5
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go`
 
 ---
 
-## T073: Implement PreviewArtifact handler
+## T076: Implement PreviewArtifact handler
 **Description**: Handler for GET /api/artifacts/{artifactId}/preview rendering HTML/markdown inline.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go` (continue)
@@ -2693,14 +2996,14 @@ func isPreviewable(mimeType string) bool {
 
 **Acceptance**: HTML/markdown artifacts render inline in preview.
 
-**Dependencies**: T072
+**Dependencies**: T075
 **Story**: US5
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go`
 
 ---
 
-## T074: Add artifacts section to pipeline detail page
+## T077: Add artifacts section to pipeline detail page
 **Description**: Integrate artifacts list into pipeline detail template.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html` (update)
@@ -2719,14 +3022,14 @@ func isPreviewable(mimeType string) bool {
 
 **Acceptance**: Artifacts section displays on pipeline detail page.
 
-**Dependencies**: T041, T070
+**Dependencies**: T044, T073
 **Story**: US5
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html`
 
 ---
 
-## T075: Write integration test for artifacts API
+## T078: Write integration test for artifacts API
 **Description**: Test artifact listing, download, and preview.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/integration/artifacts_test.go`
@@ -2741,14 +3044,14 @@ func TestListArtifacts_FiltersByStep(t *testing.T)
 
 **Acceptance**: Artifact API tests pass, download and preview work.
 
-**Dependencies**: T071, T072, T073
+**Dependencies**: T074, T075, T076
 **Story**: US5
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/integration/artifacts_test.go`
 
 ---
 
-## T076: Write E2E test for artifact management
+## T079: Write E2E test for artifact management
 **Description**: Playwright test for artifact download and preview.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/artifacts.spec.ts`
@@ -2763,14 +3066,14 @@ test('empty state shows when no artifacts', async ({ page }) => {})
 
 **Acceptance**: E2E tests pass, artifacts interactive.
 
-**Dependencies**: T070, T071, T072, T074
+**Dependencies**: T073, T074, T075, T077
 **Story**: US5
 **Files Created**:
 - `/Users/elavigne/workspace/c8s/tests/e2e/artifacts.spec.ts`
 
 ---
 
-## T077: Register US5 routes in main.go
+## T080: Register US5 routes in main.go
 **Description**: Add all US5 routes to router.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (update)
@@ -2787,16 +3090,239 @@ router.Group(func(r chi.Router) {
 
 **Acceptance**: All US5 routes registered and accessible.
 
-**Dependencies**: T071, T072, T073
+**Dependencies**: T074, T075, T076
 **Story**: US5
 **Files Modified**:
 - `/Users/elavigne/workspace/c8s/cmd/api-server/main.go`
 
 ---
 
+## T080a: Implement artifact content sanitization (per A8) [P]
+**Description**: Sanitize HTML/markdown artifact content to prevent XSS attacks per FR-009. Only allow safe HTML tags, remove scripts, style, and iframe elements.
+
+**File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/sanitizer.go` (new)
+
+**Implementation**:
+```go
+package dashboard
+
+import (
+    "github.com/microcosm-cc/bluemonday"
+    "github.com/yuin/goldmark"
+    "github.com/yuin/goldmark/extension"
+)
+
+type ArtifactSanitizer struct {
+    htmlPolicy *bluemonday.Policy
+}
+
+// NewArtifactSanitizer creates sanitizer with safe HTML policy
+func NewArtifactSanitizer() *ArtifactSanitizer
+
+// SanitizeHTML removes dangerous tags/scripts from HTML content
+func (as *ArtifactSanitizer) SanitizeHTML(html string) string
+
+// RenderMarkdown converts markdown to safe HTML
+func (as *ArtifactSanitizer) RenderMarkdown(markdown string) (string, error)
+
+// AllowedTags defines which HTML tags are safe for artifact preview
+var AllowedTags = []string{
+    "p", "br", "span", "div",
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "ul", "ol", "li", "dl", "dt", "dd",
+    "pre", "code", "blockquote",
+    "strong", "em", "u", "s",
+    "a", "img",
+    "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+}
+```
+
+**Sanitization Rules**:
+- Allow safe HTML tags (p, h1-h6, ul, ol, code, blockquote, table, etc.)
+- Remove script, style, iframe, object, embed, form, input elements
+- Remove event handlers (onclick, onload, etc.)
+- Remove dangerous attributes (data-*, on*, etc.)
+- For markdown: Convert to HTML first, then sanitize
+- Whitelist img src to same-origin or data: URIs only
+
+**Acceptance**:
+- XSS injection attempts blocked
+- Safe HTML tags preserved
+- Markdown renders to safe HTML
+- Links safe (no javascript: URIs)
+- No inline scripts/styles execute
+
+**Dependencies**: bluemonday, goldmark libraries
+**Story**: US5
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/pkg/dashboard/sanitizer.go`
+
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/artifacts.go` (use sanitizer in PreviewArtifactHandler)
+
+---
+
+## T080b: Add Content-Security-Policy header for artifacts (per A8) [P]
+**Description**: Set CSP headers specifically for artifact preview responses to prevent inline script injection.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/middleware/artifact_csp.go` (new)
+
+**Implementation**:
+```go
+// ArtifactCSPMiddleware sets CSP headers for artifact preview responses
+func ArtifactCSPMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Only apply CSP to artifact preview endpoints
+        if strings.HasPrefix(r.URL.Path, "/api/artifacts") &&
+           strings.Contains(r.URL.Path, "preview") {
+
+            // Strict CSP: no inline scripts, no external scripts
+            w.Header().Set("Content-Security-Policy",
+                "default-src 'none'; "+
+                "script-src 'self'; "+
+                "style-src 'unsafe-inline'; "+
+                "img-src 'self' data:; "+
+                "frame-ancestors 'none'")
+        }
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+**Acceptance**:
+- CSP headers present on artifact preview responses
+- No inline scripts allowed
+- Only same-origin scripts allowed
+- External resources blocked
+
+**Dependencies**: T017 (security headers middleware)
+**Story**: US5
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/middleware/artifact_csp.go`
+
+---
+
+## T080c: Write artifact sanitization tests (per A8) [P]
+**Description**: Unit tests for sanitizer to verify XSS prevention and safe rendering.
+
+**File**: `/Users/elavigne/workspace/c8s/tests/unit/sanitizer_test.go` (new)
+
+**Tests**:
+```go
+func TestSanitizeHTML_RemovesScripts(t *testing.T)      // <script> tags removed
+func TestSanitizeHTML_RemovesEventHandlers(t *testing.T) // onclick, etc removed
+func TestSanitizeHTML_PreservesSafeHTML(t *testing.T)   // <p>, <h1>, etc preserved
+func TestSanitizeHTML_BlocksDangerousLinks(t *testing.T) // javascript: URIs blocked
+func TestRenderMarkdown_ProducesSafeHTML(t *testing.T)  // Markdown → safe HTML
+func TestSanitizeHTML_ImgSrcWhitelisting(t *testing.T)  // Only safe image sources
+```
+
+**Acceptance**:
+- All XSS vectors blocked
+- Safe content preserved
+- No regressions in rendering
+
+**Dependencies**: T080a, T080b
+**Story**: US5
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/unit/sanitizer_test.go`
+
+---
+
+## T080d: Implement pipeline cancellation (per A9) [P]
+**Description**: Add ability to cancel running pipelines per spec.md edge cases. Implement GET /api/runs/{runId}/cancel endpoint and "Cancel" button in pipeline detail view.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_control.go` (new)
+
+**Implementation**:
+```go
+// CancelPipelineRunHandler stops a running pipeline
+func CancelPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
+    runID := chi.URLParam(r, "runId")
+
+    // Fetch pipeline run
+    run, err := k8sClient.GetPipelineRun(r.Context(), runID)
+    if err != nil {
+        dashboard.WriteError(w, http.StatusNotFound, "RUN_NOT_FOUND", "")
+        return
+    }
+
+    // Check authorization (user owns project)
+    user, _ := handlers.GetUserFromContext(r.Context())
+    if !canUserCancelRun(user, run) {
+        dashboard.WriteError(w, http.StatusForbidden, "UNAUTHORIZED", "")
+        return
+    }
+
+    // Cancel Kubernetes Job
+    err = k8sClient.TerminateJob(r.Context(), run.Namespace, run.JobName)
+    if err != nil {
+        dashboard.WriteError(w, http.StatusInternalServerError, "CANCEL_FAILED", err.Error())
+        return
+    }
+
+    // Update run status to "cancelled"
+    run.Status = "cancelled"
+    k8sClient.UpdatePipelineRun(r.Context(), run)
+
+    // Return updated run to client
+    dashboard.WriteSuccess(w, run, nil)
+}
+
+func canUserCancelRun(user *User, run *PipelineRun) bool {
+    // Only allow cancellation by project admin/editor
+    return user.ProjectRole(run.ProjectID) == "admin" ||
+           user.ProjectRole(run.ProjectID) == "editor"
+}
+```
+
+**Acceptance**:
+- Cancel endpoint stops running pipelines
+- Requires admin/editor permissions
+- Pipeline status changes to "cancelled"
+- Cannot cancel completed pipelines
+- Cancel button hidden for non-running pipelines
+
+**Dependencies**: T008 (PipelineRun model), T041 (detail page template)
+**Story**: US2
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/pipeline_control.go`
+
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html` (add Cancel button)
+- `/Users/elavigne/workspace/c8s/cmd/api-server/main.go` (register cancel route)
+
+---
+
+## T080e: Write pipeline cancellation tests (per A9) [P]
+**Description**: Test cancel endpoint authorization and cancellation logic.
+
+**File**: `/Users/elavigne/workspace/c8s/tests/integration/pipeline_control_test.go` (new)
+
+**Tests**:
+```go
+func TestCancelPipeline_Success(t *testing.T)           // Running pipeline cancels
+func TestCancelPipeline_Unauthorized(t *testing.T)      // Viewer cannot cancel
+func TestCancelPipeline_UpdatesStatus(t *testing.T)     // Status changed to "cancelled"
+func TestCancelPipeline_CompletedError(t *testing.T)    // Cannot cancel completed run
+func TestCancelPipeline_NotFound(t *testing.T)          // 404 for missing run
+```
+
+**Acceptance**:
+- Cancellation works end-to-end
+- Authorization enforced
+- Edge cases handled
+
+**Dependencies**: T080d
+**Story**: US2
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/integration/pipeline_control_test.go`
+
+---
+
 # Phase 8: Polish & Cross-Cutting Concerns
 
-## T078: Implement error handling middleware
+## T081: Implement error handling middleware
 **Description**: Centralized error handling with proper logging.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/handlers/error_middleware.go`
@@ -2841,36 +3367,152 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 ---
 
-## T079: Add caching layer for pipeline lists
-**Description**: Implement Redis/in-memory cache for frequently accessed data.
+## T081a: Implement keyboard shortcuts (per FR-013) [P]
+**Description**: Add keyboard shortcut support per spec.md FR-013. Users can perform common actions (refresh, search, navigate, cancel) using keyboard combinations defined in spec.
 
-**File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/cache.go`
+**Files**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/static/js/keyboard_shortcuts.js` (new)
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/shortcuts_help_modal.html` (new)
+- `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/keyboard_shortcuts.css` (new)
 
-**Functions**:
+**Implementation**:
+```javascript
+// keyboard_shortcuts.js
+class KeyboardShortcutManager {
+  constructor() {
+    this.shortcuts = {
+      '?': () => this.showHelp(),
+      'ctrl+k': () => this.focusSearch(),
+      'ctrl+r': () => this.refreshPage(),
+      'ctrl+l': () => this.jumpToLatestLog(),
+      'escape': () => this.closeModal(),
+      'ctrl+enter': () => this.submitForm(),
+      'j': () => this.navigateDown(),  // Next run
+      'k': () => this.navigateUp(),    // Previous run
+      'x': () => this.cancelPipeline(),
+      'd': () => this.downloadArtifact(),
+      'v': () => this.viewArtifact(),
+      'ctrl+slash': () => this.toggleFilterPanel(),
+      'ctrl+s': () => this.saveFilterPreset(),
+    };
+  }
+
+  register() {
+    document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+  }
+
+  handleKeyPress(event) {
+    // Build key combination (e.g., "ctrl+k")
+    const key = this.getKeyCombo(event);
+    if (this.shortcuts[key]) {
+      event.preventDefault();
+      this.shortcuts[key]();
+    }
+  }
+
+  // Implementation of each shortcut action...
+}
+```
+
+**Shortcuts Implemented** (per spec.md keyboard shortcuts table):
+- `?`: Show help modal with all available shortcuts
+- `Ctrl/Cmd + K`: Focus search input field
+- `Ctrl/Cmd + R`: Reload pipeline/project data
+- `Ctrl/Cmd + L`: Scroll to latest log line
+- `Esc`: Close currently open modal
+- `Ctrl/Cmd + Enter`: Submit active form
+- `J`/`K`: Navigate pipeline list (next/previous)
+- `X`: Cancel selected running pipeline
+- `D`/`V`: Download/view artifact
+- `Ctrl/Cmd + /`: Toggle filter panel
+- `Ctrl/Cmd + S`: Save filter preset
+
+**Acceptance**:
+- All 12+ keyboard shortcuts defined in spec.md work correctly
+- Help modal displays context-aware shortcuts (only show relevant shortcuts per page)
+- Shortcuts respect platform conventions (Cmd on Mac, Ctrl on Windows/Linux)
+- No shortcut interference with text input fields
+- Accessibility: All shortcuts have UI/mouse equivalents
+
+**Dependencies**: T034, T041 (page templates)
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/static/js/keyboard_shortcuts.js`
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/shortcuts_help_modal.html`
+- `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/keyboard_shortcuts.css`
+
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/layout/base.html` (include keyboard_shortcuts.js)
+
+---
+
+## T082: Add caching layer for pipeline lists (per A5) [P]
+**Description**: Implement in-memory cache for frequently accessed data per FR-015. Support TTL-based expiration and manual invalidation for real-time accuracy.
+
+**File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/cache.go` (new)
+
+**Caching Strategy** (per A5):
 ```go
 package dashboard
 
 import (
     "context"
+    "sync"
     "time"
 )
 
-type CacheLayer struct {
-    cache map[string]interface{}
-    ttl   time.Duration
+type CacheEntry struct {
+    Value      interface{}
+    ExpiresAt  time.Time
+    CreatedAt  time.Time
 }
+
+type CacheLayer struct {
+    mu              sync.RWMutex
+    entries         map[string]*CacheEntry
+    defaultTTL      time.Duration
+    cleanupInterval time.Duration
+}
+
+// NewCacheLayer creates cache with default TTL
+func NewCacheLayer(defaultTTL, cleanupInterval time.Duration) *CacheLayer
 
 // Get retrieves value from cache
 func (c *CacheLayer) Get(key string) (interface{}, bool)
 
-// Set stores value in cache with TTL
-func (c *CacheLayer) Set(key string, value interface{}, ttl time.Duration)
+// Set stores value in cache with default TTL
+func (c *CacheLayer) Set(key string, value interface{})
 
-// Invalidate removes value from cache
+// SetWithTTL stores value with custom TTL
+func (c *CacheLayer) SetWithTTL(key string, value interface{}, ttl time.Duration)
+
+// Invalidate removes specific key from cache
 func (c *CacheLayer) Invalidate(key string)
+
+// InvalidatePattern removes all keys matching pattern (e.g., "project:*")
+func (c *CacheLayer) InvalidatePattern(pattern string)
+
+// StartCleanup runs background goroutine to remove expired entries
+func (c *CacheLayer) StartCleanup(ctx context.Context)
 ```
 
-**Acceptance**: Cache reduces database queries, improves performance.
+**Cache Keys & TTL Configuration**:
+
+| Data Type | Cache Key Pattern | Default TTL | Invalidation Trigger |
+|-----------|------------------|-------------|----------------------|
+| Pipeline list | `pipeline:list:{projectID}` | 5 seconds | New pipeline run created (SSE event) |
+| Pipeline run details | `pipeline:run:{runID}` | 10 seconds | Run status changes (SSE event) |
+| Project list | `project:list:{userID}` | 30 seconds | New project created |
+| Project metadata | `project:{projectID}` | 60 seconds | Project updated |
+| Log snapshot | `log:{runID}:{stepID}` | 2 seconds | New log lines streamed |
+| User permissions | `user:perms:{userID}` | 300 seconds | User role changed |
+
+**Acceptance**:
+- Cache reduces queries to Kubernetes API
+- TTL-based expiration prevents stale data
+- SSE events trigger cache invalidation for real-time accuracy
+- Background cleanup removes expired entries
+- Cache hit/miss metrics available for monitoring
 
 **Dependencies**: None
 **Story**: Polish
@@ -2879,7 +3521,107 @@ func (c *CacheLayer) Invalidate(key string)
 
 ---
 
-## T080: Add loading states to HTMX requests
+## T082a: Define cache key design document (per A5) [P]
+**Description**: Document cache key naming conventions, TTL values, and invalidation strategy to ensure consistency and correctness.
+
+**File**: `/Users/elavigne/workspace/c8s/docs/CACHE_STRATEGY.md` (new)
+
+**Content**:
+- Cache key naming convention: `entity:action:{id}` (e.g., `pipeline:list:proj-123`)
+- TTL tiers: Real-time (2-5s), Short-lived (10-30s), Medium (60s), Long (5min+)
+- Invalidation patterns: By entity ID, by user ID, by project
+- Cache busting: Manual invalidation via SSE events, time-based expiration
+- Monitoring: Cache hit/miss ratios, eviction rates, memory usage
+- Testing: Cache behavior validation, TTL verification
+
+**Acceptance**:
+- Document defines all cache keys used in codebase
+- TTL decisions justified (e.g., why pipeline list = 5s, not 30s)
+- Invalidation strategy ensures stale-free behavior
+- Guide for adding new cached data in future
+
+**Dependencies**: T082
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/docs/CACHE_STRATEGY.md`
+
+---
+
+## T082b: Implement cache invalidation via SSE events (per A5) [P]
+**Description**: Connect cache layer to SSE events so cache automatically invalidates when data changes. Ensures real-time accuracy without manual cache busting.
+
+**File**: `/Users/elavigne/workspace/c8s/pkg/dashboard/cache_invalidation.go` (new)
+
+**Implementation**:
+```go
+// CacheInvalidator listens to SSE events and invalidates related cache entries
+type CacheInvalidator struct {
+    cache *CacheLayer
+    events chan SSEEvent
+}
+
+// OnPipelineStatusChanged invalidates pipeline list/detail cache
+func (ci *CacheInvalidator) OnPipelineStatusChanged(event SSEEvent)
+
+// OnNewPipelineRun invalidates pipeline list for project
+func (ci *CacheInvalidator) OnNewPipelineRun(event SSEEvent)
+
+// OnProjectUpdated invalidates project cache
+func (ci *CacheInvalidator) OnProjectUpdated(event SSEEvent)
+```
+
+**Acceptance**:
+- SSE events trigger cache invalidation
+- Pipeline list cache cleared when new run created
+- Pipeline detail cache cleared on status change
+- Project cache cleared on project update
+- No manual cache busting needed
+
+**Dependencies**: T082, T018, T037
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/pkg/dashboard/cache_invalidation.go`
+
+---
+
+## T082c: Write cache layer tests (per A5) [P]
+**Description**: Unit and integration tests for cache implementation, TTL behavior, and invalidation.
+
+**Files**:
+- `/Users/elavigne/workspace/c8s/tests/unit/cache_test.go` (new)
+- `/Users/elavigne/workspace/c8s/tests/integration/cache_integration_test.go` (new)
+
+**Tests**:
+```go
+// Unit tests
+func TestCacheGet_Hits(t *testing.T)              // Cache returns stored value
+func TestCacheGet_Misses(t *testing.T)            // Cache misses after TTL expires
+func TestCacheSet_WithTTL(t *testing.T)           // Custom TTL respected
+func TestCacheInvalidate_ByKey(t *testing.T)      // Specific key invalidated
+func TestCacheInvalidate_ByPattern(t *testing.T)  // Pattern-based invalidation works
+func TestCacheCleanup_RemovesExpired(t *testing.T) // Background cleanup runs
+
+// Integration tests
+func TestCacheInvalidation_OnSSEEvent(t *testing.T)      // SSE events invalidate cache
+func TestCacheHitRate_Improves(t *testing.T)            // Cache hit rate metrics
+func TestCacheMemory_Bounded(t *testing.T)              // Memory doesn't grow unbounded
+```
+
+**Acceptance**:
+- Cache TTL behavior validated
+- Invalidation strategy tested end-to-end
+- Cache hit/miss metrics work
+- Memory cleanup prevents leaks
+
+**Dependencies**: T082, T082a, T082b
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/unit/cache_test.go`
+- `/Users/elavigne/workspace/c8s/tests/integration/cache_integration_test.go`
+
+---
+
+## T083: Add loading states to HTMX requests
 **Description**: Show loading indicators during async HTMX operations.
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css` (update)
@@ -2924,7 +3666,7 @@ func (c *CacheLayer) Invalidate(key string)
 
 ---
 
-## T081: Add keyboard shortcuts
+## T084: Add keyboard shortcuts
 **Description**: Implement keyboard navigation (r=refresh, /=search focus, esc=close modal).
 
 **File**: `/Users/elavigne/workspace/c8s/cmd/api-server/static/js/keyboard.js`
@@ -2965,7 +3707,524 @@ function isInputFocused() {
 
 ---
 
-## T082: Write comprehensive E2E test suite
+## T084a: Write performance benchmarking tests (per A3) [P]
+**Description**: Create performance validation tests to verify all SC (success criteria) are met in defined test environment per spec.md Performance Test Environment section.
+
+**Files**:
+- `/Users/elavigne/workspace/c8s/tests/performance/benchmark_test.go` (new)
+- `/Users/elavigne/workspace/c8s/tests/performance/load_test.go` (new)
+- `/Users/elavigne/workspace/c8s/tests/performance/network_simulator.go` (new)
+- `/Users/elavigne/workspace/c8s/docs/PERFORMANCE_TESTING.md` (new)
+
+**Benchmarks to Implement**:
+```go
+// SC-001: Dashboard loads within 2 seconds
+func BenchmarkDashboardLoad(b *testing.B)
+
+// SC-002: New pipeline run appears within 5 seconds
+func BenchmarkNewRunAppearance(b *testing.B)
+
+// SC-003: Log streaming latency < 2 seconds
+func BenchmarkLogStreamingLatency(b *testing.B)
+
+// SC-004: Search/filter on 1000 runs in < 1 second
+func BenchmarkSearchPerformance(b *testing.B)
+
+// SC-005: 100+ concurrent users without degradation
+func BenchmarkConcurrentUsers(b *testing.B)
+
+// SC-006: Page loads in 3 seconds on standard internet
+func BenchmarkPageLoadWithNetworkThrottling(b *testing.B)
+
+// SC-011: Artifact download in < 30 seconds (500MB)
+func BenchmarkArtifactDownload(b *testing.B)
+```
+
+**Performance Test Environment Setup**:
+- Docker Compose or K8s manifest for test infrastructure
+- MinIO for S3-compatible storage
+- Sample data generation (1000 pipeline runs, logs, artifacts)
+- Network simulation via tc (traffic control) for latency/bandwidth throttling
+- Chrome DevTools Protocol integration for client-side measurements
+
+**Acceptance**:
+- All 7 performance benchmarks pass with target success criteria
+- Test results documented with environment configuration
+- Baseline metrics captured for regression detection
+- Load testing shows no degradation at 100+ concurrent users
+- Network-throttled tests validate SC-006 (standard internet conditions)
+
+**Documentation**:
+- PERFORMANCE_TESTING.md explains how to run benchmarks
+- Includes steps to set up test environment
+- Shows how to interpret results
+- Provides troubleshooting guidance
+
+**Dependencies**: T001-T085 (all implementation must complete first)
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/performance/benchmark_test.go`
+- `/Users/elavigne/workspace/c8s/tests/performance/load_test.go`
+- `/Users/elavigne/workspace/c8s/tests/performance/network_simulator.go`
+- `/Users/elavigne/workspace/c8s/docs/PERFORMANCE_TESTING.md`
+
+---
+
+## T085a: Write mobile E2E tests (per A15) [P]
+**Description**: End-to-end tests for mobile viewports to verify responsive design works correctly per FR-012 and SC-007. Test on iPhone SE (375px) and iPad (768px) viewports.
+
+**File**: `/Users/elavigne/workspace/c8s/tests/e2e/mobile.spec.ts` (new)
+
+**Test Coverage**:
+```typescript
+// Mobile viewport tests (375px - iPhone SE)
+test('mobile: pipeline list responsive', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('http://localhost:8080/dashboard');
+
+    // Verify mobile layout loads
+    await expect(page.locator('.pipeline-list')).toBeVisible();
+    // Verify no horizontal scroll
+    const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
+    expect(bodyWidth).toBeLessThanOrEqual(375);
+});
+
+test('mobile: navigation touch-friendly', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    // Verify touch targets are at least 44x44px
+    const buttons = await page.locator('button').all();
+    for (const btn of buttons) {
+        const box = await btn.boundingBox();
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+});
+
+test('mobile: pipeline detail readable', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    // Font sizes should be readable (min 14px for body)
+    const computed = await page.evaluate(() =>
+        window.getComputedStyle(document.body).fontSize
+    );
+    expect(parseInt(computed)).toBeGreaterThanOrEqual(14);
+});
+
+test('mobile: logs scrollable', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    // Vertical scrolling should work for logs
+    await page.goto('http://localhost:8080/dashboard/runs/123');
+    const logViewer = page.locator('.log-viewer');
+    await logViewer.evaluate(el => el.scrollTop = 100);
+    const scrolled = await logViewer.evaluate(el => el.scrollTop);
+    expect(scrolled).toBeGreaterThan(0);
+});
+
+// Tablet viewport tests (768px - iPad)
+test('tablet: two-column layout', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    // Tablet can show side-by-side content
+    await page.goto('http://localhost:8080/dashboard');
+    // Verify layout optimizes for tablet
+    const sidebar = page.locator('.sidebar');
+    await expect(sidebar).toBeVisible();
+});
+
+// Touch interaction tests
+test('mobile: dropdown menu works on touch', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('http://localhost:8080/dashboard');
+    // Tap (not click) to open dropdown
+    await page.locator('.menu-toggle').tap();
+    await expect(page.locator('.dropdown-menu')).toBeVisible();
+});
+
+test('mobile: forms work with mobile keyboard', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    // Input fields should trigger mobile keyboard
+    const input = page.locator('input[name="search"]');
+    await input.focus();
+    // Verify input visible above keyboard (viewport shift)
+    const box = await input.boundingBox();
+    expect(box.y).toBeLessThan(667 * 0.75); // In upper 75% of screen
+});
+```
+
+**Viewport Sizes Tested**:
+- **375px** (iPhone SE, per SC-007 requirement)
+- **414px** (iPhone 12)
+- **768px** (iPad mini)
+- **1024px** (iPad)
+
+**Accessibility for Mobile**:
+- Touch targets minimum 44x44px (iOS HIG standard)
+- No horizontal scroll on mobile viewports
+- Form inputs shift into view above virtual keyboard
+- Font sizes readable on small screens (≥14px)
+- Tap gestures work (not just click)
+
+**Acceptance**:
+- All mobile viewports render correctly
+- No layout shifts or overflow
+- Touch interactions work
+- Page loads within SC-006 (3 seconds) on mobile
+- Forms usable on mobile keyboard
+- Logs readable and scrollable
+
+**Dependencies**: T034, T041, T073, T080 (all page templates)
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/e2e/mobile.spec.ts`
+
+---
+
+## T085b: Add accessibility audit and WCAG compliance (per A16) [P]
+**Description**: Run Lighthouse accessibility audit and document WCAG 2.1 Level AA compliance per SC-009 (80+ Lighthouse score requirement).
+
+**File**: `/Users/elavigne/workspace/c8s/tests/e2e/accessibility.spec.ts` (new)
+
+**Implementation**:
+```typescript
+import { test, expect } from '@playwright/test';
+import lighthouse from 'lighthouse';
+
+test('lighthouse: accessibility score >= 80', async ({ page }) => {
+    await page.goto('http://localhost:8080/dashboard');
+
+    const options = {
+        logLevel: 'info',
+        output: 'json',
+        onlyCategories: ['accessibility'],
+    };
+
+    const runnerResult = await lighthouse(page.url(), options);
+    const accessibilityScore = runnerResult.lhr.categories.accessibility.score;
+
+    // SC-009: 80+ Lighthouse score
+    expect(accessibilityScore * 100).toBeGreaterThanOrEqual(80);
+
+    // Log issues for remediation
+    console.log('Accessibility Audit Results:');
+    const auditResults = runnerResult.lhr.audits;
+    Object.entries(auditResults).forEach(([key, audit]) => {
+        if (audit.score < 1) {
+            console.log(`⚠️  ${audit.title}: ${audit.description}`);
+        }
+    });
+});
+
+test('WCAG 2.1: text contrast ratio', async ({ page }) => {
+    // Verify WCAG AA minimum contrast (4.5:1 normal, 3:1 large text)
+    await page.goto('http://localhost:8080/dashboard');
+
+    const textElements = await page.locator('body *:visible').all();
+    for (const el of textElements) {
+        const computed = await el.evaluate(e => window.getComputedStyle(e));
+        // Should check contrast using color contrast analyzer library
+        // e.g., computed.color vs computed.backgroundColor
+    }
+});
+
+test('WCAG 2.1: keyboard navigation only', async ({ page }) => {
+    // Test all functionality reachable via keyboard
+    await page.goto('http://localhost:8080/dashboard');
+
+    // Tab through page
+    let focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+    let tabCount = 0;
+
+    while (focusedElement && tabCount < 50) {
+        await page.keyboard.press('Tab');
+        focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+        tabCount++;
+    }
+
+    expect(tabCount).toBeGreaterThan(5); // Many focusable elements
+});
+
+test('WCAG 2.1: form labels', async ({ page }) => {
+    // All form inputs must have labels
+    await page.goto('http://localhost:8080/dashboard/projects');
+
+    const inputs = await page.locator('input').all();
+    for (const input of inputs) {
+        const id = await input.getAttribute('id');
+        const label = page.locator(`label[for="${id}"]`);
+        // Or aria-label attribute
+        const ariaLabel = await input.getAttribute('aria-label');
+        const hasLabel = await label.count() > 0 || ariaLabel;
+        expect(hasLabel).toBeTruthy();
+    }
+});
+
+test('WCAG 2.1: heading hierarchy', async ({ page }) => {
+    // Headings must be in logical order
+    await page.goto('http://localhost:8080/dashboard');
+
+    const headings = await page.locator('h1, h2, h3, h4, h5, h6').all();
+    let lastLevel = 0;
+
+    for (const h of headings) {
+        const level = parseInt(await h.evaluate(e => e.tagName[1]));
+        // Skip only 1 level max (h1 → h2, h2 → h3, etc.)
+        expect(level - lastLevel).toBeLessThanOrEqual(1);
+        lastLevel = level;
+    }
+});
+
+test('WCAG 2.1: alt text for images', async ({ page }) => {
+    await page.goto('http://localhost:8080/dashboard');
+
+    const images = await page.locator('img').all();
+    for (const img of images) {
+        const alt = await img.getAttribute('alt');
+        const isDecorative = await img.getAttribute('role') === 'presentation';
+        expect(alt || isDecorative).toBeTruthy();
+    }
+});
+
+test('WCAG 2.1: color not only indicator', async ({ page }) => {
+    // Cannot convey information using color alone
+    await page.goto('http://localhost:8080/dashboard');
+
+    // Status badges must have text labels, not just color
+    const statusBadges = page.locator('[class*="status"]');
+    for (const badge of await statusBadges.all()) {
+        const text = await badge.textContent();
+        expect(text?.trim().length).toBeGreaterThan(0);
+    }
+});
+```
+
+**WCAG 2.1 Level AA Compliance Checklist**:
+- ✓ Perceived: Sufficient contrast (4.5:1), readable fonts
+- ✓ Operable: Keyboard navigation, no keyboard traps, skip links
+- ✓ Understandable: Labels, headings, link text, form instructions
+- ✓ Robust: Valid HTML, proper ARIA attributes, semantic markup
+
+**Acceptance**:
+- Lighthouse accessibility score ≥80 (per SC-009)
+- WCAG 2.1 Level AA compliance verified
+- All form inputs have labels
+- Keyboard navigation functional
+- Color contrast meets standards
+- Headings in logical order
+- Alt text for all meaningful images
+
+**Documentation**:
+- `/Users/elavigne/workspace/c8s/docs/ACCESSIBILITY.md` - WCAG compliance guide
+- Remediation items documented and linked to issues
+
+**Dependencies**: T005, T034, T041, T080a (all page templates and styling)
+**Story**: Polish
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/tests/e2e/accessibility.spec.ts`
+- `/Users/elavigne/workspace/c8s/docs/ACCESSIBILITY.md`
+
+---
+
+## T085c: Implement step dependency visualization (per A17) [P]
+**Description**: Add visual representation of step dependencies on pipeline detail page. Show which steps block which other steps per spec.md:US2 Acceptance Criteria #5.
+
+**File**: `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/step_dependency_graph.html` (new)
+
+**Implementation**:
+```html
+{{define "step_dependency_graph"}}
+<div class="step-dependency-container">
+    <h3>Step Dependencies</h3>
+
+    <!-- SVG-based dependency graph -->
+    <svg class="dependency-graph" width="800" height="500">
+        <!-- Nodes: steps -->
+        {{range $i, $step := .Steps}}
+        <g class="step-node" id="step-{{.ID}}">
+            <rect class="step-box" x="{{mul $i 150}}" y="50"
+                  width="120" height="60" rx="5"
+                  fill="{{statusColor .Status}}" />
+            <text class="step-name" x="{{add (mul $i 150) 60}}" y="85">
+                {{.Name}}
+            </text>
+            <text class="step-status" x="{{add (mul $i 150) 60}}" y="105"
+                  font-size="12">
+                {{.Status}}
+            </text>
+        </g>
+        {{end}}
+
+        <!-- Edges: dependencies -->
+        {{range $i, $step := .Steps}}
+        {{range .DependsOn}}
+        <line class="dependency-edge"
+              x1="{{add (mul (indexOf .ID $.Steps) 150) 120}}" y1="80"
+              x2="{{add (mul (indexOf $step.ID $.Steps) 150) 0}}" y2="80"
+              stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+        {{end}}
+        {{end}}
+
+        <!-- Arrow marker -->
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="10"
+                    refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#666" />
+            </marker>
+        </defs>
+    </svg>
+
+    <!-- Legend -->
+    <div class="dependency-legend">
+        <div class="legend-item">
+            <span class="legend-color" style="background: #4CAF50"></span>
+            <span>Succeeded</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #FF9800"></span>
+            <span>Running</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #F44336"></span>
+            <span>Failed</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #E0E0E0"></span>
+            <span>Pending</span>
+        </div>
+    </div>
+
+    <!-- Dependency Table (text alternative) -->
+    <table class="dependency-table">
+        <thead>
+            <tr>
+                <th>Step</th>
+                <th>Status</th>
+                <th>Depends On</th>
+            </tr>
+        </thead>
+        <tbody>
+        {{range .Steps}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Status}}</td>
+                <td>
+                    {{if .DependsOn}}
+                        {{join (map .DependsOn (print "Name")) ", "}}
+                    {{else}}
+                        None (runs immediately)
+                    {{end}}
+                </td>
+            </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+```
+
+**CSS Styling** (add to dashboard.css):
+```css
+.step-dependency-container {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dependency-graph {
+    display: block;
+    margin: 20px 0;
+    border: 1px solid #eee;
+    background: #f9f9f9;
+}
+
+.step-node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.step-node:hover {
+    opacity: 0.8;
+}
+
+.step-box {
+    stroke: #333;
+    stroke-width: 1;
+}
+
+.step-name {
+    font-weight: bold;
+    text-anchor: middle;
+    fill: white;
+}
+
+.step-status {
+    text-anchor: middle;
+    fill: white;
+}
+
+.dependency-legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+}
+
+.dependency-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.dependency-table th, .dependency-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.dependency-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+```
+
+**Features**:
+- Visual SVG graph showing step nodes and dependency edges
+- Color-coded by status (green=succeeded, orange=running, red=failed, gray=pending)
+- Interactive hover highlighting
+- Text-based table alternative for accessibility
+- Legend explaining colors
+- Responsive (adapts to container width)
+
+**Acceptance**:
+- Dependencies visually displayed on detail page
+- Relationship between steps clear (blocking/blocked-by)
+- Accessible via keyboard and screen readers
+- Works on mobile (table view as fallback)
+- Performance: Renders 50+ steps without lag
+
+**Dependencies**: T046 (pipeline detail template), T085b (accessibility)
+**Story**: US2
+**Files Created**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/partials/step_dependency_graph.html`
+
+**Files Modified**:
+- `/Users/elavigne/workspace/c8s/cmd/api-server/static/css/dashboard.css` (add dependency graph styles)
+- `/Users/elavigne/workspace/c8s/cmd/api-server/templates/pages/pipeline_detail.html` (include dependency graph)
+
+---
+
+## T085: Write comprehensive E2E test suite
 **Description**: Master E2E test covering complete user workflow.
 
 **File**: `/Users/elavigne/workspace/c8s/tests/e2e/full_workflow.spec.ts`
@@ -3030,10 +4289,10 @@ test('complete dashboard workflow', async ({ page }) => {
 6. Iterate on P2 and P3 stories
 
 **Success Metrics** (from spec.md):
-- SC-001: Dashboard loads in <2s ✓ (via caching T079)
-- SC-003: Log latency <2s ✓ (via SSE T044)
-- SC-004: Search <1s ✓ (via indexing T053)
-- SC-005: 100+ concurrent users ✓ (via SSE broadcaster T018, caching T079)
+- SC-001: Dashboard loads in <2s ✓ (via caching T082)
+- SC-003: Log latency <2s ✓ (via SSE T047)
+- SC-004: Search <1s ✓ (via indexing T056)
+- SC-005: 100+ concurrent users ✓ (via SSE broadcaster T018, caching T082)
 
 **Deliverables**:
 - Functional web dashboard integrated with C8S API server

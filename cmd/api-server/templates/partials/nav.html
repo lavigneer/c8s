@@ -1,0 +1,15 @@
+{{define "partials/nav"}}
+<nav class="navbar">
+    <div class="nav-container">
+        <h1 class="nav-title"><a href="/dashboard">C8S Dashboard</a></h1>
+        <ul class="nav-menu">
+            <li><a href="/dashboard/projects">Projects</a></li>
+            <li><a href="/dashboard">Pipelines</a></li>
+            {{if .User}}
+                <li><span>{{.User.Username}}</span></li>
+                <li><a href="/logout">Logout</a></li>
+            {{end}}
+        </ul>
+    </div>
+</nav>
+{{end}}

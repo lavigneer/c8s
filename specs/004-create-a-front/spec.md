@@ -99,12 +99,49 @@ A developer has run a pipeline that produces build artifacts (compiled binaries,
 
 ### Edge Cases
 
-- **Long-running pipelines**: Dashboard displays elapsed time and allows users to cancel stuck pipelines. System shows last-updated timestamp to distinguish active vs. stalled executions.
-- **Network interruption**: Dashboard gracefully handles disconnections. WebSocket reconnects automatically; page doesn't break if logs fail to load temporarily.
-- **Concurrent updates**: Multiple team members viewing the same pipeline run see synchronized updates through real-time mechanisms (WebSocket or polling).
+- **Long-running pipelines**: Dashboard displays elapsed time and allows users to cancel stuck pipelines per spec.md US2 edge case. System shows last-updated timestamp to distinguish active vs. stalled executions.
+- **Network interruption**: Dashboard gracefully handles disconnections. SSE reconnects automatically within 10 seconds (SC-012); page doesn't break if logs fail to load temporarily.
+- **Concurrent updates**: Multiple team members viewing the same pipeline run see synchronized updates through SSE in real-time.
 - **Very large log outputs**: Dashboard streams logs and implements pagination/virtual scrolling to avoid rendering performance degradation.
 - **Deleted projects or pipeline metadata**: Dashboard handles gracefully by showing archived/read-only view with message explaining that data is no longer maintained.
 - **Permission mismatches**: Users without access to a project cannot view its runs or data; appropriate error messages guide them to request access.
+
+### Filter Persistence and Sharing (Per A12 - Search & Filter)
+
+**Filter State Management**:
+1. **URL-based filter state** (RECOMMENDED for MVP):
+   - Filters stored as query parameters: `/dashboard?status=failed&branch=main&search=abc123`
+   - Users can bookmark filtered views
+   - Shared links preserve filters
+   - Back/forward browser buttons work with filters
+   - Example: `/dashboard?status=running,failed&branch=*&created_after=2025-10-01&created_before=2025-10-31`
+
+2. **Session-based filter persistence** (OPTIONAL enhancement):
+   - If URL-based filters are cleared, check browser localStorage
+   - Store last-used filter combination in localStorage
+   - Restore on next dashboard visit
+   - Max 10 saved filter presets per user (stored server-side)
+
+**Filter Parameters Supported**:
+- `status` - Comma-separated: `passed,failed,running,cancelled`
+- `branch` - Git branch name (supports wildcards: `feature/*`)
+- `search` - Commit SHA or author name (substring match)
+- `created_after` - ISO date: `2025-10-01`
+- `created_before` - ISO date: `2025-10-31`
+- `project_id` - Filter to specific project
+
+**Acceptance Criteria for FR-006 (Search & Filter)**:
+1. Filters update URL query params immediately
+2. Page reload preserves active filters
+3. Shared links include filter state
+4. Invalid filter values ignored (no error page)
+5. Filters reset button clears all params
+6. "Save filter preset" feature (optional for P2)
+
+**Example Filter Scenarios**:
+- Failed runs in production: `/dashboard?status=failed&branch=main`
+- Recent commits by alice: `/dashboard?search=alice&created_after=2025-10-25`
+- All running tests: `/dashboard?status=running&branch=*-test`
 
 ## Requirements *(mandatory)*
 
@@ -126,6 +163,33 @@ A developer has run a pipeline that produces build artifacts (compiled binaries,
 - **FR-014**: System MUST maintain session security through appropriate token handling and HTTPS enforcement
 - **FR-015**: System MUST cache frequently accessed data (pipeline lists, project metadata) to reduce API load and improve perceived performance
 - **FR-016**: System MUST handle WebSocket or polling disconnections gracefully, with automatic reconnection and user notification
+
+### Keyboard Shortcuts (Per FR-013)
+
+Dashboard users can access the following keyboard shortcuts from any page:
+
+| Shortcut | Action | Context | Notes |
+|----------|--------|---------|-------|
+| `?` | Show keyboard shortcuts help modal | Any page | Display modal with shortcut reference |
+| `Ctrl/Cmd + K` | Focus search box | Pipeline list, Project list | Allows quick search without mouse |
+| `Ctrl/Cmd + R` | Refresh current page | Any page | Force refresh of pipeline/project data |
+| `Ctrl/Cmd + L` | Jump to latest log line | Pipeline detail (logs visible) | Auto-scroll to bottom of log viewer |
+| `Esc` | Close modal/dropdown | Modal or filter menu open | Dismiss currently open UI element |
+| `Ctrl/Cmd + Enter` | Submit form | Project creation or search filters | Submit form without clicking button |
+| `J` | Jump to next run | Pipeline list (focus in table) | Navigate down one row in pipeline list |
+| `K` | Jump to previous run | Pipeline list (focus in table) | Navigate up one row in pipeline list |
+| `X` | Cancel selected pipeline | Pipeline detail (running pipeline) | Terminate currently executing pipeline |
+| `D` | Download artifact | Artifact list (focus on artifact) | Download selected artifact |
+| `V` | View artifact | Artifact list (focus on artifact) | Open/preview selected artifact |
+| `Ctrl/Cmd + /` | Toggle search filter panel | Pipeline list | Show/hide advanced filter options |
+| `Ctrl/Cmd + S` | Save filter preset | Pipeline list (filter active) | Save current filter combination as reusable preset |
+
+**Acceptance Criteria for FR-013**:
+1. All keyboard shortcuts defined above work on supported pages
+2. Help modal (triggered by `?`) displays all available shortcuts for current page
+3. Shortcuts respect modifier key conventions (Cmd on Mac, Ctrl on Windows/Linux)
+4. Keyboard navigation doesn't interfere with text input fields (search, form fields)
+5. Accessibility: All shortcut actions have equivalent mouse/UI alternatives (no functionality keyboard-only)
 
 ### Key Entities
 
@@ -151,6 +215,50 @@ A developer has run a pipeline that produces build artifacts (compiled binaries,
 - **SC-010**: Project setup (create project, obtain webhook, register webhook) can be completed in under 5 minutes
 - **SC-011**: Artifact downloads complete in under 30 seconds for artifacts up to 500MB
 - **SC-012**: System recovers from network interruptions and reconnects within 10 seconds
+
+### Performance Test Environment Specification (Per A3)
+
+All performance success criteria (SC-001, SC-002, SC-003, SC-004, SC-005, SC-006, SC-011) MUST be validated in a defined test environment to ensure reproducibility and consistency.
+
+**Test Environment Configuration**:
+
+| Component | Specification | Notes |
+|-----------|---------------|-------|
+| **Server Hardware** | 4 vCPU, 8GB RAM, SSD storage | Represents mid-tier production node |
+| **Kubernetes Cluster** | Local k3d cluster with 1 control plane + 2 worker nodes | Simulates multi-node environment |
+| **Database** | PostgreSQL 14+ (if used for metadata) | Native performance, no managed service overhead |
+| **Object Storage** | Local MinIO or S3 compatible | Represents artifact storage layer |
+| **Network Latency** | 10-50ms RTT (simulating WAN) | Can use `tc` (traffic control) to simulate latency |
+| **Bandwidth** | 100 Mbps (simulating standard broadband) | Can use `tc` to throttle bandwidth |
+| **Browser/Client** | Chrome/Firefox latest stable | Desktop viewport (1920x1080) |
+| **Load Generator** | Apache JMeter or Locust for concurrent user tests | For SC-005 (100+ concurrent) |
+| **Monitoring** | Prometheus + Grafana or built-in Go profiling | Track request latency, throughput, error rates |
+
+**Performance Testing Procedure**:
+1. Warm up database/cache with baseline data (e.g., 1000 pipeline runs for SC-004)
+2. Clear caches before each test run
+3. Measure 3 test runs, report average + p99 latency
+4. Validate against success criteria
+5. Document any deviations or environmental factors
+
+**Client Network Conditions** (for SC-006):
+- **"Standard internet connection"** defined as:
+  - Downlink: 10-25 Mbps (typical cable/fiber)
+  - Uplink: 5-10 Mbps
+  - Latency: 20-40ms
+  - Packet loss: < 0.1%
+  - Can be simulated using Chrome DevTools throttling or network simulator
+
+**Success Criteria Validation**:
+- **SC-001** (2sec load): Measure time from initial dashboard page request to render complete with data
+- **SC-002** (5sec new run): Create pipeline run via API, measure time to appearance in dashboard list (via SSE)
+- **SC-003** (2sec log latency): Compare log timestamp with SSE event timestamp (measure backend queue delay)
+- **SC-004** (1sec search): Insert 1000 test pipeline runs, measure search filter response time
+- **SC-005** (100+ concurrent): Use load generator, maintain target response time under concurrent load
+- **SC-006** (3sec page load): Simulate "standard internet" network conditions, measure full page load time
+- **SC-011** (30sec download): Download 500MB artifact file, measure download completion time
+
+---
 
 ## Assumptions
 
