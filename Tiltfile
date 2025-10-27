@@ -82,6 +82,7 @@ k8s_yaml([
     'deploy/03-controller-deployment.yaml',
     'deploy/04-webhook-rbac.yaml',
     'deploy/05-webhook-deployment.yaml',
+    'deploy/06-api-server-deployment.yaml',
 ])
 
 # ============================================================================
@@ -160,6 +161,27 @@ docker_build(
 k8s_resource(
     'c8s-webhook',
     labels=['webhook'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    pod_readiness='wait'
+)
+
+# ============================================================================
+# API Server Component (HTMX Frontend)
+# ============================================================================
+
+docker_build(
+    ref='c8s-api-server:latest',
+    context='.',
+    dockerfile='Dockerfile',
+    target='api-server',
+    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
+)
+
+# Track API Server deployment
+k8s_resource(
+    'c8s-api-server',
+    port_forwards=['8080:8080'],  # Forward dashboard to localhost:8080
+    labels=['api-server'],
     trigger_mode=TRIGGER_MODE_AUTO,
     pod_readiness='wait'
 )
@@ -252,30 +274,40 @@ if with_samples:
 # ============================================================================
 
 print("""
-╭─────────────────────────────────────────────────────────────────╮
-│         C8S Local Development with Tilt                        │
-│                                                                 │
-│ Usage:                                                          │
-│   tilt up              - Start development environment         │
-│   tilt down            - Shut down development environment     │
-│   tilt logs controller - View controller logs                  │
-│                                                                 │
-│ Web UI:                                                         │
-│   Open http://localhost:10350 (Tilt dashboard)                │
-│                                                                 │
-│ Components:                                                     │
-│   - Controller:   http://localhost:6060 (pprof)               │
-│   - API Server:   http://localhost:8080                       │
-│   - Webhook:      https://localhost:9443                      │
-│                                                                 │
-│ Workflow:                                                       │
-│   1. Edit Go files in cmd/ or pkg/                            │
-│   2. Tilt automatically detects changes and rebuilds          │
-│   3. Components redeploy automatically                        │
-│   4. View logs in Tilt dashboard                              │
-│                                                                 │
-│ Documentation:                                                  │
-│   See docs/tilt-setup.md for detailed guide                   │
-│                                                                 │
-╰─────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────╮
+│         C8S Local Development with Tilt + HTMX Dashboard       │
+│                                                                  │
+│ Usage:                                                           │
+│   tilt up              - Start development environment          │
+│   tilt down            - Shut down development environment      │
+│   tilt logs <service>  - View logs (controller/api-server)     │
+│                                                                  │
+│ Access Points:                                                   │
+│   - Tilt Dashboard:    http://localhost:10350                  │
+│   - C8S Dashboard:     http://localhost:8080                   │
+│   - Controller Pprof:  http://localhost:6060                   │
+│   - Webhook:           https://localhost:9443                  │
+│                                                                  │
+│ Components Running:                                              │
+│   ✓ Controller:        Manages C8S Kubernetes resources        │
+│   ✓ API Server:        HTMX-based web dashboard                │
+│   ✓ Webhook:           Git webhook event receiver              │
+│                                                                  │
+│ Development Workflow:                                            │
+│   1. Edit Go files in cmd/api-server or pkg/dashboard         │
+│   2. Edit templates in cmd/api-server/templates/              │
+│   3. Tilt automatically detects changes and rebuilds           │
+│   4. Browser auto-refresh shows updates                        │
+│   5. View logs and metrics in Tilt dashboard                   │
+│                                                                  │
+│ Hot Reload:                                                      │
+│   - Go backend: Automatic rebuild and restart                  │
+│   - Templates: Live update on save                             │
+│   - Static assets: Automatic cache invalidation                │
+│                                                                  │
+│ Documentation:                                                   │
+│   - See docs/tilt-setup.md for detailed guide                  │
+│   - See DASHBOARD_README.md for frontend development           │
+│                                                                  │
+╰──────────────────────────────────────────────────────────────────╯
 """)

@@ -25,6 +25,7 @@ COPY Makefile ./
 # Use -trimpath to remove build paths, -v for verbose output
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/controller ./cmd/controller
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/webhook ./cmd/webhook
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/api-server ./cmd/api-server
 
 # Controller image
 FROM alpine:3.18 AS controller
@@ -43,3 +44,18 @@ COPY --from=builder /workspace/bin/webhook /webhook
 USER 65532:65532
 
 ENTRYPOINT ["/webhook"]
+
+# API Server image
+FROM alpine:3.18 AS api-server
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+# Copy the api-server binary
+COPY --from=builder /workspace/bin/api-server /app/api-server
+# Copy templates and static assets
+COPY cmd/api-server/templates ./templates
+COPY cmd/api-server/static ./static
+EXPOSE 8080
+USER 65532:65532
+
+ENTRYPOINT ["/app/api-server"]
+CMD ["-base-dir", "/app"]
