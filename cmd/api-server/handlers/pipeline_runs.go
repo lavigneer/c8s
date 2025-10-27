@@ -99,13 +99,13 @@ func filterPipelineRuns(runs []*dashboard.PipelineRunDTO, status, branch, search
 	return filtered
 }
 
-// GetPipelineRunHandler handles GET /api/projects/{projectId}/runs/{runId}
+// GetPipelineRunHandler handles GET /api/runs/{runId}
+// Returns full pipeline run with step details
 func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
-	projectID := chi.URLParam(r, "projectId")
 	runID := chi.URLParam(r, "runId")
 
-	if projectID == "" || runID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId and runId required")
+	if runID == "" {
+		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 

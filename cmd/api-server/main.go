@@ -66,6 +66,8 @@ func main() {
 		// Dashboard pages (US1)
 		r.Get("/dashboard", handlers.DashboardHandler)
 		r.Get("/dashboard/projects", handlers.ProjectsHandler)
+
+		// Dashboard pages (US2)
 		r.Get("/dashboard/runs/{runId}", handlers.PipelineRunDetailsHandler)
 
 		// API endpoints - Projects
@@ -75,9 +77,16 @@ func main() {
 
 		// API endpoints - Pipeline Runs (US1)
 		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
-		r.Get("/api/projects/{projectId}/runs/{runId}", handlers.GetPipelineRunHandler)
 
-		// SSE endpoints
+		// API endpoints - Pipeline Run Details (US2)
+		r.Get("/api/runs/{runId}", handlers.GetPipelineRunHandler)
+
+		// Log Streaming endpoints (US2)
+		r.Get("/api/runs/{runId}/steps/{stepId}/logs", handlers.LogStreamHandler)
+		r.Get("/api/runs/{runId}/steps/{stepId}/logs/text", handlers.GetLogsHandler)
+		r.Get("/api/runs/{runId}/steps/{stepId}/logs/snapshot", handlers.GetLogSnapshotHandler)
+
+		// SSE endpoints (US1)
 		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
 	})
 

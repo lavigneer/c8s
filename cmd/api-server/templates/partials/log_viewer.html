@@ -1,0 +1,62 @@
+{{define "partials/log_viewer"}}
+<div class="log-viewer" id="log-viewer-{{.StepID}}">
+    <!-- Log Header -->
+    <div class="log-header sticky top-0 bg-gray-900 border-b border-gray-700 px-4 py-3 flex justify-between items-center">
+        <div>
+            <h3 class="font-semibold text-white">Logs: {{.StepName}}</h3>
+            <p class="text-xs text-gray-400">{{.StepID}}</p>
+        </div>
+        <button class="btn btn-sm bg-gray-700 hover:bg-gray-600 text-white"
+                onclick="clearLogs('log-container-{{.StepID}}')">
+            Clear
+        </button>
+    </div>
+
+    <!-- Log Container with SSE -->
+    <div class="log-container" id="log-container-{{.StepID}}"
+         hx-ext="sse"
+         sse-connect="/api/runs/{{.RunID}}/steps/{{.StepID}}/logs"
+         hx-swap="beforeend swap:3s">
+        <div class="log-line text-yellow-400 py-1">Connecting to log stream...</div>
+    </div>
+
+    <!-- Log Footer -->
+    <div class="log-footer sticky bottom-0 bg-gray-950 border-t border-gray-700 px-4 py-2 text-xs text-gray-400">
+        <span id="log-count-{{.StepID}}">0</span> lines
+    </div>
+</div>
+
+<script>
+// Clear logs function
+function clearLogs(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '<div class="log-line text-yellow-400 py-1">Logs cleared</div>';
+    }
+}
+
+// Auto-scroll to bottom on new logs
+document.addEventListener('htmx:sseMessage', function(event) {
+    if (event.detail.event === 'log') {
+        const container = event.target.closest('.log-container');
+        if (container) {
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 0);
+        }
+    }
+});
+
+// Update log line count
+function updateLogCount(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        const count = container.querySelectorAll('.log-line').length;
+        const countEl = document.getElementById(containerId.replace('log-container-', 'log-count-'));
+        if (countEl) {
+            countEl.textContent = count;
+        }
+    }
+}
+</script>
+{{end}}

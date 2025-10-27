@@ -1,0 +1,115 @@
+{{define "pipeline_detail"}}
+{{template "base" .}}
+{{define "title"}}Pipeline Run - C8S Dashboard{{end}}
+{{define "content"}}
+<div class="py-8">
+    <!-- Header -->
+    {{if .PipelineRun}}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">{{.PipelineRun.Name}}</h1>
+                <p class="text-gray-600 mt-2">Run Details</p>
+            </div>
+            <div>
+                {{template "partials/status_badge" .PipelineRun}}
+            </div>
+        </div>
+
+        <!-- Run Metadata -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <!-- Commit -->
+            <div>
+                <span class="text-gray-600 block">Commit</span>
+                <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{slice .PipelineRun.CommitSHA 0 7}}</span>
+            </div>
+
+            <!-- Branch -->
+            <div>
+                <span class="text-gray-600 block">Branch</span>
+                <span class="font-medium">{{.PipelineRun.Branch}}</span>
+            </div>
+
+            <!-- Author -->
+            <div>
+                <span class="text-gray-600 block">Author</span>
+                <span class="font-medium">{{.PipelineRun.Author}}</span>
+            </div>
+
+            <!-- Triggered -->
+            <div>
+                <span class="text-gray-600 block">Triggered</span>
+                <span class="text-sm">{{formatTime .PipelineRun.TriggeredAt}}</span>
+            </div>
+
+            <!-- Started -->
+            {{if .PipelineRun.StartedAt}}
+            <div>
+                <span class="text-gray-600 block">Started</span>
+                <span class="text-sm">{{formatTime .PipelineRun.StartedAt}}</span>
+            </div>
+            {{end}}
+
+            <!-- Duration -->
+            {{if .PipelineRun.DurationSeconds}}
+            <div>
+                <span class="text-gray-600 block">Duration</span>
+                <span class="font-medium">{{formatDuration .PipelineRun.DurationSeconds}}</span>
+            </div>
+            {{end}}
+
+            <!-- Steps/Artifacts -->
+            <div>
+                <span class="text-gray-600 block">Steps</span>
+                <span class="font-medium">{{.PipelineRun.StepCount}}</span>
+            </div>
+
+            <div>
+                <span class="text-gray-600 block">Artifacts</span>
+                <span class="font-medium">{{.PipelineRun.ArtifactCount}}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Steps Section -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-900">Steps</h2>
+        </div>
+
+        {{if .PipelineRun.Steps}}
+        <div class="divide-y divide-gray-200">
+            {{range .PipelineRun.Steps}}
+                {{template "partials/step_status" . }}
+            {{end}}
+        </div>
+        {{else}}
+        <div class="px-6 py-8 text-center text-gray-600">
+            No steps found
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Log Section -->
+    <div id="log-section" class="bg-white rounded-lg shadow-md mt-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-900">Logs</h2>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-600">Select a step to view logs</p>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-8">
+        <a href="/dashboard" class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition">
+            ← Back to Pipeline List
+        </a>
+    </div>
+    {{else}}
+    <!-- Error State -->
+    {{template "partials/empty_state" dict "Title" "Pipeline Not Found" "Message" "The pipeline run you're looking for doesn't exist or has been deleted." "ActionText" "Back to List" "ActionURL" "/dashboard"}}
+    {{end}}
+</div>
+{{end}}
+{{end}}

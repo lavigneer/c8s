@@ -144,3 +144,97 @@
 .empty-state p {
     @apply text-gray-600 mb-6 max-w-sm;
 }
+
+/* Step Status Styles */
+.step-item {
+    @apply border-b border-gray-200 transition-colors;
+}
+
+.step-item:last-child {
+    @apply border-b-0;
+}
+
+.step-item:hover {
+    @apply bg-gray-50;
+}
+
+.step-header {
+    @apply flex justify-between items-center gap-4;
+}
+
+.step-name {
+    @apply flex items-center gap-3;
+}
+
+.step-time {
+    @apply text-sm text-gray-600;
+}
+
+.step-details {
+    @apply bg-gray-50 rounded p-3 mb-3 text-sm space-y-2;
+}
+
+.step-image {
+    @apply font-mono text-xs bg-white px-2 py-1 rounded border border-gray-200;
+}
+
+.step-commands {
+    @apply space-y-1;
+}
+
+.step-commands code {
+    @apply font-mono text-xs bg-white px-2 py-1 rounded border border-gray-200 block;
+}
+
+.step-exit-code {
+    @apply font-mono text-xs;
+}
+
+/* Log Viewer Styles */
+.log-viewer {
+    @apply bg-gray-900 text-gray-200 font-mono text-sm leading-relaxed rounded-lg border border-gray-700 overflow-hidden flex flex-col max-h-96;
+}
+
+.log-header {
+    @apply sticky top-0 bg-gray-900 border-b border-gray-700 px-4 py-3 flex justify-between items-center z-10;
+}
+
+.log-header h3 {
+    @apply text-white font-semibold;
+}
+
+.log-header p {
+    @apply text-gray-400 text-xs mt-1;
+}
+
+.log-container {
+    @apply flex-1 overflow-y-auto p-4 bg-gray-950;
+}
+
+.log-line {
+    @apply whitespace-pre-wrap break-words py-1;
+}
+
+.log-line.loading {
+    @apply text-yellow-400;
+}
+
+.log-error {
+    @apply text-red-400;
+}
+
+.log-warning {
+    @apply text-yellow-400;
+}
+
+.log-success {
+    @apply text-green-400;
+}
+
+.log-info {
+    @apply text-blue-400;
+}
+
+.log-footer {
+    @apply sticky bottom-0 bg-gray-950 border-t border-gray-700 px-4 py-2 text-xs text-gray-400;
+}

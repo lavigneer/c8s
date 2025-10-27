@@ -1,0 +1,97 @@
+{{define "partials/step_status"}}
+<div class="step-item p-4 border-b border-gray-200 hover:bg-gray-50 transition" id="step-{{.ID}}" data-status="{{.Status}}">
+    <!-- Step Header -->
+    <div class="flex justify-between items-start mb-3">
+        <div class="flex items-center gap-3 flex-1">
+            {{template "partials/status_badge" .}}
+            <div>
+                <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
+                <p class="text-xs text-gray-500 font-mono">{{.ID}}</p>
+            </div>
+        </div>
+        <div class="text-right text-sm">
+            {{if .StartedAt}}
+                <div class="text-gray-600">Started {{formatTime .StartedAt}}</div>
+            {{end}}
+            {{if .DurationSeconds}}
+                <div class="text-gray-600">Duration: {{formatDuration .DurationSeconds}}</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Step Details (Collapsible) -->
+    <div class="step-details bg-gray-50 rounded p-3 mb-3 text-sm">
+        <!-- Image -->
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">Container:</span>
+            <span class="font-mono text-xs bg-white px-2 py-1 rounded ml-2">{{.Image}}</span>
+        </div>
+
+        <!-- Commands -->
+        {{if .Commands}}
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">Commands:</span>
+            <div class="mt-1 space-y-1">
+                {{range .Commands}}
+                <div class="font-mono text-xs bg-white px-2 py-1 rounded border border-gray-200">
+                    {{.}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Exit Code -->
+        {{if .ExitCode}}
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">Exit Code:</span>
+            <span class="font-mono {{if eq .ExitCode 0}}text-green-600{{else}}text-red-600{{end}} ml-2">{{.ExitCode}}</span>
+        </div>
+        {{end}}
+
+        <!-- Resources -->
+        {{if .CPURequest}}
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">CPU:</span>
+            <span class="ml-2">{{.CPURequest}}</span>
+        </div>
+        {{end}}
+
+        {{if .MemoryRequest}}
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">Memory:</span>
+            <span class="ml-2">{{.MemoryRequest}}</span>
+        </div>
+        {{end}}
+
+        <!-- Dependencies -->
+        {{if .DependsOn}}
+        <div class="mb-2">
+            <span class="text-gray-600 font-medium">Depends On:</span>
+            <div class="mt-1 flex flex-wrap gap-1">
+                {{range .DependsOn}}
+                <span class="px-2 py-1 bg-white border border-gray-300 rounded text-xs">{{.}}</span>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- View Logs Button -->
+    <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white"
+            onclick="showLogs('{{.ID}}', '{{.Name}}')"
+            hx-get="/api/runs/{{.PipelineRunID}}/steps/{{.ID}}/logs"
+            hx-target="#log-section"
+            hx-swap="innerHTML">
+        📋 View Logs
+    </button>
+</div>
+
+<script>
+function showLogs(stepId, stepName) {
+    // This function is called when user clicks View Logs button
+    // The HTMX attributes handle the actual request/swap
+    console.log('Loading logs for step:', stepId, stepName);
+}
+</script>
+{{end}}
