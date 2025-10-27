@@ -1,0 +1,129 @@
+/*
+Copyright 2025 C8S Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/dashboard"
+)
+
+func main() {
+	var (
+		port      = flag.String("port", ":8080", "Port to listen on")
+		baseDir   = flag.String("base-dir", ".", "Base directory for templates and static files")
+		tlsCert   = flag.String("tls-cert", os.Getenv("TLS_CERT_PATH"), "Path to TLS certificate")
+		tlsKey    = flag.String("tls-key", os.Getenv("TLS_KEY_PATH"), "Path to TLS key")
+		tlsPort   = flag.String("tls-port", ":8443", "TLS port to listen on")
+		enableTLS = flag.Bool("enable-tls", false, "Enable HTTPS/TLS")
+	)
+	flag.Parse()
+
+	// Load dashboard templates
+	if err := dashboard.LoadTemplates(*baseDir); err != nil {
+		log.Fatalf("Failed to load templates: %v", err)
+	}
+
+	// Create router
+	router := chi.NewRouter()
+
+	// Global middleware
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+	router.Use(SecurityHeadersMiddleware)
+
+	// Static files (no auth required)
+	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir + "/static"))
+	router.HandleFunc("/health", healthHandler)
+
+	// Dashboard routes (protected by auth)
+	router.Group(func(r chi.Router) {
+		r.Use(handlers.AuthMiddleware)
+
+		// Dashboard pages
+		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("<h1>Dashboard - Coming Soon</h1>"))
+		})
+
+		r.Get("/dashboard/projects", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("<h1>Projects - Coming Soon</h1>"))
+		})
+
+		// API endpoints
+		r.Get("/api/projects", func(w http.ResponseWriter, r *http.Request) {
+			handlers.RespondSuccess(w, http.StatusOK, []interface{}{})
+		})
+
+		r.Get("/api/projects/{projectId}/runs", func(w http.ResponseWriter, r *http.Request) {
+			handlers.RespondSuccess(w, http.StatusOK, []interface{}{})
+		})
+	})
+
+	// 404 handler
+	router.NotFound(handlers.NotFoundHandler)
+
+	// Start HTTP server
+	log.Printf("Starting API server on %s", *port)
+	go func() {
+		if err := http.ListenAndServe(*port, router); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	// Start HTTPS server if enabled
+	if *enableTLS && *tlsCert != "" && *tlsKey != "" {
+		log.Printf("Starting HTTPS server on %s", *tlsPort)
+		if err := http.ListenAndServeTLS(*tlsPort, *tlsCert, *tlsKey, router); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTPS server error: %v", err)
+		}
+	}
+
+	// Keep server running
+	select {}
+}
+
+// healthHandler returns a simple health check response
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"healthy","service":"api-server"}`)
+}
+
+// SecurityHeadersMiddleware adds security headers to all responses
+func SecurityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next.ServeHTTP(w, r)
+	})
+}
