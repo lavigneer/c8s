@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+
+	"github.com/org/c8s/pkg/dashboard/helpers"
 )
 
 var Templates *template.Template
@@ -28,6 +30,9 @@ func LoadTemplates(basePath string) error {
 		"le":               le,
 		"gt":               gt,
 		"ge":               ge,
+		"dict":             helpers.Dict,
+		"add":              helpers.Add,
+		"sub":              helpers.Sub,
 	}
 
 	pattern := filepath.Join(basePath, "templates/**/*.html")

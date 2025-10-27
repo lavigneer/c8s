@@ -22,10 +22,10 @@ COPY PROJECT ./
 COPY Makefile ./
 
 # Build deployed components
-# Use -trimpath to remove build paths, -v for verbose output
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/controller ./cmd/controller
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/webhook ./cmd/webhook
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -trimpath -v -o bin/api-server ./cmd/api-server
+# Use -trimpath to remove build paths (avoid -a flag to leverage layer caching)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/controller ./cmd/controller
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cmd/webhook
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server
 
 # Controller image
 FROM alpine:3.18 AS controller
@@ -54,8 +54,10 @@ COPY --from=builder /workspace/bin/api-server /app/api-server
 # Copy templates and static assets
 COPY cmd/api-server/templates ./templates
 COPY cmd/api-server/static ./static
+# Create directories with proper permissions for Tilt live_update (don't restrict until after sync)
+RUN mkdir -p /app/templates /app/static && chmod 777 /app /app/templates /app/static
 EXPOSE 8080
-USER 65532:65532
+# Note: For production, use USER 65532:65532; for local dev, Tilt needs write access
 
 ENTRYPOINT ["/app/api-server"]
 CMD ["-base-dir", "/app"]

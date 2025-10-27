@@ -108,8 +108,15 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// LoginHandler renders login page
+// LoginHandler renders login page or handles login POST
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		// Handle login submission
+		handleLoginSubmit(w, r)
+		return
+	}
+
+	// Render login page for GET requests
 	data := map[string]interface{}{
 		"Title": "Login",
 	}
@@ -118,4 +125,33 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to render login page", http.StatusInternalServerError)
 		return
 	}
+}
+
+// handleLoginSubmit processes login form submission
+func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
+	// Parse form data
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	// Basic validation (in production, validate against actual auth system)
+	if username == "" || password == "" {
+		http.Error(w, "Username and password required", http.StatusBadRequest)
+		return
+	}
+
+	// Create a demo token (in production, this would be a proper JWT)
+	token := "demo_token_" + username
+
+	// Set auth cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   86400, // 24 hours
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	// Redirect to dashboard
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

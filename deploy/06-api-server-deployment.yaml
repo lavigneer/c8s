@@ -96,7 +96,7 @@ rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "list", "watch"]
-- apiGroups: ["ci.c8s.io"]
+- apiGroups: ["c8s.dev"]
   resources: ["pipelineconfigs", "pipelineruns"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 # Read pods and logs for monitoring

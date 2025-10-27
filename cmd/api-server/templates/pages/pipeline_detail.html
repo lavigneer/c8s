@@ -1,7 +1,6 @@
 {{define "pipeline_detail"}}
 {{template "base" .}}
-{{define "title"}}Pipeline Run - C8S Dashboard{{end}}
-{{define "content"}}
+<!-- Content -->
 <div class="py-8">
     <!-- Header -->
     {{if .PipelineRun}}
@@ -123,5 +122,4 @@
     {{template "partials/empty_state" dict "Title" "Pipeline Not Found" "Message" "The pipeline run you're looking for doesn't exist or has been deleted." "ActionText" "Back to List" "ActionURL" "/dashboard"}}
     {{end}}
 </div>
-{{end}}
 {{end}}

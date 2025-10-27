@@ -1,3 +1,4 @@
+{{define "login"}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,7 +132,7 @@
 
             <div id="error-message" class="login-error"></div>
 
-            <form id="login-form">
+            <form id="login-form" method="POST" action="/login">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -182,58 +183,6 @@
     </div>
 
     <script>
-        // Simple login form handler
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const button = document.getElementById('login-button');
-            const errorDiv = document.getElementById('error-message');
-
-            // Clear previous error
-            errorDiv.classList.remove('show');
-
-            // Disable button
-            button.disabled = true;
-            button.textContent = 'Signing in...';
-
-            try {
-                // TODO: Send login request to API
-                // const response = await fetch('/api/auth/login', {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify({ username, password })
-                // });
-
-                // if (response.ok) {
-                //     const data = await response.json();
-                //     localStorage.setItem('auth_token', data.token);
-                //     window.location.href = '/dashboard';
-                // } else {
-                //     showError('Invalid username or password');
-                // }
-
-                // For demo: simulate successful login
-                setTimeout(() => {
-                    localStorage.setItem('auth_token', 'demo_token_' + Date.now());
-                    window.location.href = '/dashboard';
-                }, 500);
-            } catch (error) {
-                showError('An error occurred. Please try again.');
-                console.error('Login error:', error);
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Sign In';
-            }
-        });
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-        }
-
         // Handle keyboard shortcuts on login page
         document.addEventListener('keydown', (e) => {
             // Disable global shortcuts on login page
@@ -245,3 +194,4 @@
     </script>
 </body>
 </html>
+{{end}}

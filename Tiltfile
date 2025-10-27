@@ -23,7 +23,7 @@ k8s_namespace = 'c8s-system'
 # Environment variables for builds
 os.environ['CGO_ENABLED'] = '0'
 os.environ['GOOS'] = 'linux'
-os.environ['GOARCH'] = 'amd64'
+os.environ['GOARCH'] = 'arm64'
 
 # ============================================================================
 # Cluster Configuration
@@ -134,7 +134,7 @@ docker_build(
     context='.',
     dockerfile='Dockerfile',
     target='controller',
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
+    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
 )
 
 k8s_resource(
@@ -154,7 +154,7 @@ docker_build(
     context='.',
     dockerfile='Dockerfile',
     target='webhook',
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
+    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
 )
 
 # Track webhook deployment
@@ -174,7 +174,12 @@ docker_build(
     context='.',
     dockerfile='Dockerfile',
     target='api-server',
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
+    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
+    live_update=[
+        fall_back_on(['Dockerfile', 'go.sum', 'go.mod']),
+        sync('cmd/api-server/templates', '/app/templates'),
+        sync('cmd/api-server/static', '/app/static'),
+    ]
 )
 
 # Track API Server deployment

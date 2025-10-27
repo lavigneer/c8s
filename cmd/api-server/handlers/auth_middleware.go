@@ -23,7 +23,16 @@ type User struct {
 // This is a basic implementation that can be extended with proper JWT/OAuth2 validation
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Try to get token from Authorization header first
 		token := extractBearerToken(r.Header.Get("Authorization"))
+
+		// For local dev, also check for auth cookie
+		if token == "" {
+			if cookie, err := r.Cookie("auth_token"); err == nil {
+				token = cookie.Value
+			}
+		}
+
 		if token == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
