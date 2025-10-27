@@ -63,27 +63,22 @@ func main() {
 	router.Group(func(r chi.Router) {
 		r.Use(handlers.AuthMiddleware)
 
-		// Dashboard pages
-		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<h1>Dashboard - Coming Soon</h1>"))
-		})
+		// Dashboard pages (US1)
+		r.Get("/dashboard", handlers.DashboardHandler)
+		r.Get("/dashboard/projects", handlers.ProjectsHandler)
+		r.Get("/dashboard/runs/{runId}", handlers.PipelineRunDetailsHandler)
 
-		r.Get("/dashboard/projects", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<h1>Projects - Coming Soon</h1>"))
-		})
-
-		// API endpoints
+		// API endpoints - Projects
 		r.Get("/api/projects", func(w http.ResponseWriter, r *http.Request) {
 			handlers.RespondSuccess(w, http.StatusOK, []interface{}{})
 		})
 
-		r.Get("/api/projects/{projectId}/runs", func(w http.ResponseWriter, r *http.Request) {
-			handlers.RespondSuccess(w, http.StatusOK, []interface{}{})
-		})
+		// API endpoints - Pipeline Runs (US1)
+		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
+		r.Get("/api/projects/{projectId}/runs/{runId}", handlers.GetPipelineRunHandler)
+
+		// SSE endpoints
+		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
 	})
 
 	// 404 handler

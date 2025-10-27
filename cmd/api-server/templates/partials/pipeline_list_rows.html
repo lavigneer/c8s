@@ -1,0 +1,11 @@
+{{define "pipeline_list_rows"}}
+{{if .PipelineRuns}}
+    {{range .PipelineRuns}}
+        {{template "partials/pipeline_row" .}}
+    {{end}}
+{{else}}
+    <div class="text-center py-8 text-gray-600">
+        No pipeline runs found
+    </div>
+{{end}}
+{{end}}

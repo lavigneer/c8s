@@ -1,0 +1,124 @@
+{{define "pipeline_list"}}
+{{template "base" .}}
+{{define "title"}}Pipeline History - C8S Dashboard{{end}}
+{{define "content"}}
+<div class="py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Pipeline History</h1>
+        <p class="text-gray-600">View and monitor your pipeline runs</p>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <form id="filters-form" hx-get="/api/projects/{{.ProjectID}}/runs" hx-target="#pipeline-rows" hx-trigger="change" hx-select="#pipeline-rows" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Commit SHA, branch, author..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Running">Running</option>
+                    <option value="Succeeded">Succeeded</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <!-- Branch Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
+                <input
+                    type="text"
+                    name="branch"
+                    placeholder="main, develop..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+
+            <!-- Results Per Page -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Per Page</label>
+                <select name="per_page" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Pipeline List Container with SSE -->
+    <div id="pipeline-list-container"
+         hx-ext="sse"
+         sse-connect="/api/projects/{{.ProjectID}}/runs/updates"
+         class="bg-white rounded-lg shadow-md overflow-hidden">
+
+        <!-- Pipeline Rows -->
+        <div id="pipeline-rows" class="divide-y divide-gray-200">
+            {{if .PipelineRuns}}
+                {{range .PipelineRuns}}
+                    {{template "partials/pipeline_row" .}}
+                {{end}}
+            {{else}}
+                {{template "partials/empty_state" dict "Title" "No Pipeline Runs" "Message" "No pipeline runs found. Create a new pipeline to get started." "ActionText" "Create Pipeline" "ActionURL" "/dashboard/create"}}
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {{if .Pagination}}
+    <div class="mt-8 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+            Showing <span class="font-medium">{{.Pagination.Page}}</span> of <span class="font-medium">{{.Pagination.TotalPages}}</span> pages
+        </div>
+        <div class="flex gap-2">
+            {{if .Pagination.HasPrev}}
+                <a href="/dashboard?page={{sub .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}"
+                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    Previous
+                </a>
+            {{else}}
+                <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+                    Previous
+                </button>
+            {{end}}
+
+            {{if .Pagination.HasNext}}
+                <a href="/dashboard?page={{add .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}"
+                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    Next
+                </a>
+            {{else}}
+                <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+                    Next
+                </button>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+
+<script>
+  // Handle SSE messages for real-time updates
+  document.body.addEventListener('htmx:sseMessage', function(event) {
+    if (event.detail.event === 'run_status_changed') {
+      // Refresh the pipeline list when status changes
+      htmx.ajax('GET', '/api/projects/{{.ProjectID}}/runs?page=1', '#pipeline-rows');
+    }
+  });
+</script>
+{{end}}
+{{end}}

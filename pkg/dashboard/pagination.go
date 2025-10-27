@@ -174,3 +174,29 @@ func GeneratePaginationLinks(baseURL string, result *PaginationResult) Paginatio
 
 	return links
 }
+
+// CalculatePagination is a helper that returns metadata based on total count
+func CalculatePagination(total, page, perPage int) *Metadata {
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 20
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	if page > totalPages {
+		page = totalPages
+	}
+
+	return &Metadata{
+		Total:      total,
+		Page:       page,
+		PerPage:    perPage,
+		TotalPages: totalPages,
+	}
+}
