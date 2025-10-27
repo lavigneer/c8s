@@ -9,15 +9,82 @@ import (
 
 var Templates *template.Template
 
-// LoadTemplates parses all templates from templates/ directory
+// LoadTemplates parses all templates from templates/ directory with custom functions
 func LoadTemplates(basePath string) error {
+	// Create function map with custom template helpers
+	funcMap := template.FuncMap{
+		"formatTime":       FormatTimestamp,
+		"formatDuration":   FormatDuration,
+		"formatBytes":      FormatBytes,
+		"formatRelative":   FormatRelativeTime,
+		"isRecent":         IsWithinLastHour,
+		"isWithinLastHour": IsWithinLastHour,
+		"isWithinLastDay":  IsWithinLastDay,
+		"isWithinLastWeek": IsWithinLastWeek,
+		"slice":            sliceString,
+		"eq":               eq,
+		"ne":               ne,
+		"lt":               lt,
+		"le":               le,
+		"gt":               gt,
+		"ge":               ge,
+	}
+
 	pattern := filepath.Join(basePath, "templates/**/*.html")
 	var err error
-	Templates, err = template.ParseGlob(pattern)
+	Templates, err = template.New("").Funcs(funcMap).ParseGlob(pattern)
 	if err != nil {
 		return fmt.Errorf("failed to parse templates: %w", err)
 	}
 	return nil
+}
+
+// Unexported helper functions that can be used in templates
+func sliceString(s string, start, end int) string {
+	if start < 0 || end > len(s) || start > end {
+		return s
+	}
+	return s[start:end]
+}
+
+func eq(a, b interface{}) bool {
+	return a == b
+}
+
+func ne(a, b interface{}) bool {
+	return a != b
+}
+
+func lt(a, b interface{}) bool {
+	switch av := a.(type) {
+	case int:
+		return av < b.(int)
+	case float64:
+		return av < b.(float64)
+	case string:
+		return av < b.(string)
+	}
+	return false
+}
+
+func le(a, b interface{}) bool {
+	return lt(a, b) || eq(a, b)
+}
+
+func gt(a, b interface{}) bool {
+	switch av := a.(type) {
+	case int:
+		return av > b.(int)
+	case float64:
+		return av > b.(float64)
+	case string:
+		return av > b.(string)
+	}
+	return false
+}
+
+func ge(a, b interface{}) bool {
+	return gt(a, b) || eq(a, b)
 }
 
 // IsHTMXRequest checks if request is from HTMX (partial render)

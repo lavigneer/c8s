@@ -1,0 +1,15 @@
+{{define "partials/status_badge"}}
+{{if eq .Status "Running"}}
+    <span class="badge-running">⏳ Running</span>
+{{else if eq .Status "Succeeded"}}
+    <span class="badge-success">✓ Succeeded</span>
+{{else if eq .Status "Failed"}}
+    <span class="badge-error">✗ Failed</span>
+{{else if eq .Status "Pending"}}
+    <span class="badge-pending">⏸ Pending</span>
+{{else if eq .Status "Cancelled"}}
+    <span class="badge-error">⊘ Cancelled</span>
+{{else}}
+    <span class="badge-pending">{{.Status}}</span>
+{{end}}
+{{end}}
