@@ -4,12 +4,22 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
 )
+
+// PipelineFilters holds filter parameters for pipeline runs
+type PipelineFilters struct {
+	Status   string
+	Branch   string
+	Search   string
+	FromDate time.Time
+	ToDate   time.Time
+}
 
 // ListPipelineRunsHandler handles GET /api/projects/{projectId}/runs
 // Returns paginated pipeline runs in JSON or HTML depending on request
@@ -120,4 +130,45 @@ func FetchPipelineRuns(ctx context.Context, projectID, status, branch, search st
 	// TODO: Implement actual K8s query using client-go
 	// This would query PipelineRun resources from the cluster
 	return []*v1alpha1.PipelineRun{}, nil
+}
+
+// ParseFilters extracts filter parameters from query string
+func ParseFilters(r *http.Request) PipelineFilters {
+	filters := PipelineFilters{
+		Status: r.URL.Query().Get("status"),
+		Branch: r.URL.Query().Get("branch"),
+		Search: r.URL.Query().Get("search"),
+	}
+
+	// Parse date filters
+	if fromDateStr := r.URL.Query().Get("from_date"); fromDateStr != "" {
+		if fromDate, err := time.Parse("2006-01-02", fromDateStr); err == nil {
+			filters.FromDate = fromDate
+		}
+	}
+
+	if toDateStr := r.URL.Query().Get("to_date"); toDateStr != "" {
+		if toDate, err := time.Parse("2006-01-02", toDateStr); err == nil {
+			// Set to end of day
+			filters.ToDate = toDate.Add(24*time.Hour - time.Second)
+		}
+	}
+
+	return filters
+}
+
+// ListBranchesHandler returns unique branch names for a project
+// GET /api/projects/{projectId}/branches
+func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectId")
+	if projectID == "" {
+		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		return
+	}
+
+	// TODO: Fetch PipelineRuns from Kubernetes and extract unique branches
+	// For now, return empty list
+	branches := []string{}
+
+	dashboard.RespondSuccess(w, http.StatusOK, branches)
 }

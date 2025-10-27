@@ -78,6 +78,9 @@ func main() {
 		// API endpoints - Pipeline Runs (US1)
 		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
 
+		// API endpoints - Pipeline Branches (US3)
+		r.Get("/api/projects/{projectId}/branches", handlers.ListBranchesHandler)
+
 		// API endpoints - Pipeline Run Details (US2)
 		r.Get("/api/runs/{runId}", handlers.GetPipelineRunHandler)
 
