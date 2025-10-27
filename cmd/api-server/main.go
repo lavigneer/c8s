@@ -50,8 +50,8 @@ func main() {
 	router := chi.NewRouter()
 
 	// Global middleware
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
+	router.Use(handlers.ErrorRecoveryMiddleware)
+	router.Use(handlers.RequestLoggerMiddleware)
 	router.Use(middleware.RequestID)
 	router.Use(SecurityHeadersMiddleware)
 
@@ -102,7 +102,7 @@ func main() {
 	})
 
 	// 404 handler
-	router.NotFound(handlers.NotFoundHandler)
+	router.NotFound(http.HandlerFunc(handlers.NotFoundMiddleware))
 
 	// Start HTTP server
 	log.Printf("Starting API server on %s", *port)

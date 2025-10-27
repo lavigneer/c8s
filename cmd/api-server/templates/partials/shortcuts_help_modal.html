@@ -1,0 +1,123 @@
+{{define "partials/shortcuts_help_modal"}}
+<div id="shortcuts-help-modal" class="modal hidden">
+    <div class="modal-content max-w-2xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Keyboard Shortcuts</h2>
+                <p class="text-gray-600 text-sm mt-1">Press <kbd class="px-2 py-1 bg-gray-200 rounded text-sm">?</kbd> to show/hide this help</p>
+            </div>
+            <button onclick="closeModal('shortcuts-help-modal')" class="text-gray-600 hover:text-gray-900 text-2xl">×</button>
+        </div>
+
+        <!-- Shortcuts List -->
+        <div class="space-y-6">
+            <!-- Navigation Shortcuts -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Navigation</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-center">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[60px]">J</kbd>
+                        <span class="text-gray-700">Next pipeline run</span>
+                    </div>
+                    <div class="flex items-center">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[60px]">K</kbd>
+                        <span class="text-gray-700">Previous pipeline run</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Filters -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Search & Filters</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+K</kbd>
+                        <span class="text-gray-700">Focus search input</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+/</kbd>
+                        <span class="text-gray-700">Toggle filter panel</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+S</kbd>
+                        <span class="text-gray-700">Save filter preset</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Actions</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">X</kbd>
+                        <span class="text-gray-700">Cancel selected pipeline</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">D</kbd>
+                        <span class="text-gray-700">Download artifact</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">V</kbd>
+                        <span class="text-gray-700">View artifact</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+R</kbd>
+                        <span class="text-gray-700">Refresh data</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Logs</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+L</kbd>
+                        <span class="text-gray-700">Jump to latest log line</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Forms & Modals</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Ctrl+Enter</kbd>
+                        <span class="text-gray-700">Submit active form</span>
+                    </div>
+                    <div class="flex items-start">
+                        <kbd class="px-3 py-1 bg-gray-200 rounded text-sm font-mono mr-3 min-w-[100px]">Esc</kbd>
+                        <span class="text-gray-700">Close modal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <p class="text-blue-900 text-sm">
+                    <strong>💡 Tip:</strong> On macOS, use <kbd class="px-2 py-1 bg-blue-200 rounded text-xs">Cmd</kbd> instead of <kbd class="px-2 py-1 bg-blue-200 rounded text-xs">Ctrl</kbd>.
+                    All shortcuts work seamlessly with your keyboard layout.
+                </p>
+            </div>
+        </div>
+
+        <!-- Close Button -->
+        <div class="mt-6 flex justify-end">
+            <button class="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition"
+                    onclick="closeModal('shortcuts-help-modal')">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeModal(modalId) {
+    document.getElementById(modalId)?.classList.add('hidden');
+}
+</script>
+
+{{end}}
