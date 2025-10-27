@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-12
 - (001-build-a-continuous)
 - Go 1.25.0 (002-i-want-to)
 - N/A (cluster state managed by chosen local K8s distribution) (002-i-want-to)
+- Go 1.24.0 (backend API server), HTML5/CSS3/JavaScript (frontend with HTMX) (004-create-a-front)
+- Uses existing C8S infrastructure (Kubernetes, S3-compatible object storage for logs/artifacts) (004-create-a-front)
 
 ## Project Structure
 ```
@@ -20,6 +22,7 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
+- 004-create-a-front: Added Go 1.24.0 (backend API server), HTML5/CSS3/JavaScript (frontend with HTMX)
 - 002-i-want-to: Added Go 1.25.0
 - 001-build-a-continuous: Added
 
