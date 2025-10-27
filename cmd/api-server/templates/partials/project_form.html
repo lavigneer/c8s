@@ -66,6 +66,7 @@
                         class="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
                     Create Project
                 </button>
+                {{template "partials/loading_spinner" (dict "Text" "Creating...")}}
             </div>
         </form>
     </div>

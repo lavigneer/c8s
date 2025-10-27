@@ -1,0 +1,7 @@
+{{define "partials/loading_spinner"}}
+<!-- HTMX Loading Spinner Indicator -->
+<span class="htmx-indicator inline-flex items-center gap-2 text-gray-600">
+    <div class="spinner"></div>
+    <span>{{if .Text}}{{.Text}}{{else}}Loading...{{end}}</span>
+</span>
+{{end}}

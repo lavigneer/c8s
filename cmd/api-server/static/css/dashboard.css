@@ -1,7 +1,15 @@
 /* C8S Dashboard - Tailwind CSS */
 /* This file contains custom utilities and overrides for the C8S dashboard */
 
-/* HTMX Loading States */
+/* HTMX Loading States and Indicators */
+.htmx-request .htmx-indicator {
+    display: inline-block !important;
+}
+
+.htmx-indicator {
+    display: none;
+}
+
 .htmx-swapping {
     opacity: 0.5;
     transition: opacity 0.3s ease-out;
@@ -10,6 +18,89 @@
 .htmx-settling {
     opacity: 1;
     transition: opacity 0.3s ease-in;
+}
+
+/* Spinner Animation */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Loading Skeleton */
+.skeleton {
+    animation: skeleton-loading 1s infinite alternate;
+    background-color: #e5e7eb;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-color: #e5e7eb;
+    }
+    100% {
+        background-color: #f3f4f6;
+    }
+}
+
+/* Loading text indicator */
+.loading-text::after {
+    content: '';
+    animation: loading-dots 1.4s infinite;
+}
+
+@keyframes loading-dots {
+    0%, 20% {
+        content: '';
+    }
+    40% {
+        content: '.';
+    }
+    60% {
+        content: '..';
+    }
+    80%, 100% {
+        content: '...';
+    }
+}
+
+/* HTMX Request Progress Bar */
+.htmx-request::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right, #3b82f6, #8b5cf6, #3b82f6);
+    background-size: 200% 100%;
+    animation: progress-bar 1.5s ease-in-out infinite;
+    z-index: 9999;
+}
+
+@keyframes progress-bar {
+    0% {
+        background-position: 0% 0%;
+    }
+    50% {
+        background-position: 100% 0%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
 }
 
 /* Custom status badge colors */
