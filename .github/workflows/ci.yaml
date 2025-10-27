@@ -106,16 +106,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build API server image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: api-server
-          push: false
-          tags: c8s-api-server:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       - name: Build webhook image
         uses: docker/build-push-action@v5
         with:

@@ -9,14 +9,12 @@ MODULE := $(ORG)/$(PROJECT_NAME)
 # Build configuration
 BUILD_DIR := bin
 CONTROLLER_BINARY := $(BUILD_DIR)/controller
-API_SERVER_BINARY := $(BUILD_DIR)/api-server
 WEBHOOK_BINARY := $(BUILD_DIR)/webhook
 CLI_BINARY := $(BUILD_DIR)/c8s
 
 # Docker configuration
 DOCKER_REGISTRY ?= ghcr.io/org
 CONTROLLER_IMAGE := $(DOCKER_REGISTRY)/c8s-controller
-API_SERVER_IMAGE := $(DOCKER_REGISTRY)/c8s-api-server
 WEBHOOK_IMAGE := $(DOCKER_REGISTRY)/c8s-webhook
 VERSION ?= $(shell git describe --tags --always --dirty)
 
@@ -78,15 +76,11 @@ coverage: test ## Generate coverage report
 ##@ Build
 
 .PHONY: build
-build: build-controller build-api-server build-webhook build-cli ## Build all binaries
+build: build-controller build-webhook build-cli ## Build all binaries
 
 .PHONY: build-controller
 build-controller: ## Build controller binary
 	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(CONTROLLER_BINARY) ./cmd/controller
-
-.PHONY: build-api-server
-build-api-server: ## Build API server binary
-	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(API_SERVER_BINARY) ./cmd/api-server
 
 .PHONY: build-webhook
 build-webhook: ## Build webhook binary
@@ -111,17 +105,12 @@ clean-all: clean clean-clusters ## Clean everything including test clusters
 ##@ Docker
 
 .PHONY: docker-build
-docker-build: docker-build-controller docker-build-api-server docker-build-webhook ## Build all Docker images
+docker-build: docker-build-controller docker-build-webhook ## Build all Docker images
 
 .PHONY: docker-build-controller
 docker-build-controller: ## Build controller Docker image
 	docker build -t $(CONTROLLER_IMAGE):$(VERSION) --target controller .
 	docker tag $(CONTROLLER_IMAGE):$(VERSION) $(CONTROLLER_IMAGE):latest
-
-.PHONY: docker-build-api-server
-docker-build-api-server: ## Build API server Docker image
-	docker build -t $(API_SERVER_IMAGE):$(VERSION) --target api-server .
-	docker tag $(API_SERVER_IMAGE):$(VERSION) $(API_SERVER_IMAGE):latest
 
 .PHONY: docker-build-webhook
 docker-build-webhook: ## Build webhook Docker image
@@ -132,8 +121,6 @@ docker-build-webhook: ## Build webhook Docker image
 docker-push: ## Push Docker images to registry
 	docker push $(CONTROLLER_IMAGE):$(VERSION)
 	docker push $(CONTROLLER_IMAGE):latest
-	docker push $(API_SERVER_IMAGE):$(VERSION)
-	docker push $(API_SERVER_IMAGE):latest
 	docker push $(WEBHOOK_IMAGE):$(VERSION)
 	docker push $(WEBHOOK_IMAGE):latest
 
@@ -158,16 +145,15 @@ uninstall-crds: manifests ## Uninstall CRDs from cluster
 	kubectl delete -f config/crd/bases
 
 .PHONY: deploy
-deploy: manifests ## Deploy controller, webhook, and API server to cluster
+deploy: manifests ## Deploy controller and webhook to cluster
 	kubectl create namespace c8s-system --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f deploy/install.yaml
-	kubectl apply -f deploy/admission-webhook-deployment.yaml
 	kubectl apply -f deploy/webhook-deployment.yaml
 	kubectl apply -f deploy/webhook-service.yaml
 	kubectl apply -f deploy/webhook-ingress.yaml
 
 .PHONY: undeploy
-undeploy: ## Remove controller, webhook, and API server from cluster
+undeploy: ## Remove controller and webhook from cluster
 	kubectl delete -f deploy/
 
 ##@ Tools
@@ -205,10 +191,6 @@ check-deps: ## Check if required dependencies are installed
 .PHONY: run-controller
 run-controller: ## Run controller locally (requires kubeconfig)
 	$(GO) run ./cmd/controller/main.go
-
-.PHONY: run-api-server
-run-api-server: ## Run API server locally
-	$(GO) run ./cmd/api-server/main.go --port=8080
 
 .PHONY: run-webhook
 run-webhook: ## Run webhook server locally
