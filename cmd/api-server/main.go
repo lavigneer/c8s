@@ -70,10 +70,11 @@ func main() {
 		// Dashboard pages (US2)
 		r.Get("/dashboard/runs/{runId}", handlers.PipelineRunDetailsHandler)
 
-		// API endpoints - Projects
-		r.Get("/api/projects", func(w http.ResponseWriter, r *http.Request) {
-			handlers.RespondSuccess(w, http.StatusOK, []interface{}{})
-		})
+		// API endpoints - Projects (US4)
+		r.Get("/api/projects", handlers.ListProjectsHandler)
+		r.Post("/api/projects", handlers.CreateProjectHandler)
+		r.Delete("/api/projects/{projectId}", handlers.DeleteProjectHandler)
+		r.Get("/api/projects/{projectId}/webhook", handlers.GetWebhookConfigHandler)
 
 		// API endpoints - Pipeline Runs (US1)
 		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)

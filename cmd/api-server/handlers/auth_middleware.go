@@ -12,10 +12,11 @@ const userContextKey contextKey = "user"
 
 // User represents an authenticated user
 type User struct {
-	ID       string
-	Username string
-	Email    string
-	Roles    []string
+	ID        string
+	Username  string
+	Email     string
+	Namespace string
+	Roles     []string
 }
 
 // AuthMiddleware validates bearer token and attaches user to context
@@ -33,10 +34,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// In production, validate against JWT or OAuth2 provider
 
 		user := &User{
-			ID:       "user-id", // Extract from token
-			Username: "user",    // Extract from token
-			Email:    "",        // Extract from token
-			Roles:    []string{},
+			ID:        "user-id", // Extract from token
+			Username:  "user",    // Extract from token
+			Email:     "",        // Extract from token
+			Namespace: "default", // TODO: Extract from token or config
+			Roles:     []string{},
 		}
 
 		ctx := context.WithValue(r.Context(), userContextKey, user)
@@ -62,10 +64,11 @@ func OptionalAuthMiddleware(next http.Handler) http.Handler {
 
 		// TODO: Validate token with C8S auth system
 		user := &User{
-			ID:       "user-id",
-			Username: "user",
-			Email:    "",
-			Roles:    []string{},
+			ID:        "user-id",
+			Username:  "user",
+			Email:     "",
+			Namespace: "default", // TODO: Extract from token or config
+			Roles:     []string{},
 		}
 
 		ctx := context.WithValue(r.Context(), userContextKey, user)

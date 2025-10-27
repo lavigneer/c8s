@@ -106,25 +106,3 @@ func respondJSON(w http.ResponseWriter, statusCode int, response interface{}) er
 	encoder.SetEscapeHTML(false)
 	return encoder.Encode(response)
 }
-
-// CalculatePagination calculates pagination values
-func CalculatePagination(total, page, perPage int) *Metadata {
-	if perPage <= 0 {
-		perPage = 20
-	}
-	if page <= 0 {
-		page = 1
-	}
-
-	totalPages := (total + perPage - 1) / perPage
-	if totalPages == 0 {
-		totalPages = 1
-	}
-
-	return &Metadata{
-		Total:      total,
-		Page:       page,
-		PerPage:    perPage,
-		TotalPages: totalPages,
-	}
-}

@@ -87,3 +87,34 @@ func (k *K8sClient) ListPipelineConfigs(ctx context.Context, namespace string, o
 
 	return &list, nil
 }
+
+// CreatePipelineConfig creates a new pipeline config
+func (k *K8sClient) CreatePipelineConfig(ctx context.Context, config *v1alpha1.PipelineConfig) error {
+	if k.Client == nil {
+		return fmt.Errorf("kubernetes client not initialized")
+	}
+
+	if err := k.Client.Create(ctx, config); err != nil {
+		return fmt.Errorf("failed to create pipeline config: %w", err)
+	}
+
+	return nil
+}
+
+// DeletePipelineConfig deletes a pipeline config
+func (k *K8sClient) DeletePipelineConfig(ctx context.Context, namespace, name string) error {
+	if k.Client == nil {
+		return fmt.Errorf("kubernetes client not initialized")
+	}
+
+	config := &v1alpha1.PipelineConfig{}
+	config.SetName(name)
+	config.SetNamespace(namespace)
+
+	if err := k.Client.Delete(ctx, config); err != nil {
+		return fmt.Errorf("failed to delete pipeline config: %w", err)
+	}
+
+	return nil
+}
+

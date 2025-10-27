@@ -3,7 +3,6 @@ package dashboard
 import (
 	"fmt"
 	"html/template"
-	"path/filepath"
 	"time"
 )
 
@@ -152,60 +151,4 @@ func TemplateFuncMap() template.FuncMap {
 		"gt":               gt,
 		"ge":               ge,
 	}
-}
-
-// Helper template functions
-
-func sliceString(s string, start, end int) string {
-	if start < 0 || end > len(s) || start > end {
-		return s
-	}
-	return s[start:end]
-}
-
-func eq(a, b interface{}) bool {
-	return a == b
-}
-
-func ne(a, b interface{}) bool {
-	return a != b
-}
-
-func lt(a, b interface{}) bool {
-	switch av := a.(type) {
-	case int:
-		return av < b.(int)
-	case float64:
-		return av < b.(float64)
-	case string:
-		return av < b.(string)
-	}
-	return false
-}
-
-func le(a, b interface{}) bool {
-	return lt(a, b) || eq(a, b)
-}
-
-func gt(a, b interface{}) bool {
-	switch av := a.(type) {
-	case int:
-		return av > b.(int)
-	case float64:
-		return av > b.(float64)
-	case string:
-		return av > b.(string)
-	}
-	return false
-}
-
-func ge(a, b interface{}) bool {
-	return gt(a, b) || eq(a, b)
-}
-
-// UpdateLoadTemplates updates the templates.go LoadTemplates function
-// to register custom template functions
-// This is called from templates.go
-func GetTemplateHelpers() template.FuncMap {
-	return TemplateFuncMap()
 }

@@ -1,0 +1,95 @@
+{{define "partials/webhook_display"}}
+<div class="webhook-section bg-white rounded-lg shadow-md p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Webhook Configuration</h3>
+
+    <!-- Webhook URL Display -->
+    <div class="webhook-url-box bg-gray-50 rounded-lg p-4 mb-6">
+        <div class="flex justify-between items-center mb-3">
+            <label class="text-sm font-medium text-gray-700">Webhook URL</label>
+            <button class="text-sm text-blue-600 hover:underline"
+                    onclick="copyWebhookURL()">
+                Copy to Clipboard
+            </button>
+        </div>
+        <code id="webhook-url"
+              class="block bg-white px-3 py-2 rounded border border-gray-300 font-mono text-sm text-gray-900 break-all">
+            {{.WebhookURL}}
+        </code>
+    </div>
+
+    <!-- Setup Instructions -->
+    <div class="webhook-instructions">
+        <h4 class="text-md font-semibold text-gray-900 mb-3">Setup Instructions</h4>
+
+        {{if eq .GitPlatform "github"}}
+        <ol class="space-y-2 list-decimal list-inside text-sm text-gray-700">
+            <li>Go to your repository on GitHub</li>
+            <li>Click <strong>Settings</strong> in the repository menu</li>
+            <li>Select <strong>Webhooks</strong> from the left sidebar</li>
+            <li>Click <strong>Add webhook</strong></li>
+            <li>Paste the webhook URL above in the <strong>Payload URL</strong> field</li>
+            <li>Set <strong>Content type</strong> to <code>application/json</code></li>
+            <li>Under <strong>Which events would you like to trigger this webhook?</strong>:
+                <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+                    <li>Select <strong>Push events</strong></li>
+                    <li>Select <strong>Pull request events</strong></li>
+                </ul>
+            </li>
+            <li>Click <strong>Add webhook</strong></li>
+        </ol>
+        {{else if eq .GitPlatform "gitlab"}}
+        <ol class="space-y-2 list-decimal list-inside text-sm text-gray-700">
+            <li>Go to your project on GitLab</li>
+            <li>Click <strong>Settings</strong> → <strong>Webhooks</strong></li>
+            <li>Paste the webhook URL above in the <strong>URL</strong> field</li>
+            <li>Under <strong>Trigger</strong>, select:
+                <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+                    <li><strong>Push events</strong></li>
+                    <li><strong>Merge request events</strong></li>
+                </ul>
+            </li>
+            <li>Click <strong>Add webhook</strong></li>
+        </ol>
+        {{else}}
+        <ol class="space-y-2 list-decimal list-inside text-sm text-gray-700">
+            <li>Configure your git hosting platform to send webhooks to this URL</li>
+            <li>Set the webhook to trigger on push and pull request events</li>
+            <li>Ensure the webhook content type is set to JSON</li>
+        </ol>
+        {{end}}
+
+        <!-- Important Note -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <p class="text-sm text-blue-900">
+                <strong>💡 Tip:</strong> Once configured, the webhook will automatically trigger C8S pipelines whenever you push code or open a pull request.
+            </p>
+        </div>
+    </div>
+
+    <!-- Test Webhook -->
+    <div class="mt-6 pt-6 border-t border-gray-200">
+        <button class="text-sm text-blue-600 hover:underline"
+                hx-post="/api/webhooks/test"
+                hx-confirm="Send a test webhook to verify the connection is working?">
+            📤 Send Test Webhook
+        </button>
+    </div>
+</div>
+
+<script>
+function copyWebhookURL() {
+    const url = document.getElementById('webhook-url').innerText;
+    navigator.clipboard.writeText(url).then(() => {
+        // Visual feedback
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 2000);
+    }).catch(() => {
+        alert('Failed to copy webhook URL');
+    });
+}
+</script>
+{{end}}

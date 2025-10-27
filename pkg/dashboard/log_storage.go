@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 )
 
 // LogStorage defines interface for retrieving logs from object storage
@@ -48,7 +49,7 @@ func (s *InMemoryLogStorage) GetStepLogs(ctx context.Context, runID, stepID stri
 	if !ok {
 		return nil, fmt.Errorf("logs not found for %s/%s", runID, stepID)
 	}
-	return io.NopCloser(io.Reader(bufio.NewReader(io.StringReader(content)))), nil
+	return io.NopCloser(strings.NewReader(content)), nil
 }
 
 // StreamStepLogs streams logs line-by-line to channel
@@ -61,7 +62,7 @@ func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID s
 
 	go func() {
 		defer close(linesChan)
-		scanner := bufio.NewScanner(io.StringReader(content))
+		scanner := bufio.NewScanner(strings.NewReader(content))
 		for scanner.Scan() {
 			select {
 			case <-ctx.Done():
@@ -83,7 +84,7 @@ func (s *InMemoryLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID s
 	}
 
 	var result []string
-	scanner := bufio.NewScanner(io.StringReader(content))
+	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
 		result = append(result, scanner.Text())
 	}
@@ -111,7 +112,7 @@ type NoOpLogStorage struct{}
 
 // GetStepLogs returns empty log
 func (s *NoOpLogStorage) GetStepLogs(ctx context.Context, runID, stepID string) (io.ReadCloser, error) {
-	return io.NopCloser(io.Reader(bufio.NewReader(io.StringReader("")))), nil
+	return io.NopCloser(strings.NewReader("")), nil
 }
 
 // StreamStepLogs closes channel immediately

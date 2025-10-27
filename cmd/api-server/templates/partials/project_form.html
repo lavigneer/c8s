@@ -1,0 +1,110 @@
+{{define "partials/project_form"}}
+<div class="modal hidden" id="create-project-modal">
+    <div class="modal-overlay" onclick="closeModal('create-project-modal')"></div>
+    <div class="modal-content bg-white rounded-lg shadow-xl max-w-2xl">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+            <h2 class="text-2xl font-bold text-gray-900">Create New Project</h2>
+            <button class="text-gray-600 hover:text-gray-900 text-2xl" onclick="closeModal('create-project-modal')">×</button>
+        </div>
+
+        <form hx-post="/api/projects"
+              hx-target="#projects-list"
+              hx-swap="afterbegin"
+              hx-on::after-request="if(event.detail.xhr.status === 200) closeModal('create-project-modal')"
+              class="space-y-4">
+
+            <!-- Project Name -->
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                <input type="text"
+                       name="name"
+                       required
+                       placeholder="my-awesome-project"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-600 mt-1">Unique identifier for your project</p>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea name="description"
+                          placeholder="What does this project do?"
+                          rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <!-- Repository URL -->
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Repository URL *</label>
+                <input type="url"
+                       name="repository_url"
+                       required
+                       placeholder="https://github.com/org/repo"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-600 mt-1">GitHub repository URL</p>
+            </div>
+
+            <!-- Namespace -->
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Kubernetes Namespace *</label>
+                <input type="text"
+                       name="namespace"
+                       required
+                       placeholder="c8s-my-project"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-600 mt-1">K8s namespace where pipelines will run</p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex gap-3 justify-end border-t border-gray-200 pt-6">
+                <button type="button"
+                        class="btn bg-gray-200 hover:bg-gray-300 text-gray-900 px-6 py-2 rounded-lg transition"
+                        onclick="closeModal('create-project-modal')">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                    Create Project
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal {
+    display: none;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal:not(.hidden) {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.modal-content {
+    position: relative;
+    z-index: 1001;
+    padding: 2rem;
+}
+</style>
+{{end}}

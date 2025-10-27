@@ -1,8 +1,6 @@
 package dashboard
 
 import (
-	"time"
-
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,17 +12,17 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 	}
 
 	dto := &PipelineRunDTO{
-		ID:            run.Name,
-		ProjectID:     run.Labels["project"],
-		Name:          run.Name,
-		Status:        string(run.Status.Phase),
-		CommitSHA:     run.Spec.CommitSHA,
-		Branch:        run.Spec.Branch,
-		Author:        run.Spec.Author,
-		AuthorEmail:   run.Spec.AuthorEmail,
-		TriggerSource: run.Spec.TriggerSource,
-		TriggeredAt:   run.CreationTimestamp.Time,
-		StepCount:     len(run.Status.Steps),
+		ID:          run.Name,
+		ProjectID:   run.Labels["project"],
+		Name:        run.Name,
+		Status:      string(run.Status.Phase),
+		CommitSHA:   run.Spec.Commit,
+		Branch:      run.Spec.Branch,
+		Author:      run.Spec.TriggeredBy,
+		AuthorEmail: "",
+		TriggerSource: "webhook",
+		TriggeredAt: run.CreationTimestamp.Time,
+		StepCount:   len(run.Status.Steps),
 	}
 
 	// Count step statuses
@@ -53,9 +51,9 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 		}
 	}
 
-	// Count artifacts
-	if run.Status.Artifacts != nil {
-		dto.ArtifactCount = len(run.Status.Artifacts)
+	// Count artifacts - sum all artifact URLs from steps
+	for _, step := range run.Status.Steps {
+		dto.ArtifactCount += len(step.ArtifactURLs)
 	}
 
 	return dto
@@ -71,18 +69,12 @@ func MapStepStatusToDTO(step *v1alpha1.StepStatus) *StepDTO {
 		ID:     step.Name,
 		Name:   step.Name,
 		Status: string(step.Phase),
-		Image:  step.Image,
+		Image:  "",
 	}
 
-	// Copy commands
-	if step.Commands != nil {
-		dto.Commands = append([]string{}, step.Commands...)
-	}
-
-	// Copy dependencies
-	if step.DependsOn != nil {
-		dto.DependsOn = append([]string{}, step.DependsOn...)
-	}
+	// Copy commands - not available in StepStatus, set empty
+	dto.Commands = []string{}
+	dto.DependsOn = []string{}
 
 	// Set timing information
 	if step.StartTime != nil && !step.StartTime.IsZero() {
@@ -105,14 +97,9 @@ func MapStepStatusToDTO(step *v1alpha1.StepStatus) *StepDTO {
 		dto.ExitCode = step.ExitCode
 	}
 
-	// Set resource requests if available
-	if step.ResourceRequirements != nil {
-		if cpu := step.ResourceRequirements.Requests.Cpu(); cpu != nil {
-			dto.CPURequest = cpu.String()
-		}
-		if memory := step.ResourceRequirements.Requests.Memory(); memory != nil {
-			dto.MemoryRequest = memory.String()
-		}
+	// Set log URL
+	if step.LogURL != "" {
+		dto.LogURL = step.LogURL
 	}
 
 	return dto
@@ -135,20 +122,12 @@ func MapProjectToDTO(config *v1alpha1.PipelineConfig) *ProjectDTO {
 	}
 
 	dto := &ProjectDTO{
-		ID:          config.Name,
-		Name:        config.Name,
-		Description: config.Spec.Description,
-		RepoURL:     config.Spec.Repository,
-		Namespace:   config.Namespace,
-		CreatedAt:   config.CreationTimestamp.Time,
-	}
-
-	// Set branches
-	if config.Spec.Branches != nil {
-		dto.Branches = make([]string, len(config.Spec.Branches))
-		for i, branch := range config.Spec.Branches {
-			dto.Branches[i] = branch
-		}
+		ID:        config.Name,
+		Name:      config.Name,
+		RepoURL:   config.Spec.Repository,
+		Namespace: config.Namespace,
+		CreatedAt: config.CreationTimestamp.Time,
+		RunCount:  0, // TODO: Count actual PipelineRuns
 	}
 
 	return dto
@@ -161,21 +140,18 @@ func MapPipelineConfigToDTO(config *v1alpha1.PipelineConfig) *PipelineConfigDTO 
 	}
 
 	dto := &PipelineConfigDTO{
-		ID:          config.Name,
-		Name:        config.Name,
-		Description: config.Spec.Description,
-		RepoURL:     config.Spec.Repository,
-		CreatedAt:   config.CreationTimestamp.Time,
+		ID:        config.Name,
+		Name:      config.Name,
+		RepoURL:   config.Spec.Repository,
+		CreatedAt: config.CreationTimestamp.Time,
+		Timeout:   3600, // Default 1 hour
 	}
 
 	// Copy branches
 	if config.Spec.Branches != nil {
 		dto.Branches = append([]string{}, config.Spec.Branches...)
-	}
-
-	// Set timeout from spec
-	if config.Spec.Timeout != nil {
-		dto.Timeout = int(*config.Spec.Timeout)
+	} else {
+		dto.Branches = []string{"*"}
 	}
 
 	return dto

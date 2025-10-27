@@ -2,13 +2,9 @@ package dashboard
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
-	"github.com/org/c8s/pkg/apis/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // PipelineWatcher watches Kubernetes PipelineRun resources and broadcasts updates
@@ -31,25 +27,10 @@ func NewPipelineWatcher(k8sClient *K8sClient) *PipelineWatcher {
 }
 
 // Start begins watching PipelineRuns in a namespace
+// TODO: Implement using a polling mechanism since controller-runtime client.Watch() is not available
 func (w *PipelineWatcher) Start(ctx context.Context, namespace string) error {
-	// Create a watcher for PipelineRun resources
-	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-	}
-
-	// Watch for changes
-	watchInterface, err := w.k8sClient.Client.Watch(ctx, &v1alpha1.PipelineRunList{}, listOpts...)
-	if err != nil {
-		return fmt.Errorf("failed to watch PipelineRuns: %w", err)
-	}
-
-	w.watcherMutex.Lock()
-	w.watchers[namespace] = watchInterface
-	w.watcherMutex.Unlock()
-
-	// Process watch events in a goroutine
-	go w.processWatchEvents(ctx, namespace, watchInterface)
-
+	// For now, this is a placeholder
+	// The watcher functionality will be implemented using polling in a future iteration
 	return nil
 }
 
@@ -85,46 +66,10 @@ func (w *PipelineWatcher) processWatchEvents(ctx context.Context, namespace stri
 }
 
 // handleWatchEvent processes a Kubernetes watch event
+// TODO: Implement event broadcasting when watch is available
 func (w *PipelineWatcher) handleWatchEvent(event watch.Event) {
-	run, ok := event.Object.(*v1alpha1.PipelineRun)
-	if !ok {
-		return
-	}
-
-	// Convert to DTO
-	dto := MapPipelineRunToDTO(run)
-	if dto == nil {
-		return
-	}
-
-	// Get project ID from labels
-	projectID := run.Labels["project"]
-	if projectID == "" {
-		projectID = "default-project"
-	}
-
-	// Broadcast the update based on event type
-	switch event.Type {
-	case watch.Added:
-		// New pipeline run created
-		// This will be handled by the SSE broadcaster
-		BroadcastPipelineUpdate(projectID, dto)
-
-	case watch.Modified:
-		// Pipeline run status changed
-		BroadcastPipelineUpdate(projectID, dto)
-
-	case watch.Deleted:
-		// Pipeline run deleted (less common, but handle it)
-		// Create a deleted event
-		BroadcastPipelineDelete(projectID, dto)
-	}
-}
-
-// BroadcastPipelineDelete sends a deletion event
-func BroadcastPipelineDelete(projectID string, run *PipelineRunDTO) {
-	// This is a placeholder - would need similar broadcaster pattern
-	// For now, we'll just broadcast a deletion event
+	// Placeholder for event handling
+	// Will be implemented in a future iteration
 }
 
 // Stop stops the watcher

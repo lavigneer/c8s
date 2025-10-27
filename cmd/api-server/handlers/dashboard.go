@@ -56,8 +56,17 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Fetch user's projects
+	// Fetch user's projects from Kubernetes
 	var projects []*dashboard.ProjectDTO
+	if k8sClient != nil {
+		configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
+		if err == nil && configs != nil {
+			projects = make([]*dashboard.ProjectDTO, len(configs.Items))
+			for i, config := range configs.Items {
+				projects[i] = mapPipelineConfigToProjectDTO(&config, user.Namespace)
+			}
+		}
+	}
 
 	data := map[string]interface{}{
 		"User":     user,
