@@ -1,0 +1,12 @@
+# C8S Kubernetes-Native CI System - Namespace and Custom Resource Definitions
+# This file contains the namespace and all CRDs required for C8S
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: c8s-system
+---
+# CRDs are included from deploy/crds.yaml
+# Include them here for completeness in standalone deployments

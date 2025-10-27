@@ -1,0 +1,84 @@
+name: Tilt CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  tilt-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up Kind cluster
+      uses: helm/kind-action@v1.7.0
+      with:
+        cluster_name: c8s
+        config: |
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          name: c8s
+          nodes:
+          - role: control-plane
+            extraPortMappings:
+            - containerPort: 80
+              hostPort: 8080
+              listenAddress: "127.0.0.1"
+            - containerPort: 443
+              hostPort: 8443
+              listenAddress: "127.0.0.1"
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Install Tilt
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
+
+    - name: Install ctlptl (optional but helpful)
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/tilt-dev/ctlptl/master/scripts/install.sh | bash
+      continue-on-error: true
+
+    - name: Run Tilt CI
+      run: |
+        tilt ci --file=Tiltfile --timeout=600s --log-source=all
+      env:
+        DOCKER_HOST: unix:///var/run/docker.sock
+
+    - name: Check cluster status on failure
+      if: failure()
+      run: |
+        echo "=== Cluster Info ==="
+        kubectl cluster-info
+
+        echo -e "\n=== Nodes ==="
+        kubectl get nodes -o wide
+
+        echo -e "\n=== All Pods ==="
+        kubectl get pods -A -o wide
+
+        echo -e "\n=== C8S Namespace ==="
+        kubectl get all -n c8s-system -o wide || true
+
+        echo -e "\n=== Recent Events ==="
+        kubectl get events -A --sort-by='.lastTimestamp' | tail -20
+
+    - name: Upload Tilt logs
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: tilt-logs
+        path: |
+          ~/.tilt/
+          /tmp/tilt-*
+      continue-on-error: true

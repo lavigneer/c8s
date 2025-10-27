@@ -290,6 +290,18 @@ clean-clusters: ## Delete all c8s test clusters
 	@k3d cluster list -o json 2>/dev/null | grep -o '"name":"c8s-[^"]*"' | cut -d'"' -f4 | xargs -I {} k3d cluster delete {} 2>/dev/null || true
 	@echo "All c8s clusters deleted"
 
+##@ Tilt CI
+
+.PHONY: tilt-ci-local
+tilt-ci-local: ## Run tilt ci locally with kind cluster
+	@bash scripts/tilt-ci-local.sh
+
+.PHONY: tilt-ci-clean
+tilt-ci-clean: ## Clean up kind cluster from tilt ci
+	@command -v kind >/dev/null 2>&1 || { echo "⚠ kind is not installed"; exit 1; }
+	@kind get clusters | grep -q "c8s-ci" && kind delete cluster --name c8s-ci || echo "No c8s-ci cluster found"
+	@echo "Cleaned up tilt ci cluster"
+
 ##@ Help
 
 .PHONY: dev-help

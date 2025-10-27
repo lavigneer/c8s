@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,29 +50,29 @@ func init() {
 
 func main() {
 	var (
-		port       int
-		kubeconfig string
-		logLevel   string
+		port     int
+		logLevel string
 	)
 
 	flag.IntVar(&port, "port", 8080, "Port to listen on for webhook requests")
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to kubeconfig file (leave empty for in-cluster config)")
 	flag.StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error)")
-	flag.Parse()
 
-	// Setup logging
+	// Setup logging with zap options
 	opts := zap.Options{
 		Development: logLevel == "debug",
 	}
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	opts.BindFlags(flag.CommandLine)
+	flag.Parse()
+
+	ctrl.SetLogger(zap.New(opts))
 
 	setupLog.Info("Starting C8S Webhook Service",
 		"port", port,
 		"version", "v1alpha1",
 	)
 
-	// Setup Kubernetes client
-	config, err := getKubeConfig(kubeconfig)
+	// Setup Kubernetes client (uses in-cluster config when running in pod)
+	config, err := rest.InClusterConfig()
 	if err != nil {
 		setupLog.Error(err, "Failed to get kubeconfig")
 		os.Exit(1)
@@ -141,17 +140,6 @@ func main() {
 	}
 
 	setupLog.Info("Webhook service stopped")
-}
-
-// getKubeConfig returns Kubernetes REST config
-func getKubeConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		// Use kubeconfig file
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-
-	// Use in-cluster config
-	return rest.InClusterConfig()
 }
 
 // handleHealth handles health check requests

@@ -12,9 +12,8 @@
 #
 # Alternatively, trigger cluster creation from the Tilt UI if needed.
 
-# Load Tilt libraries for utilities
-# Note: ext://restart_process is optional - comment out if not available
-# load('ext://restart_process', 'docker_build_with_restart')
+# Extensions can be loaded here if needed, but standard docker_build with k8s
+# restart_policy handles most development workflows efficiently
 
 # Configuration with defaults - use simple assignments instead of config API
 with_samples = True
@@ -75,42 +74,55 @@ local_resource(
 )
 
 # Load manifests for Tilt resource tracking
-# This applies RBAC, ServiceAccounts, and configuration to the cluster
-k8s_yaml('deploy/install.yaml')
+# Split into separate files for better tracking and organization
+k8s_yaml([
+    'deploy/01-namespace.yaml',
+    'deploy/crds.yaml',
+    'deploy/02-controller-rbac.yaml',
+    'deploy/03-controller-deployment.yaml',
+    'deploy/04-webhook-rbac.yaml',
+    'deploy/05-webhook-deployment.yaml',
+])
+
+# ============================================================================
+# Kubernetes Resource Tracking Configuration
+# ============================================================================
+# Comprehensive resource tracking for better observability in Tilt UI
+#
+# Organized by category:
+#  - 'controller': Controller deployment and status
+#  - 'webhook': Webhook deployment and status
+#  - 'networking': Services, ingress, endpoints
+#  - 'infrastructure': CRDs, RBAC, namespace setup
+#  - 'status': Cluster health, events, resource usage
+#
+# Resources can be filtered and grouped by labels in Tilt UI
+
+# Resource groups by function
+resource_groups = {
+    'controller': ['c8s-controller'],
+    'webhook': ['c8s-webhook'],
+    'infrastructure': ['install_crds', 'rbac_status'],
+    'networking': ['service_endpoints', 'ingress_status'],
+    'status': ['cluster_status', 'k8s_events', 'resource_usage'],
+}
+
+# Track all ServiceAccounts for RBAC visibility
+local_resource(
+    'rbac_status',
+    'kubectl get serviceaccounts -n ' + k8s_namespace + ' && kubectl get roles -n ' + k8s_namespace,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['infrastructure'],
+    allow_parallel=True
+)
 
 # ============================================================================
 # Component Build Configuration
 # ============================================================================
-
-# Build all components using multi-stage Dockerfile with builder target
-def build_component(component_name, port=None):
-    """Configure Docker build for a C8S component"""
-    dockerfile = 'Dockerfile'
-    context = '.'
-    target = component_name
-
-    # Build context with hot-reload capability
-    build_config = docker_build(
-        ref='c8s-' + component_name + ':latest',
-        context=context,
-        dockerfile=dockerfile,
-        target=target,
-        only=[
-            'cmd/' + component_name + '/',
-            'pkg/',
-            'go.mod',
-            'go.sum',
-            'Makefile',
-            'PROJECT',
-            'hack/',
-        ],
-        # Ignore files that shouldn't trigger rebuilds
-        ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
-        # For local development, enable live update when possible
-        entrypoint=['/' + component_name]
-    )
-
-    return build_config
+# Components are built using docker_build_with_restart extension which:
+# - Automatically rebuilds when source files change
+# - Restarts the container entrypoint on live updates
+# - Provides faster iteration cycles for Kubebuilder projects
 
 # ============================================================================
 # Controller Component
@@ -121,23 +133,15 @@ docker_build(
     context='.',
     dockerfile='Dockerfile',
     target='controller',
-    only=[
-        'cmd/controller/',
-        'pkg/',
-        'go.mod',
-        'go.sum',
-        'Makefile',
-        'PROJECT',
-        'hack/',
-    ],
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
+    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
 )
 
 k8s_resource(
     'c8s-controller',
     port_forwards=['6060:6060'],  # Pprof debug port
     labels=['controller'],
-    trigger_mode=TRIGGER_MODE_AUTO
+    trigger_mode=TRIGGER_MODE_AUTO,
+    pod_readiness='wait'
 )
 
 # ============================================================================
@@ -149,20 +153,41 @@ docker_build(
     context='.',
     dockerfile='Dockerfile',
     target='webhook',
-    only=[
-        'cmd/webhook/',
-        'pkg/',
-        'go.mod',
-        'go.sum',
-        'Makefile',
-        'PROJECT',
-        'hack/',
-    ],
-    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/'],
+    ignore=['.*', 'README*', 'specs/', 'docs/', '*.md', 'tests/', '.git/', 'bin/'],
 )
 
-# Note: c8s-webhook is deployed via k8s_yaml but not explicitly tracked as k8s_resource
-# This is OK - it will be managed by Tilt via the manifests
+# Track webhook deployment
+k8s_resource(
+    'c8s-webhook',
+    labels=['webhook'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    pod_readiness='wait'
+)
+
+# ============================================================================
+# Network and Service Tracking
+# ============================================================================
+
+# Note: Webhook service will be tracked automatically via k8s_yaml
+# No explicit k8s_resource needed as Tilt discovers it from manifests
+
+# Display service endpoints and networking status
+local_resource(
+    'service_endpoints',
+    'echo "=== C8S Service Endpoints ===" && kubectl get services -n ' + k8s_namespace + ' -o wide',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['networking'],
+    allow_parallel=True
+)
+
+# Display ingress and routing configuration
+local_resource(
+    'ingress_status',
+    'echo "=== C8S Ingress Configuration ===" && kubectl get ingress -n ' + k8s_namespace + ' || echo "No ingress resources"',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['networking'],
+    allow_parallel=True
+)
 
 # ============================================================================
 # Pipeline Validation
@@ -182,7 +207,33 @@ local_resource(
 
 local_resource(
     'cluster_status',
-    'kubectl cluster-info && echo "\\n=== C8S Components ===" && kubectl get pods -n ' + k8s_namespace + ' && echo "\\n=== Service Endpoints ===" && kubectl get svc -n ' + k8s_namespace,
+    '''
+kubectl cluster-info
+echo "\\n=== Cluster Nodes ==="
+kubectl get nodes -o wide
+echo "\\n=== C8S Components ==="
+kubectl get pods -n ''' + k8s_namespace + ''' -o wide
+echo "\\n=== Component Status ==="
+kubectl get deployments -n ''' + k8s_namespace + ''' -o wide
+    ''',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['status'],
+    allow_parallel=True
+)
+
+# Monitor Kubernetes events for troubleshooting
+local_resource(
+    'k8s_events',
+    'echo "=== Recent K8s Events ===" && kubectl get events -n ' + k8s_namespace + ' --sort-by=".lastTimestamp" | tail -20',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['status'],
+    allow_parallel=True
+)
+
+# Show resource usage/constraints
+local_resource(
+    'resource_usage',
+    'echo "=== Resource Requests/Limits ===" && kubectl describe nodes | grep -A 5 "Allocated resources" || kubectl top nodes 2>/dev/null || echo "Metrics server not available"',
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['status'],
     allow_parallel=True

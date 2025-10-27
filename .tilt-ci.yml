@@ -1,0 +1,19 @@
+# Tilt CI Configuration for C8S
+# This file configures how Tilt runs in CI environments
+# See: https://docs.tilt.dev/ci.html
+
+# Kubeconfig context to use
+kubeContext: kind-c8s
+
+# Environment variables
+env:
+  CGO_ENABLED: "0"
+  GOOS: linux
+  GOARCH: amd64
+
+# Resources to track in CI
+# All resources from the Tiltfile will be built and deployed
+# CI will wait for all to reach healthy state
+
+# Timeouts (in seconds)
+update_mode: auto
