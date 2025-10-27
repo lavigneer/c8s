@@ -1,329 +1,5 @@
-/* C8S Dashboard Styles */
-
-:root {
-    --color-primary: #2563eb;
-    --color-success: #16a34a;
-    --color-error: #dc2626;
-    --color-warning: #ea580c;
-    --color-bg: #ffffff;
-    --color-bg-alt: #f9fafb;
-    --color-border: #e5e7eb;
-    --color-text: #111827;
-    --color-text-light: #6b7280;
-    --spacing-xs: 0.25rem;
-    --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
-    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html, body {
-    height: 100%;
-}
-
-body {
-    font-family: var(--font-family);
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--color-text);
-    background-color: var(--color-bg);
-}
-
-/* Navbar */
-.navbar {
-    background-color: #1f2937;
-    color: white;
-    padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 var(--spacing-md);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.nav-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.nav-title a {
-    color: white;
-    text-decoration: none;
-}
-
-.nav-title a:hover {
-    color: #e5e7eb;
-}
-
-.nav-menu {
-    display: flex;
-    list-style: none;
-    gap: var(--spacing-lg);
-    align-items: center;
-}
-
-.nav-menu a {
-    color: white;
-    text-decoration: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.nav-menu a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-menu span {
-    color: #d1d5db;
-    font-size: 0.875rem;
-}
-
-/* Layout */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--spacing-lg);
-}
-
-/* Status Badges */
-.badge {
-    display: inline-block;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: 4px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.badge-success {
-    background-color: #dcfce7;
-    color: #166534;
-}
-
-.badge-error {
-    background-color: #fee2e2;
-    color: #991b1b;
-}
-
-.badge-warning {
-    background-color: #fed7aa;
-    color: #92400e;
-}
-
-.badge-running {
-    background-color: #dbeafe;
-    color: #0c4a6e;
-}
-
-.badge-pending {
-    background-color: #f3f4f6;
-    color: #374151;
-}
-
-/* Tables */
-.table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    overflow: hidden;
-    margin-top: var(--spacing-md);
-}
-
-.table thead {
-    background-color: var(--color-bg-alt);
-    border-bottom: 2px solid var(--color-border);
-}
-
-.table th {
-    padding: var(--spacing-md);
-    text-align: left;
-    font-weight: 600;
-    color: var(--color-text);
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.table td {
-    padding: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-}
-
-.table tbody tr:hover {
-    background-color: var(--color-bg-alt);
-}
-
-.table a {
-    color: var(--color-primary);
-    text-decoration: none;
-}
-
-.table a:hover {
-    text-decoration: underline;
-}
-
-/* Buttons */
-.btn {
-    display: inline-block;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s;
-    text-align: center;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-    background-color: #1d4ed8;
-    border-color: #1d4ed8;
-}
-
-.btn-secondary {
-    background-color: var(--color-bg-alt);
-    color: var(--color-text);
-    border-color: var(--color-border);
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background-color: #e5e7eb;
-}
-
-.btn-danger {
-    background-color: var(--color-error);
-    color: white;
-    border-color: var(--color-error);
-}
-
-.btn-danger:hover:not(:disabled) {
-    background-color: #b91c1c;
-    border-color: #b91c1c;
-}
-
-/* Log Viewer */
-.log-viewer {
-    background-color: #1f2937;
-    color: #e5e7eb;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
-    font-size: 12px;
-    line-height: 1.6;
-    padding: var(--spacing-md);
-    border-radius: 6px;
-    border: 1px solid var(--color-border);
-    max-height: 600px;
-    overflow-y: auto;
-    margin-top: var(--spacing-md);
-}
-
-.log-line {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.log-error {
-    color: #f87171;
-}
-
-.log-warning {
-    color: #fbbf24;
-}
-
-.log-success {
-    color: #86efac;
-}
-
-/* Forms */
-.form-group {
-    margin-bottom: var(--spacing-md);
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: var(--spacing-sm);
-    font-weight: 600;
-    color: var(--color-text);
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    font-family: var(--font-family);
-    font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* Headings */
-h1, h2, h3 {
-    margin-top: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
-    font-weight: 700;
-}
-
-h1 {
-    font-size: 2rem;
-}
-
-h2 {
-    font-size: 1.5rem;
-}
-
-h3 {
-    font-size: 1.25rem;
-}
-
-/* Utility Classes */
-.mt-sm { margin-top: var(--spacing-sm); }
-.mt-md { margin-top: var(--spacing-md); }
-.mt-lg { margin-top: var(--spacing-lg); }
-
-.mb-sm { margin-bottom: var(--spacing-sm); }
-.mb-md { margin-bottom: var(--spacing-md); }
-.mb-lg { margin-bottom: var(--spacing-lg); }
-
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-muted { color: var(--color-text-light); }
+/* C8S Dashboard - Tailwind CSS */
+/* This file contains custom utilities and overrides for the C8S dashboard */
 
 /* HTMX Loading States */
 .htmx-swapping {
@@ -336,35 +12,54 @@ h3 {
     transition: opacity 0.3s ease-in;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
+/* Custom status badge colors */
+.badge-success {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800;
+}
 
-    .nav-menu {
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
+.badge-error {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800;
+}
 
-    .container {
-        padding: var(--spacing-md);
-    }
+.badge-warning {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800;
+}
 
-    .table {
-        font-size: 0.75rem;
-    }
+.badge-running {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800;
+}
 
-    .table th, .table td {
-        padding: var(--spacing-sm);
-    }
+.badge-pending {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800;
+}
 
-    h1 {
-        font-size: 1.5rem;
-    }
+/* Log viewer */
+.log-viewer {
+    @apply bg-gray-900 text-gray-200 font-mono text-xs leading-relaxed p-4 rounded-lg border border-gray-700 max-h-96 overflow-y-auto;
+}
 
-    h2 {
-        font-size: 1.25rem;
-    }
+.log-line {
+    @apply whitespace-pre-wrap break-words;
+}
+
+.log-error {
+    @apply text-red-400;
+}
+
+.log-warning {
+    @apply text-yellow-400;
+}
+
+.log-success {
+    @apply text-green-400;
+}
+
+/* Table styles */
+.table-row-hover:hover {
+    @apply bg-gray-50 dark:bg-gray-800;
+}
+
+/* Custom form focus styles */
+.form-input:focus {
+    @apply ring-2 ring-blue-500 ring-opacity-50;
 }

@@ -1,15 +1,19 @@
 {{define "partials/nav"}}
-<nav class="navbar">
-    <div class="nav-container">
-        <h1 class="nav-title"><a href="/dashboard">C8S Dashboard</a></h1>
-        <ul class="nav-menu">
-            <li><a href="/dashboard/projects">Projects</a></li>
-            <li><a href="/dashboard">Pipelines</a></li>
-            {{if .User}}
-                <li><span>{{.User.Username}}</span></li>
-                <li><a href="/logout">Logout</a></li>
-            {{end}}
-        </ul>
+<nav class="bg-gray-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <h1 class="text-2xl font-bold">
+                <a href="/dashboard" class="hover:text-gray-300 transition-colors">C8S Dashboard</a>
+            </h1>
+            <ul class="flex items-center gap-6">
+                <li><a href="/dashboard" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pipelines</a></li>
+                <li><a href="/dashboard/projects" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors">Projects</a></li>
+                {{if .User}}
+                    <li class="text-gray-300 text-sm">{{.User.Username}}</li>
+                    <li><a href="/logout" class="hover:bg-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Logout</a></li>
+                {{end}}
+            </ul>
+        </div>
     </div>
 </nav>
 {{end}}
