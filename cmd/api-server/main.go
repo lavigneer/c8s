@@ -25,9 +25,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func main() {
@@ -45,6 +49,28 @@ func main() {
 	if err := dashboard.LoadTemplates(*baseDir); err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
+
+	// Initialize Kubernetes client
+	log.Println("Initializing Kubernetes client...")
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatalf("Failed to get Kubernetes config: %v", err)
+	}
+
+	// Create a scheme and add C8S types
+	scheme := runtime.NewScheme()
+	if err := v1alpha1.AddToScheme(scheme); err != nil {
+		log.Fatalf("Failed to add v1alpha1 types to scheme: %v", err)
+	}
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		log.Fatalf("Failed to create Kubernetes client: %v", err)
+	}
+
+	k8sClient := dashboard.NewK8sClient(c)
+	handlers.InitK8sClient(k8sClient)
+	log.Println("Kubernetes client initialized successfully")
 
 	// Create router
 	router := chi.NewRouter()

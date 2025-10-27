@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/org/c8s/pkg/dashboard"
@@ -57,14 +58,25 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch user's projects from Kubernetes
+	// For development, also check c8s-system namespace for test data
 	var projects []*dashboard.ProjectDTO
 	if k8sClient != nil {
-		configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
-		if err == nil && configs != nil {
-			projects = make([]*dashboard.ProjectDTO, len(configs.Items))
-			for i, config := range configs.Items {
-				projects[i] = mapPipelineConfigToProjectDTO(&config, user.Namespace)
+		namespaces := []string{user.Namespace, "c8s-system"}
+		projectMap := make(map[string]*dashboard.ProjectDTO)
+
+		for _, ns := range namespaces {
+			configs, err := k8sClient.ListPipelineConfigs(r.Context(), ns)
+			if err == nil && configs != nil {
+				for _, config := range configs.Items {
+					projectMap[config.Name] = mapPipelineConfigToProjectDTO(&config, ns)
+				}
 			}
+		}
+
+		// Convert map to slice
+		projects = make([]*dashboard.ProjectDTO, 0, len(projectMap))
+		for _, p := range projectMap {
+			projects = append(projects, p)
 		}
 	}
 
@@ -74,7 +86,8 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := dashboard.RenderTemplate(w, "projects", data); err != nil {
-		http.Error(w, "Failed to render projects page", http.StatusInternalServerError)
+		log.Printf("ERROR: Failed to render projects page: %v", err)
+		// Don't call http.Error since RenderTemplate already wrote the header
 		return
 	}
 }

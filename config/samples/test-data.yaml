@@ -1,0 +1,103 @@
+---
+# Test PipelineConfig 1
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: hello-world-pipeline
+  namespace: c8s-system
+spec:
+  repository: https://github.com/example-org/hello-world
+  branches: ["main", "develop"]
+  steps:
+    - name: checkout
+      image: alpine:latest
+      commands:
+        - echo "Checking out code"
+      timeout: 1m
+    - name: build
+      image: alpine:latest
+      commands:
+        - echo "Building application"
+        - sleep 2
+      timeout: 2m
+      dependsOn: ["checkout"]
+    - name: test
+      image: alpine:latest
+      commands:
+        - echo "Running tests"
+        - sleep 1
+      timeout: 2m
+      dependsOn: ["build"]
+  timeout: 10m
+  retryPolicy:
+    maxRetries: 2
+    backoffSeconds: 30
+
+---
+# Test PipelineConfig 2
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: backend-api-pipeline
+  namespace: c8s-system
+spec:
+  repository: https://github.com/example-org/backend-api
+  branches: ["main"]
+  steps:
+    - name: lint
+      image: alpine:latest
+      commands:
+        - echo "Running linter"
+      timeout: 1m
+    - name: unit-test
+      image: alpine:latest
+      commands:
+        - echo "Running unit tests"
+        - sleep 1
+      timeout: 3m
+      dependsOn: ["lint"]
+    - name: build
+      image: alpine:latest
+      commands:
+        - echo "Building Docker image"
+        - sleep 2
+      timeout: 5m
+      dependsOn: ["unit-test"]
+  timeout: 15m
+  retryPolicy:
+    maxRetries: 1
+    backoffSeconds: 60
+
+---
+# Test PipelineConfig 3
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: frontend-app-pipeline
+  namespace: c8s-system
+spec:
+  repository: https://github.com/example-org/frontend-app
+  branches: ["main", "develop", "staging"]
+  steps:
+    - name: install
+      image: node:18-alpine
+      commands:
+        - echo "Installing dependencies"
+      timeout: 5m
+    - name: build
+      image: node:18-alpine
+      commands:
+        - echo "Building frontend"
+        - sleep 1
+      timeout: 5m
+      dependsOn: ["install"]
+    - name: test
+      image: node:18-alpine
+      commands:
+        - echo "Running tests"
+      timeout: 5m
+      dependsOn: ["build"]
+  timeout: 20m
+  retryPolicy:
+    maxRetries: 2
+    backoffSeconds: 45
