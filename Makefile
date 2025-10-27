@@ -60,14 +60,6 @@ test-unit: ## Run unit tests only
 test-integration: envtest ## Run integration tests with envtest
 	KUBEBUILDER_ASSETS="$(shell setup-envtest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
 
-.PHONY: test-contract
-test-contract: ## Run API contract tests (requires Docker and k3d)
-	$(GO) test -v -timeout 30m ./tests/contract/...
-
-.PHONY: test-contract-short
-test-contract-short: ## Run contract tests (short version)
-	$(GO) test -v -short -timeout $(TEST_TIMEOUT) ./tests/contract/...
-
 .PHONY: coverage
 coverage: test ## Generate coverage report
 	$(GO) tool cover -html=$(COVERAGE_FILE) -o coverage.html
@@ -196,50 +188,6 @@ run-controller: ## Run controller locally (requires kubeconfig)
 run-webhook: ## Run webhook server locally
 	$(GO) run ./cmd/webhook/main.go --port=9443
 
-.PHONY: dev-cluster-create
-dev-cluster-create: build-cli ## Create local test cluster
-	$(CLI_BINARY) dev cluster create c8s-dev
-
-.PHONY: dev-cluster-delete
-dev-cluster-delete: build-cli ## Delete local test cluster
-	$(CLI_BINARY) dev cluster delete c8s-dev --force
-
-.PHONY: dev-cluster-status
-dev-cluster-status: build-cli ## Show local test cluster status
-	$(CLI_BINARY) dev cluster status c8s-dev
-
-.PHONY: dev-cluster-list
-dev-cluster-list: build-cli ## List all local clusters
-	$(CLI_BINARY) dev cluster list
-
-.PHONY: dev-cluster-reset
-dev-cluster-reset: dev-cluster-delete dev-cluster-create ## Reset local test cluster
-
-.PHONY: dev-deploy
-dev-deploy: build-cli ## Deploy operator to local cluster (Phase 4 - not yet implemented)
-	@echo "⚠️  Operator deployment not yet implemented (Phase 4)"
-	@echo "Coming soon: $(CLI_BINARY) dev deploy operator"
-
-.PHONY: dev-test
-dev-test: build-cli ## Run end-to-end tests on local cluster (Phase 5 - not yet implemented)
-	@echo "⚠️  E2E testing not yet implemented (Phase 5)"
-	@echo "Coming soon: $(CLI_BINARY) dev test run"
-
-.PHONY: dev-reload
-dev-reload: build-cli ## Quick iteration: rebuild CLI (deploy/test coming in later phases)
-	@echo "✓ CLI rebuilt successfully"
-	@echo ""
-	@echo "⚠️  Full reload workflow not yet available"
-	@echo "Available now:"
-	@echo "  - make dev-cluster-create"
-	@echo "  - make dev-cluster-status"
-	@echo "  - make dev-cluster-delete"
-	@echo ""
-	@echo "Coming in Phase 4:"
-	@echo "  - make dev-deploy (operator deployment)"
-	@echo ""
-	@echo "Coming in Phase 5:"
-	@echo "  - make dev-test (end-to-end tests)"
 
 ##@ Tilt (Local K8s Development)
 
@@ -289,21 +237,23 @@ tilt-ci-clean: ## Clean up kind cluster from tilt ci
 .PHONY: dev-help
 dev-help: ## Show development commands
 	@echo ""
-	@echo "Development Workflow:"
-	@echo "  make dev-cluster-create    # Create local test cluster"
-	@echo "  make dev-deploy            # Deploy operator (Phase 4 - not yet implemented)"
-	@echo "  make dev-test              # Run end-to-end tests (Phase 5 - not yet implemented)"
-	@echo "  make dev-cluster-reset     # Reset cluster (delete and recreate)"
-	@echo "  make dev-cluster-delete    # Delete test cluster"
+	@echo "Development Workflow (using Tilt):"
+	@echo "  make tilt-up               # Start Tilt development environment"
+	@echo "  make tilt-down             # Stop Tilt"
+	@echo "  make tilt-logs             # View Tilt logs"
 	@echo ""
 	@echo "Quick Iteration:"
 	@echo "  make build                 # Build all binaries"
 	@echo "  make test                  # Run all unit tests"
-	@echo "  make test-contract-short   # Run contract tests (fast)"
+	@echo "  make test-integration      # Run integration tests"
 	@echo "  make lint                  # Run linter"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  open docs/local-testing.md # View local testing guide"
+	@echo "Manual Development (without Tilt):"
+	@echo "  make run-controller        # Run controller locally"
+	@echo "  make run-webhook           # Run webhook locally"
+	@echo ""
+	@echo "Cluster Management:"
+	@echo "  make clean-clusters        # Delete all c8s test clusters"
 	@echo ""
 
 .PHONY: help
