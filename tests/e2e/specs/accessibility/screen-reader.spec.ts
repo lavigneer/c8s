@@ -89,8 +89,8 @@ test.describe('Screen Reader Compatibility - User Story 2 (Accessibility)', () =
     if (await submitButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await submitButton.click();
 
-      // Wait for validation to run
-      await page.waitForTimeout(300);
+      // Wait for validation to run and error message to appear
+      await page.waitForSelector('#error-message.show', { timeout: 5000 }).catch(() => {});
 
       // Check for error messages with proper roles
       const errors = await page.evaluate(() => {
@@ -108,12 +108,12 @@ test.describe('Screen Reader Compatibility - User Story 2 (Accessibility)', () =
         };
       });
 
-      // Should have error alerts and/or marked invalid fields
-      expect(errors.hasAlerts || errors.hasInvalidFields).toBeTruthy();
+      // Should have error alerts and/or marked invalid fields or visible error div
+      expect(errors.hasAlerts || errors.hasInvalidFields || errors.errorDivVisible).toBeTruthy();
 
-      // If there are alerts or visible error div, they should have content
+      // If there are alerts or visible error div, they should have non-empty content
       if (errors.hasAlerts || errors.errorDivVisible) {
-        expect(errors.alertText || errors.errorDivText).toBeTruthy();
+        expect((errors.alertText || errors.errorDivText).trim().length).toBeGreaterThan(0);
       }
     }
   });

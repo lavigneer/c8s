@@ -245,9 +245,15 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// Use HX-Redirect header for HTMX-based requests
-	w.Header().Set("HX-Redirect", "/login")
-	w.WriteHeader(http.StatusOK)
+	// Check if this is an HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		// Use HX-Redirect header for HTMX-based requests
+		w.Header().Set("HX-Redirect", "/login")
+		w.WriteHeader(http.StatusOK)
+	} else {
+		// Use HTTP redirect for regular requests
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	}
 }
 
 // generateDemoArtifacts creates demo artifacts for a pipeline run

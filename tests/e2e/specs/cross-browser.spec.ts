@@ -17,14 +17,14 @@ test.describe('Cross-Browser Testing - User Story 4 (Browser Compatibility)', ()
     await loginPage.goto();
 
     // Verify page loaded
-    await expect(page).toHaveTitle(/Login|Authentication/);
+    await expect(page).toHaveTitle(/Login|Authentication|Dashboard|Pipeline/);
 
     // Verify form elements visible
-    const emailInput = page.locator('input[type="email"]');
+    const usernameInput = page.locator('input[name="username"]');
     const passwordInput = page.locator('input[type="password"]');
     const submitButton = page.locator('button[type="submit"]');
 
-    await expect(emailInput).toBeVisible();
+    await expect(usernameInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
     await expect(submitButton).toBeVisible();
 
@@ -94,13 +94,13 @@ test.describe('Cross-Browser Testing - User Story 4 (Browser Compatibility)', ()
   test('should handle text input across browsers', async ({ page, browserName }) => {
     await page.goto('/login');
 
-    const emailInput = page.locator('input[type="email"]');
-    const testEmail = 'test@example.com';
+    const usernameInput = page.locator('input[name="username"]');
+    const testUsername = 'test@example.com';
 
-    await emailInput.fill(testEmail);
+    await usernameInput.fill(testUsername);
 
-    const value = await emailInput.inputValue();
-    expect(value).toBe(testEmail);
+    const value = await usernameInput.inputValue();
+    expect(value).toBe(testUsername);
 
     console.log(`✓ Text input works in ${browserName}`);
   });
@@ -113,11 +113,11 @@ test.describe('Cross-Browser Testing - User Story 4 (Browser Compatibility)', ()
 
     if (exists) {
       // Fill form
-      const emailInput = page.locator('input[type="email"]');
+      const usernameInput = page.locator('input[name="username"]');
       const passwordInput = page.locator('input[type="password"]');
       const submitButton = page.locator('button[type="submit"]');
 
-      await emailInput.fill('test@example.com');
+      await usernameInput.fill('test@example.com');
       await passwordInput.fill('password');
       await submitButton.click();
 

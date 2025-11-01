@@ -263,7 +263,8 @@ test.describe('Focus Management - User Story 2 (Accessibility)', () => {
       });
 
       // Error should be accessible (at minimum announced)
-      expect(errorFocused || document.querySelector('[role="alert"]')).toBeTruthy();
+      // Either error is focused or error message exists
+      expect(errorFocused).toBeTruthy();
     }
   });
 
