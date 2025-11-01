@@ -37,7 +37,7 @@
         </div>
         <div class="flex gap-2">
             {{if .Pagination.HasPrev}}
-                <a href="/dashboard?page={{sub .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}"
+                <a href="javascript:void(0)" onclick="navigatePage({{sub .Pagination.Page 1}})"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     Previous
                 </a>
@@ -48,7 +48,7 @@
             {{end}}
 
             {{if .Pagination.HasNext}}
-                <a href="/dashboard?page={{add .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}"
+                <a href="javascript:void(0)" onclick="navigatePage({{add .Pagination.Page 1}})"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     Next
                 </a>
@@ -60,6 +60,14 @@
         </div>
     </div>
     {{end}}
+
+    <script>
+    function navigatePage(page) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+        window.location.href = '/dashboard?' + params.toString();
+    }
+    </script>
 </div>
 
 <script>

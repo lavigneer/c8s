@@ -39,10 +39,8 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse pagination parameters
 	params := dashboard.ParsePaginationParams(r.URL.Query())
 
-	// Get filter parameters
-	status := r.URL.Query().Get("status")
-	branch := r.URL.Query().Get("branch")
-	search := r.URL.Query().Get("search")
+	// Parse filter parameters
+	filters := ParseFilters(r)
 
 	// Fetch PipelineRuns from Kubernetes (check both user namespace and c8s-system for test data)
 	var runs []*v1alpha1.PipelineRun
@@ -69,7 +67,7 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Apply filters (client-side for now, should be K8s-side)
-	dtos = filterPipelineRuns(dtos, status, branch, search)
+	dtos = filterPipelineRuns(dtos, filters)
 
 	// Paginate results
 	total := len(dtos)
@@ -98,29 +96,38 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// filterPipelineRuns applies status, branch, and search filters to pipeline runs
-func filterPipelineRuns(runs []*dashboard.PipelineRunDTO, status, branch, search string) []*dashboard.PipelineRunDTO {
+// filterPipelineRuns applies status, branch, search, and date range filters to pipeline runs
+func filterPipelineRuns(runs []*dashboard.PipelineRunDTO, filters PipelineFilters) []*dashboard.PipelineRunDTO {
 	var filtered []*dashboard.PipelineRunDTO
 
 	for _, run := range runs {
 		// Status filter
-		if status != "" && run.Status != status {
+		if filters.Status != "" && run.Status != filters.Status {
 			continue
 		}
 
 		// Branch filter
-		if branch != "" && !strings.EqualFold(run.Branch, branch) {
+		if filters.Branch != "" && !strings.EqualFold(run.Branch, filters.Branch) {
 			continue
 		}
 
 		// Search filter (searches commit SHA, branch, author)
-		if search != "" {
-			searchLower := strings.ToLower(search)
+		if filters.Search != "" {
+			searchLower := strings.ToLower(filters.Search)
 			if !strings.Contains(strings.ToLower(run.CommitSHA), searchLower) &&
 				!strings.Contains(strings.ToLower(run.Branch), searchLower) &&
 				!strings.Contains(strings.ToLower(run.Author), searchLower) {
 				continue
 			}
+		}
+
+		// Date range filter
+		if !filters.FromDate.IsZero() && run.TriggeredAt.Before(filters.FromDate) {
+			continue
+		}
+
+		if !filters.ToDate.IsZero() && run.TriggeredAt.After(filters.ToDate) {
+			continue
 		}
 
 		filtered = append(filtered, run)

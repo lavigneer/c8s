@@ -49,6 +49,10 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse filter parameters and apply filters
+	filters := ParseFilters(r)
+	runs = filterPipelineRuns(runs, filters)
+
 	// Parse pagination parameters
 	params := dashboard.ParsePaginationParams(r.URL.Query())
 

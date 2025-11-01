@@ -89,13 +89,65 @@
 </div>
 
 <script>
+// Initialize filters from URL on page load
+function initializeFiltersFromURL() {
+    const params = new URLSearchParams(window.location.search);
+
+    // Set form values from URL params
+    const search = params.get('search');
+    if (search) document.querySelector('input[name="search"]').value = search;
+
+    const branch = params.get('branch');
+    if (branch) document.querySelector('select[name="branch"]').value = branch;
+
+    const status = params.get('status');
+    if (status) document.querySelector('select[name="status"]').value = status;
+
+    const fromDate = params.get('from_date');
+    if (fromDate) document.querySelector('input[name="from_date"]').value = fromDate;
+
+    const toDate = params.get('to_date');
+    if (toDate) document.querySelector('input[name="to_date"]').value = toDate;
+}
+
+// Update URL when filters change
+function updateURLWithFilters() {
+    const form = document.getElementById('filter-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+
+    for (let [key, value] of formData.entries()) {
+        if (value) {
+            params.append(key, value);
+        }
+    }
+
+    const newURL = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+
+    window.history.replaceState({}, '', newURL);
+}
+
 function clearFilters() {
     // Clear all filter inputs
     document.getElementById('filter-form').reset();
 
+    // Update URL to remove all filters
+    window.history.replaceState({}, '', window.location.pathname);
+
     // Trigger filter update with empty filters
     htmx.ajax('GET', '/api/projects/{{.ProjectID}}/runs', '#pipeline-rows');
 }
+
+// Add event listeners to update URL when filters change
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFiltersFromURL();
+
+    const filterForm = document.getElementById('filter-form');
+    filterForm.addEventListener('change', updateURLWithFilters);
+    filterForm.addEventListener('keyup', updateURLWithFilters);
+});
 
 // Update result count when filters change
 document.addEventListener('htmx:afterSwap', function(event) {
