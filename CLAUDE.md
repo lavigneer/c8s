@@ -91,6 +91,58 @@ tests/e2e/
 
 ### Commands
 
+## HTMX Development Philosophy
+
+**Core Principle**: Use HTMX functionality over custom JavaScript logic wherever possible.
+
+### HTMX Best Practices
+1. **Prefer HTMX Attributes Over JavaScript**
+   - Use `hx-post`, `hx-get`, etc. instead of fetch/XMLHttpRequest
+   - Use `hx-validate="true"` for form validation
+   - Use `hx-on` for event handlers instead of `.addEventListener()`
+   - Use response-targets extension for response code routing
+
+2. **Form Handling with HTMX**
+   - ✅ `hx-post="/endpoint"` for form submission
+   - ✅ `hx-validate="true"` for HTML5 validation
+   - ✅ `htmx:validation:failed` event for custom validation UI
+   - ✅ `hx-target-400/422/5*` for error routing
+   - ❌ Don't use form submit listeners
+   - ❌ Don't use preventDefault() with forms
+
+3. **HTMX Extensions to Leverage**
+   - response-targets - Route responses by HTTP status code
+   - loading-states - Manage loading/disabled states automatically
+   - (others as needed for features)
+
+4. **Test Independence**
+   - E2E tests should NOT depend on HTMX internals
+   - Don't wait for HTMX events or check window.htmx
+   - Test user-visible behavior, not implementation details
+   - Tests should work the same if HTMX is removed
+
+5. **JavaScript Usage**
+   - Use JavaScript for UI state and accessibility
+   - Use JavaScript for event listeners on HTMX events (validation, etc.)
+   - Keep custom logic minimal - let HTMX handle the heavy lifting
+   - Always prefer HTMX attributes before writing JavaScript
+
+### Example Pattern: Form Validation
+```html
+<!-- HTML: Let HTMX handle submission -->
+<form hx-post="/login" hx-validate="true">
+  <input type="text" name="username" required>
+  <input type="password" name="password" required>
+</form>
+
+<!-- JavaScript: Handle UI updates only -->
+document.addEventListener('htmx:validation:failed', (evt) => {
+  const field = evt.detail.elt;
+  field.setAttribute('aria-invalid', 'true');
+  // Show error, set focus, etc.
+});
+```
+
 ## Code Style
 Follow standard conventions
 
