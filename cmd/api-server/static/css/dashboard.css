@@ -427,20 +427,24 @@
     @apply bg-gray-950 text-gray-100;
 }
 
-:root.dark .bg-white {
-    @apply bg-gray-800;
+:root.dark .bg-white,
+:root.dark.bg-white {
+    background-color: rgb(31, 41, 55) !important;
 }
 
-:root.dark .bg-gray-50 {
-    @apply bg-gray-800;
+:root.dark .bg-gray-50,
+:root.dark.bg-gray-50 {
+    background-color: rgb(31, 41, 55) !important;
 }
 
-:root.dark .bg-gray-100 {
-    @apply bg-gray-700;
+:root.dark .bg-gray-100,
+:root.dark.bg-gray-100 {
+    background-color: rgb(55, 65, 81) !important;
 }
 
-:root.dark .bg-gray-200 {
-    @apply bg-gray-600;
+:root.dark .bg-gray-200,
+:root.dark.bg-gray-200 {
+    background-color: rgb(75, 85, 99) !important;
 }
 
 :root.dark .text-gray-900 {
