@@ -51,6 +51,23 @@ allow_k8s_contexts(cluster_name)
 k8s_context(cluster_name)
 
 # ============================================================================
+# Tailwind CSS Build
+# ============================================================================
+
+# Watch and rebuild Tailwind CSS when templates change
+local_resource(
+    'tailwind-css-build',
+    'npm run watch:css',
+    deps=[
+        'cmd/api-server/templates/',
+        'tailwind.config.js',
+        'cmd/api-server/static/css/input.css',
+    ],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['styling']
+)
+
+# ============================================================================
 # Namespace Setup
 # ============================================================================
 
