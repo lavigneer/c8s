@@ -13,8 +13,8 @@ WORKDIR /app
 # Add placeholder binary (will be replaced by live_update)
 ADD bin/controller bin/controller
 
-# Create directories with proper permissions for live_update and entr restart
-RUN mkdir -p /app/bin /tmp && chmod -R 777 /app /app/bin /tmp
+# Create directories with proper permissions for live_update
+RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
 USER 65532:65532
 
 ENTRYPOINT ["/app/bin/controller"]
@@ -29,8 +29,8 @@ WORKDIR /app
 # Add placeholder binary (will be replaced by live_update)
 ADD bin/webhook bin/webhook
 
-# Create directories with proper permissions for live_update and entr restart
-RUN mkdir -p /app/bin /tmp && chmod -R 777 /app /app/bin /tmp
+# Create directories with proper permissions for live_update
+RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
 USER 65532:65532
 
 ENTRYPOINT ["/app/bin/webhook"]

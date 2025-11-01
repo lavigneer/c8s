@@ -139,15 +139,15 @@ local_resource(
 )
 
 # Build Docker image with live updates for compiled binary
-docker_build_with_restart(
-    'c8s-controller',
-    '.',
+# Note: Using docker_build instead of docker_build_with_restart because:
+# - restart_process (entr) requires files to watch, but we only have a binary
+# - When binary changes, Kubernetes will automatically restart the pod via liveness probe
+docker_build(
+    ref='c8s-controller:latest',
+    context='.',
     dockerfile='Dockerfile.tilt',
     target='controller',
-    entrypoint=['/app/bin/controller'],
-    only=[
-        './bin/controller',
-    ],
+    only=['bin/controller'],
     live_update=[
         sync('bin/controller', '/app/bin/controller'),
     ],
@@ -177,15 +177,15 @@ local_resource(
 )
 
 # Build Docker image with live updates for compiled binary
-docker_build_with_restart(
-    'c8s-webhook',
-    '.',
+# Note: Using docker_build instead of docker_build_with_restart because:
+# - restart_process (entr) requires files to watch, but we only have a binary
+# - When binary changes, Kubernetes will automatically restart the pod via liveness probe
+docker_build(
+    ref='c8s-webhook:latest',
+    context='.',
     dockerfile='Dockerfile.tilt',
     target='webhook',
-    entrypoint=['/app/bin/webhook'],
-    only=[
-        './bin/webhook',
-    ],
+    only=['bin/webhook'],
     live_update=[
         sync('bin/webhook', '/app/bin/webhook'),
     ],
