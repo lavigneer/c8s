@@ -240,7 +240,7 @@
                         autocomplete="username"
                         required
                         aria-describedby="username-error"
-                        hx-on="input: this.removeAttribute('aria-invalid')">
+                        hx-on="input: this.removeAttribute('aria-invalid'); this.setCustomValidity('')">
                 </div>
 
                 <div class="form-group">
@@ -254,7 +254,7 @@
                         autocomplete="current-password"
                         required
                         aria-describedby="password-error"
-                        hx-on="input: this.removeAttribute('aria-invalid')">
+                        hx-on="input: this.removeAttribute('aria-invalid'); this.setCustomValidity('')">
                 </div>
 
                 <div class="form-group">
@@ -287,6 +287,15 @@
         document.addEventListener('htmx:validation:failed', function(evt) {
             const input = evt.detail.elt;
             input.setAttribute('aria-invalid', 'true');
+
+            // Set custom validation message if not already set
+            if (!input.validationMessage) {
+                if (input.name === 'username') {
+                    input.setCustomValidity('Username or email is required.');
+                } else if (input.name === 'password') {
+                    input.setCustomValidity('Password is required.');
+                }
+            }
 
             // Show error message
             const errorDiv = document.getElementById('error-message');
