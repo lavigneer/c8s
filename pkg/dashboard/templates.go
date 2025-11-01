@@ -29,6 +29,13 @@ func LoadTemplates(basePath string) error {
 		"isWithinLastWeek": IsWithinLastWeek,
 		"slice":            sliceString,
 		"dict":             helpers.Dict,
+		// Comparison functions (not provided by Sprig)
+		"eq": eq,
+		"ne": ne,
+		"lt": lt,
+		"le": le,
+		"gt": gt,
+		"ge": ge,
 	}
 
 	// Merge custom functions into the Sprig function map

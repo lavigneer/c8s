@@ -35,10 +35,15 @@ func PipelineUpdatesSSEHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
+	// Write 200 status before checking for flusher
+	// This prevents issues with wrapped response writers
+	w.WriteHeader(http.StatusOK)
+
 	// Check if response writer supports flushing
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		// If flushing isn't supported, we can't do SSE properly
+		// This shouldn't happen with standard http servers
 		return
 	}
 

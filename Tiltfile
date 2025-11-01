@@ -175,11 +175,6 @@ docker_build(
     dockerfile='Dockerfile',
     target='api-server',
     only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
-    live_update=[
-        fall_back_on(['Dockerfile', 'go.sum', 'go.mod']),
-        sync('cmd/api-server/templates', '/app/templates'),
-        sync('cmd/api-server/static', '/app/static'),
-    ]
 )
 
 # Track API Server deployment
