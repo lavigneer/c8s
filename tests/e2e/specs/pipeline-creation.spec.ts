@@ -20,8 +20,7 @@ test.describe('Pipeline Creation - User Story 1 (Functional E2E)', () => {
     await page.goto('/logout', { waitUntil: 'networkidle' }).catch(() => {});
   });
 
-  test.skip('should display create pipeline button on dashboard', async ({ page }) => {
-    // Skipped: Create button may not be implemented yet
+  test('should display create pipeline button on dashboard', async ({ page }) => {
     const dashboardPage = new DashboardPage(page);
     await dashboardPage.goto();
 
@@ -30,8 +29,7 @@ test.describe('Pipeline Creation - User Story 1 (Functional E2E)', () => {
     await expect(createButton).toBeVisible({ timeout: TIMEOUTS.medium });
   });
 
-  test.skip('should successfully create a new pipeline via API', async ({ page, apiRequest }) => {
-    // Skipped: /test/pipelines endpoint not implemented
+  test('should successfully create a new pipeline via API', async ({ page, apiRequest }) => {
     const pipelineName = `test-pipeline-${Date.now()}`;
 
     // Create via API
@@ -104,8 +102,7 @@ test.describe('Pipeline Creation - User Story 1 (Functional E2E)', () => {
     }
   });
 
-  test.skip('should successfully delete a pipeline', async ({ apiRequest }) => {
-    // Skipped: /test/pipelines endpoint not implemented
+  test('should successfully delete a pipeline', async ({ apiRequest }) => {
     // Create pipeline
     const createResponse = await apiRequest.post('/test/pipelines', {
       data: {

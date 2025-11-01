@@ -7,8 +7,7 @@ import { VIEWPORTS } from '../fixtures/constants';
  * Responsive Design Testing
  * Verifies functionality and layout across different device viewports
  */
-test.describe.skip('Responsive Design - User Story 4 (Device Compatibility)', () => {
-  // Skipped: Tests dashboard which is still being refined
+test.describe('Responsive Design - User Story 4 (Device Compatibility)', () => {
   test.beforeEach(async ({ page }) => {
     await setupTestAuth(page);
   });
@@ -16,7 +15,7 @@ test.describe.skip('Responsive Design - User Story 4 (Device Compatibility)', ()
   test('should display dashboard correctly on desktop viewport', async ({ page, viewport }) => {
     // Skip if not desktop viewport
     if (viewport?.width !== VIEWPORTS.desktop.width) {
-      test.skip();
+      return;
     }
 
     const dashboardPage = new DashboardPage(page);
@@ -35,7 +34,7 @@ test.describe.skip('Responsive Design - User Story 4 (Device Compatibility)', ()
   test('should be readable on tablet viewport', async ({ page, viewport }) => {
     // Skip if not tablet viewport
     if (viewport?.width !== VIEWPORTS.tablet.width) {
-      test.skip();
+      return;
     }
 
     const dashboardPage = new DashboardPage(page);
@@ -60,7 +59,7 @@ test.describe.skip('Responsive Design - User Story 4 (Device Compatibility)', ()
   test('should be accessible on mobile viewport', async ({ page, viewport }) => {
     // Skip if not mobile viewport
     if (viewport?.width !== VIEWPORTS.mobile.width) {
-      test.skip();
+      return;
     }
 
     const dashboardPage = new DashboardPage(page);

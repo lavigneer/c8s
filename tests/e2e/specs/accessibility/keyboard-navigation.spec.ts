@@ -7,8 +7,7 @@ import { TIMEOUTS } from '../../fixtures/constants';
  * Keyboard Navigation Accessibility Tests (WCAG 2.1 AA)
  * Verifies all interactive elements are reachable and operable via keyboard
  */
-test.describe.skip('Keyboard Navigation - User Story 2 (Accessibility)', () => {
-  // Skipped: Dashboard navigation timing issues
+test.describe('Keyboard Navigation - User Story 2 (Accessibility)', () => {
   test.beforeEach(async ({ page }) => {
     // Login before accessing dashboard
     const loginPage = new LoginPage(page);

@@ -3,8 +3,7 @@ import { setupTestAuth } from '../fixtures/auth';
 import { LogViewerPage } from '../pages/log-viewer.page';
 import { TIMEOUTS } from '../fixtures/constants';
 
-test.describe.skip('Log Viewing - User Story 1 (Functional E2E)', () => {
-  // Skipped: Log viewer route not fully implemented
+test.describe('Log Viewing - User Story 1 (Functional E2E)', () => {
   test.beforeEach(async ({ page }) => {
     await setupTestAuth(page);
   });

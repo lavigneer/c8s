@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - C8S Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <style>
         .login-container {
@@ -213,9 +214,9 @@
                 <p class="login-subtitle">CI/CD Pipeline Dashboard</p>
             </div>
 
-            <div id="error-message" class="login-error"></div>
+            <div id="error-message" class="login-error" role="alert" aria-live="assertive"></div>
 
-            <form id="login-form" method="POST" action="/login">
+            <form id="login-form" hx-post="/login" hx-target="#error-message" hx-swap="outerHTML">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -225,7 +226,8 @@
                         class="form-input"
                         placeholder="Enter your username"
                         autocomplete="username"
-                        required>
+                        required
+                        hx-change="if(this.value.trim()) this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -237,7 +239,8 @@
                         class="form-input"
                         placeholder="Enter your password"
                         autocomplete="current-password"
-                        required>
+                        required
+                        hx-change="if(this.value.trim()) this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -266,6 +269,47 @@
     </div>
 
     <script>
+        // HTMX event handlers for form validation
+        htmx.on('#login-form', 'htmx:beforeRequest', function(evt) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            // Clear previous error indicators
+            usernameInput.removeAttribute('aria-invalid');
+            passwordInput.removeAttribute('aria-invalid');
+
+            // Validate required fields before sending request
+            if (!username) {
+                evt.preventDefault();
+                usernameInput.setAttribute('aria-invalid', 'true');
+                document.getElementById('error-message').innerHTML =
+                    '<div class="show">Username or email is required.</div>';
+                document.getElementById('error-message').classList.add('show');
+                usernameInput.focus();
+                return;
+            }
+
+            if (!password) {
+                evt.preventDefault();
+                passwordInput.setAttribute('aria-invalid', 'true');
+                document.getElementById('error-message').innerHTML =
+                    '<div class="show">Password is required.</div>';
+                document.getElementById('error-message').classList.add('show');
+                passwordInput.focus();
+                return;
+            }
+        });
+
+        // Handle HTMX response errors
+        htmx.on('#login-form', 'htmx:responseError', function(evt) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = '<div class="show">Login failed. Please check your credentials.</div>';
+            errorDiv.classList.add('show');
+            document.getElementById('username').focus();
+        });
+
         // Handle keyboard shortcuts on login page
         document.addEventListener('keydown', (e) => {
             // Disable global shortcuts on login page

@@ -8,8 +8,7 @@ import { TIMEOUTS } from '../../fixtures/constants';
  * Focus Management Tests (WCAG 2.1 AA)
  * Verifies proper focus handling, focus order, and focus visibility
  */
-test.describe.skip('Focus Management - User Story 2 (Accessibility)', () => {
-  // Skipped: Dashboard navigation timing issues - modal tests pass but dashboard tests timeout
+test.describe('Focus Management - User Story 2 (Accessibility)', () => {
   test.beforeEach(async ({ page }) => {
     // Login before accessing dashboard
     const loginPage = new LoginPage(page);
