@@ -329,3 +329,94 @@
 .log-footer {
     @apply sticky bottom-0 bg-gray-950 border-t border-gray-700 px-4 py-2 text-xs text-gray-400;
 }
+
+/* Dark Mode Support */
+:root[data-theme="dark"],
+:root.dark {
+    color-scheme: dark;
+}
+
+/* Dark mode overrides for common elements */
+:root.dark {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --border-color: #475569;
+}
+
+:root.dark body {
+    @apply bg-gray-950 text-gray-100;
+}
+
+:root.dark .bg-white {
+    @apply bg-gray-900;
+}
+
+:root.dark .bg-gray-50 {
+    @apply bg-gray-900;
+}
+
+:root.dark .bg-gray-100 {
+    @apply bg-gray-800;
+}
+
+:root.dark .bg-gray-200 {
+    @apply bg-gray-700;
+}
+
+:root.dark .border-gray-200 {
+    @apply border-gray-700;
+}
+
+:root.dark .border-gray-300 {
+    @apply border-gray-600;
+}
+
+:root.dark .text-gray-900 {
+    @apply text-gray-100;
+}
+
+:root.dark .text-gray-600 {
+    @apply text-gray-400;
+}
+
+:root.dark .text-gray-500 {
+    @apply text-gray-500;
+}
+
+:root.dark .hover\:bg-gray-50:hover {
+    @apply bg-gray-900;
+}
+
+:root.dark .hover\:bg-gray-300:hover {
+    @apply bg-gray-700;
+}
+
+:root.dark input[type="text"],
+:root.dark input[type="email"],
+:root.dark input[type="password"],
+:root.dark input[type="date"],
+:root.dark select,
+:root.dark textarea {
+    @apply bg-gray-800 text-gray-100 border-gray-600;
+}
+
+:root.dark input[type="text"]:focus,
+:root.dark input[type="email"]:focus,
+:root.dark input[type="password"]:focus,
+:root.dark input[type="date"]:focus,
+:root.dark select:focus,
+:root.dark textarea:focus {
+    @apply bg-gray-700 border-gray-500;
+}
+
+/* Dark mode for modal backgrounds */
+:root.dark .modal-content {
+    @apply bg-gray-900;
+}
+
+:root.dark .modal-overlay {
+    @apply bg-black bg-opacity-75;
+}
