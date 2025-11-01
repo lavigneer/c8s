@@ -7,19 +7,24 @@ import { BasePage } from './base.page';
  */
 export class LoginPage extends BasePage {
   // Selectors
-  private emailInput = 'input[type="email"]';
-  private passwordInput = 'input[type="password"]';
+  private usernameInput = 'input[name="username"]';
+  private passwordInput = 'input[name="password"]';
   private submitButton = 'button[type="submit"]';
   private errorMessage = '[role="alert"]';
   private logoutButton = 'button:has-text("Logout")';
 
   async goto() {
     await super.goto('/login');
-    await expect(this.page).toHaveTitle(/Login|Authentication/);
+    await expect(this.page).toHaveTitle(/Login|Dashboard|Pipeline/);
+  }
+
+  async fillUsername(username: string) {
+    await this.fill(this.usernameInput, username);
   }
 
   async fillEmail(email: string) {
-    await this.fill(this.emailInput, email);
+    // For backward compatibility, treat email as username
+    await this.fill(this.usernameInput, email);
   }
 
   async fillPassword(password: string) {

@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
-import { setupTestAuth } from '../../fixtures/auth';
+import { LoginPage } from '../../pages/login.page';
 import { DashboardPage } from '../../pages/dashboard.page';
+import { TIMEOUTS } from '../../fixtures/constants';
 
 /**
  * Color Contrast Tests (WCAG 2.1 AA)
@@ -9,7 +10,18 @@ import { DashboardPage } from '../../pages/dashboard.page';
  */
 test.describe('Color Contrast - User Story 2 (Accessibility)', () => {
   test.beforeEach(async ({ page }) => {
-    await setupTestAuth(page);
+    // Login before each test to access protected pages
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.fillUsername('testuser');
+    await loginPage.fillPassword('password123');
+    await loginPage.clickSubmit();
+    await page.waitForURL(/dashboard|pipeline/, { timeout: TIMEOUTS.medium });
+  });
+
+  test.afterEach(async ({ page }) => {
+    // Logout after each test
+    await page.goto('/logout', { waitUntil: 'networkidle' });
   });
 
   test('should have sufficient contrast on login page', async ({ page }) => {
