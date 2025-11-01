@@ -4,11 +4,11 @@
 <div class="py-8">
     <!-- Header -->
     {{if .PipelineRun}}
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
         <div class="flex justify-between items-start mb-4">
             <div>
-                <h1 class="text-4xl font-bold text-gray-900">{{.PipelineRun.Name}}</h1>
-                <p class="text-gray-600 mt-2">Run Details</p>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white">{{.PipelineRun.Name}}</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Run Details</p>
             </div>
             <div>
                 {{template "partials/status_badge" .PipelineRun}}
@@ -19,32 +19,32 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <!-- Commit -->
             <div>
-                <span class="text-gray-600 block">Commit</span>
-                <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{slice .PipelineRun.CommitSHA 0 7}}</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Commit</span>
+                <span class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{{slice .PipelineRun.CommitSHA 0 7}}</span>
             </div>
 
             <!-- Branch -->
             <div>
-                <span class="text-gray-600 block">Branch</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Branch</span>
                 <span class="font-medium">{{.PipelineRun.Branch}}</span>
             </div>
 
             <!-- Author -->
             <div>
-                <span class="text-gray-600 block">Author</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Author</span>
                 <span class="font-medium">{{.PipelineRun.Author}}</span>
             </div>
 
             <!-- Triggered -->
             <div>
-                <span class="text-gray-600 block">Triggered</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Triggered</span>
                 <span class="text-sm">{{formatTime .PipelineRun.TriggeredAt}}</span>
             </div>
 
             <!-- Started -->
             {{if .PipelineRun.StartedAt}}
             <div>
-                <span class="text-gray-600 block">Started</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Started</span>
                 <span class="text-sm">{{formatTime .PipelineRun.StartedAt}}</span>
             </div>
             {{end}}
@@ -52,57 +52,57 @@
             <!-- Duration -->
             {{if .PipelineRun.DurationSeconds}}
             <div>
-                <span class="text-gray-600 block">Duration</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Duration</span>
                 <span class="font-medium">{{formatDuration .PipelineRun.DurationSeconds}}</span>
             </div>
             {{end}}
 
             <!-- Steps/Artifacts -->
             <div>
-                <span class="text-gray-600 block">Steps</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Steps</span>
                 <span class="font-medium">{{.PipelineRun.StepCount}}</span>
             </div>
 
             <div>
-                <span class="text-gray-600 block">Artifacts</span>
+                <span class="text-gray-600 dark:text-gray-400 block">Artifacts</span>
                 <span class="font-medium">{{.PipelineRun.ArtifactCount}}</span>
             </div>
         </div>
     </div>
 
     <!-- Steps Section -->
-    <div class="bg-white rounded-lg shadow-md mt-8 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-900">Steps Summary</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md mt-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Steps Summary</h2>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-4 gap-4">
                 <div class="text-center">
-                    <div class="text-3xl font-bold text-blue-600">{{.PipelineRun.StepCount}}</div>
-                    <div class="text-gray-600">Total Steps</div>
+                    <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{.PipelineRun.StepCount}}</div>
+                    <div class="text-gray-600 dark:text-gray-400">Total Steps</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold text-green-600">{{.PipelineRun.SuccessCount}}</div>
-                    <div class="text-gray-600">Succeeded</div>
+                    <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{.PipelineRun.SuccessCount}}</div>
+                    <div class="text-gray-600 dark:text-gray-400">Succeeded</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold text-red-600">{{.PipelineRun.FailureCount}}</div>
-                    <div class="text-gray-600">Failed</div>
+                    <div class="text-3xl font-bold text-red-600 dark:text-red-400">{{.PipelineRun.FailureCount}}</div>
+                    <div class="text-gray-600 dark:text-gray-400">Failed</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold text-yellow-600">{{sub .PipelineRun.StepCount (add .PipelineRun.SuccessCount .PipelineRun.FailureCount)}}</div>
-                    <div class="text-gray-600">Pending/Running</div>
+                    <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{sub .PipelineRun.StepCount (add .PipelineRun.SuccessCount .PipelineRun.FailureCount)}}</div>
+                    <div class="text-gray-600 dark:text-gray-400">Pending/Running</div>
                 </div>
             </div>
-            <p class="text-gray-600 mt-6 text-sm">Detailed step logs and execution information will appear here when available.</p>
+            <p class="text-gray-600 dark:text-gray-400 mt-6 text-sm">Detailed step logs and execution information will appear here when available.</p>
         </div>
     </div>
 
     <!-- Log Section with Live Streaming -->
-    <div class="bg-white rounded-lg shadow-md mt-8 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-900">Live Logs</h2>
-            <p class="text-sm text-gray-600 mt-1">Stream logs from pipeline steps in real-time</p>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md mt-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Live Logs</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Stream logs from pipeline steps in real-time</p>
         </div>
         <div class="p-6">
             {{template "partials/log_viewer" .PipelineRun}}
@@ -111,9 +111,9 @@
 
     <!-- Artifacts Section -->
     {{if .Artifacts}}
-    <div class="bg-white rounded-lg shadow-md mt-8 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-900">Artifacts</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md mt-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Artifacts</h2>
         </div>
         <div class="p-6">
             {{template "partials/artifacts_list" (dict "Artifacts" .Artifacts)}}
@@ -123,7 +123,7 @@
 
     <!-- Back Button -->
     <div class="mt-8">
-        <a href="/dashboard" class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition">
+        <a href="/dashboard" class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold rounded-lg transition">
             ← Back to Pipeline List
         </a>
     </div>

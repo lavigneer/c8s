@@ -1,18 +1,18 @@
 {{define "partials/artifacts_list"}}
 <div class="artifacts-section py-6">
-    <h3 class="text-xl font-bold text-gray-900 mb-4">Artifacts</h3>
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Artifacts</h3>
 
     {{if .Artifacts}}
         <div class="space-y-3">
             {{range .Artifacts}}
-            <div class="artifact-row bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition">
+            <div class="artifact-row bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition">
                 <div class="flex items-center flex-1 min-w-0">
                     <div class="artifact-icon text-2xl mr-4">📦</div>
                     <div class="artifact-info flex-1 min-w-0">
-                        <div class="artifact-name font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer transition"
+                        <div class="artifact-name font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition"
                              data-copy="{{.Name}}"
                              title="Click to copy artifact name">{{.Name}}</div>
-                        <div class="artifact-meta text-sm text-gray-600 mt-1">
+                        <div class="artifact-meta text-sm text-gray-600 dark:text-gray-400 mt-1">
                             <span class="inline-block">{{.Type}}</span>
                             <span class="inline-block mx-2">•</span>
                             <span class="inline-block">{{.SizeBytes | formatBytes}}</span>
@@ -22,11 +22,11 @@
                     </div>
                 </div>
                 <div class="artifact-actions flex gap-2 ml-4 flex-shrink-0">
-                    <a href="/api/artifacts/{{.ID}}/download" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition" download>
+                    <a href="/api/artifacts/{{.ID}}/download" class="btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-3 py-2 rounded text-sm transition" download>
                         Download
                     </a>
                     {{if eq .Type "report"}}
-                    <button class="btn bg-gray-200 hover:bg-gray-300 text-gray-900 px-3 py-2 rounded text-sm transition"
+                    <button class="btn bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-3 py-2 rounded text-sm transition"
                             hx-get="/api/artifacts/{{.ID}}/preview"
                             hx-target="#artifact-preview"
                             hx-swap="innerHTML">
@@ -38,10 +38,10 @@
             {{end}}
         </div>
     {{else}}
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-            <div class="text-gray-500 text-lg">📦</div>
-            <h4 class="text-gray-900 font-semibold mt-2">No Artifacts</h4>
-            <p class="text-gray-600 text-sm mt-1">This pipeline run did not produce any artifacts.</p>
+        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+            <div class="text-gray-500 dark:text-gray-400 text-lg">📦</div>
+            <h4 class="text-gray-900 dark:text-white font-semibold mt-2">No Artifacts</h4>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">This pipeline run did not produce any artifacts.</p>
         </div>
     {{end}}
 </div>
@@ -50,10 +50,10 @@
 <div id="artifact-preview" class="modal hidden">
     <div class="modal-content max-w-4xl">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-900">Artifact Preview</h2>
-            <button onclick="closeModal('artifact-preview')" class="text-gray-600 hover:text-gray-900 text-2xl">×</button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Artifact Preview</h2>
+            <button onclick="closeModal('artifact-preview')" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl">×</button>
         </div>
-        <div id="preview-content" class="bg-gray-50 rounded border border-gray-200 p-4 max-h-96 overflow-auto">
+        <div id="preview-content" class="bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-4 max-h-96 overflow-auto">
             <!-- Preview content loaded via HTMX -->
         </div>
     </div>
