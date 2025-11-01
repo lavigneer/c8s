@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -122,7 +123,11 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	// Copy reader to response
-	if _, err := w.(http.ResponseWriter).Write([]byte("Logs for " + stepID + "\n")); err != nil {
+	if _, err := fmt.Fprint(w, "Logs for "+stepID+"\n"); err != nil {
+		return
+	}
+
+	if _, err := io.Copy(w, reader); err != nil {
 		return
 	}
 }
