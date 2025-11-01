@@ -219,12 +219,12 @@
 
             <form id="login-form"
                   hx-ext="response-targets"
-                  hx-validate="true"
                   hx-post="/login"
                   hx-target-400="#error-message"
                   hx-target-422="#error-message"
                   hx-target-5*="#error-message"
-                  hx-swap="innerHTML">
+                  hx-swap="innerHTML"
+                  hx-on="submit: validateLoginForm(event)">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -279,45 +279,63 @@
     </div>
 
     <script>
-        // Handle validation failures from HTMX
-        document.addEventListener('htmx:validation:failed', function(evt) {
-            const input = evt.detail.elt;
+        // Validate form before HTMX submission
+        function validateLoginForm(evt) {
+            const form = evt.detail.target;
             const errorDiv = document.getElementById('error-message');
+            const usernameInput = form.querySelector('input[name="username"]');
+            const passwordInput = form.querySelector('input[name="password"]');
 
-            // Mark field as invalid
-            input.setAttribute('aria-invalid', 'true');
-
-            // Set custom validation message based on field
-            const fieldName = input.name;
-            const message = fieldName === 'username'
-                ? 'Username or email is required.'
-                : fieldName === 'password'
-                ? 'Password is required.'
-                : 'Please fill in all required fields.';
-
-            // Show error message
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-            input.focus();
-        });
-
-        // Clear errors before validation attempt
-        document.addEventListener('htmx:beforeRequest', function(evt) {
-            if (evt.detail.target.id !== 'login-form') return;
-
-            const errorDiv = document.getElementById('error-message');
+            // Clear previous errors
             errorDiv.textContent = '';
             errorDiv.classList.remove('show');
-
             document.querySelectorAll('[aria-invalid="true"]').forEach(el => {
                 el.removeAttribute('aria-invalid');
             });
-        });
 
-        // Show server errors
+            // Check validation
+            if (!form.checkValidity()) {
+                evt.preventDefault();
+
+                const invalidField = form.querySelector(':invalid');
+                if (invalidField) {
+                    invalidField.setAttribute('aria-invalid', 'true');
+                    const fieldName = invalidField.name;
+                    const message = fieldName === 'username'
+                        ? 'Username or email is required.'
+                        : fieldName === 'password'
+                        ? 'Password is required.'
+                        : 'Please fill in all required fields.';
+
+                    errorDiv.textContent = message;
+                    errorDiv.classList.add('show');
+                    invalidField.focus();
+                }
+                return;
+            }
+
+            // Clear errors before HTMX request
+            errorDiv.textContent = '';
+            errorDiv.classList.remove('show');
+        }
+
+        // Show server errors from response-targets
         document.addEventListener('htmx:beforeSwap', function(evt) {
             if (evt.detail.target.id !== 'error-message') return;
             evt.detail.target.classList.add('show');
+        });
+
+        // Handle successful login - navigate to dashboard
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id !== 'login-form') return;
+            // If no error message is shown, login was successful
+            const errorDiv = document.getElementById('error-message');
+            if (!errorDiv.classList.contains('show')) {
+                // Wait a moment for any redirects, then navigate
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 100);
+            }
         });
 
         // Clear error indicator when user types
