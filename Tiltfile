@@ -343,13 +343,14 @@ local_resource(
 # E2E Testing
 # ============================================================================
 
-# E2E tests in watch mode - auto-reruns when test files change
+# E2E tests resource - Tilt watches test files and auto-reruns on changes
 # Click the trigger button in Tilt UI or run: tilt trigger e2e-tests
+# Tilt's auto_init=False means it won't run on startup, but will watch files
 local_resource(
     'e2e-tests',
-    'npm run test:e2e -- --watch',
+    'npm run test:e2e',
     deps=['tests/e2e/', 'playwright.config.ts'],
-    trigger_mode=TRIGGER_MODE_MANUAL,
+    trigger_mode=TRIGGER_MODE_AUTO,
     labels=['testing'],
     resource_deps=['c8s-api-server'],  # Ensure API server is running first
     auto_init=False  # Don't run tests on Tilt startup
@@ -394,10 +395,10 @@ print("""
 │   4. Browser auto-refresh shows updates                        │
 │   5. View logs and metrics in Tilt dashboard                   │
 │                                                                  │
-│ E2E Testing (Watch Mode):                                        │
-│   - Click the trigger button on 'e2e-tests' resource           │
-│   - Or run: tilt trigger e2e-tests                             │
-│   - Tests automatically re-run when test files change          │
+│ E2E Testing:                                                     │
+│   - Trigger manually or let Tilt auto-trigger on file changes  │
+│   - Run: tilt trigger e2e-tests (to manually run)              │
+│   - Tests auto-run when test files change (watch via Tilt)     │
 │                                                                  │
 │ Hot Reload:                                                      │
 │   - Go backend: Automatic rebuild and restart                  │
