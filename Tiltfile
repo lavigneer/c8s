@@ -129,32 +129,66 @@ local_resource(
 # Controller Component
 # ============================================================================
 
-docker_build(
-    ref='c8s-controller:latest',
-    context='.',
-    dockerfile='Dockerfile',
-    target='controller',
-    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
+# Compile controller locally
+local_resource(
+    'controller-compile',
+    'CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/controller ./cmd/controller',
+    deps=['cmd/controller/', 'pkg/', 'go.mod', 'go.sum'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['controller']
 )
 
+# Build Docker image with live updates for compiled binary
+docker_build_with_restart(
+    'c8s-controller',
+    '.',
+    dockerfile='Dockerfile.tilt',
+    target='controller',
+    entrypoint=['/app/bin/controller'],
+    only=[
+        './bin/controller',
+    ],
+    live_update=[
+        sync('bin/controller', '/app/bin/controller'),
+    ],
+)
+
+# Track controller deployment
 k8s_resource(
     'c8s-controller',
     port_forwards=['6060:6060'],  # Pprof debug port
     labels=['controller'],
     trigger_mode=TRIGGER_MODE_AUTO,
-    pod_readiness='wait'
+    pod_readiness='wait',
+    resource_deps=['controller-compile']  # Ensure local compilation happens first
 )
 
 # ============================================================================
 # Webhook Component
 # ============================================================================
 
-docker_build(
-    ref='c8s-webhook:latest',
-    context='.',
-    dockerfile='Dockerfile',
+# Compile webhook locally
+local_resource(
+    'webhook-compile',
+    'CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cmd/webhook',
+    deps=['cmd/webhook/', 'pkg/', 'go.mod', 'go.sum'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['webhook']
+)
+
+# Build Docker image with live updates for compiled binary
+docker_build_with_restart(
+    'c8s-webhook',
+    '.',
+    dockerfile='Dockerfile.tilt',
     target='webhook',
-    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
+    entrypoint=['/app/bin/webhook'],
+    only=[
+        './bin/webhook',
+    ],
+    live_update=[
+        sync('bin/webhook', '/app/bin/webhook'),
+    ],
 )
 
 # Track webhook deployment
@@ -162,7 +196,8 @@ k8s_resource(
     'c8s-webhook',
     labels=['webhook'],
     trigger_mode=TRIGGER_MODE_AUTO,
-    pod_readiness='wait'
+    pod_readiness='wait',
+    resource_deps=['webhook-compile']  # Ensure local compilation happens first
 )
 
 # ============================================================================

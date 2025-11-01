@@ -1,7 +1,42 @@
 # Dockerfile for Tilt Development
 # Optimized for fast rebuilds with locally-compiled binaries
 # The binary and assets are synced via docker_build_with_restart live_update
-FROM alpine:3.18
+# Supports multiple services: controller, webhook, api-server
+
+# ============================================================================
+# Controller
+# ============================================================================
+FROM alpine:3.18 AS controller
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+
+# Add placeholder binary (will be replaced by live_update)
+ADD bin/controller bin/controller
+
+# Create directories with proper permissions for live_update
+RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
+
+ENTRYPOINT ["/app/bin/controller"]
+
+# ============================================================================
+# Webhook
+# ============================================================================
+FROM alpine:3.18 AS webhook
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+
+# Add placeholder binary (will be replaced by live_update)
+ADD bin/webhook bin/webhook
+
+# Create directories with proper permissions for live_update
+RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
+
+ENTRYPOINT ["/app/bin/webhook"]
+
+# ============================================================================
+# API Server
+# ============================================================================
+FROM alpine:3.18 AS api-server
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
