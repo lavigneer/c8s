@@ -1,22 +1,22 @@
 {{define "partials/nav"}}
-<nav class="bg-gray-900 text-white shadow-md">
+<nav class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-md dark:shadow-lg border-b border-gray-200 dark:border-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <h1 class="text-2xl font-bold">
-                <a href="/dashboard" class="hover:text-gray-300 transition-colors">C8S Dashboard</a>
+                <a href="/dashboard" class="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">C8S Dashboard</a>
             </h1>
             <ul class="flex items-center gap-6">
-                <li><a href="/dashboard" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pipelines</a></li>
-                <li><a href="/dashboard/projects" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors">Projects</a></li>
-                <li><button data-theme-toggle class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-300">
+                <li><a href="/dashboard" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pipelines</a></li>
+                <li><a href="/dashboard/projects" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">Projects</a></li>
+                <li><button data-theme-toggle class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                     🌙 Dark
                 </button></li>
-                <li><a href="#" onclick="keyboardShortcutManager.showHelp(); return false;" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-300">
+                <li><a href="#" onclick="keyboardShortcutManager.showHelp(); return false;" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                     <span title="Press ? for shortcuts">?</span>
                 </a></li>
                 {{if .User}}
-                    <li class="text-gray-300 text-sm">{{.User.Username}}</li>
-                    <li><a href="/logout" class="hover:bg-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Logout</a></li>
+                    <li class="text-gray-600 dark:text-gray-400 text-sm">{{.User.Username}}</li>
+                    <li><a href="/logout" class="text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Logout</a></li>
                 {{end}}
             </ul>
         </div>

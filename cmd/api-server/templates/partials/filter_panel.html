@@ -1,15 +1,15 @@
 {{define "partials/filter_panel"}}
-<div class="filter-panel bg-white rounded-lg shadow-md p-6 mb-8">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+<div class="filter-panel bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-lg p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h3>
 
     <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" id="filter-form">
         <!-- Search Input -->
         <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
             <input type="text"
                    name="search"
                    placeholder="Commit SHA, author..."
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                    hx-get="/api/projects/{{.ProjectID}}/runs"
                    hx-target="#pipeline-rows"
                    hx-trigger="keyup changed delay:500ms"
@@ -18,9 +18,9 @@
 
         <!-- Branch Filter -->
         <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch</label>
             <select name="branch"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     hx-get="/api/projects/{{.ProjectID}}/runs"
                     hx-target="#pipeline-rows"
                     hx-trigger="change"
@@ -34,9 +34,9 @@
 
         <!-- Status Filter -->
         <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
             <select name="status"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     hx-get="/api/projects/{{.ProjectID}}/runs"
                     hx-target="#pipeline-rows"
                     hx-trigger="change"
@@ -52,10 +52,10 @@
 
         <!-- From Date -->
         <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Date</label>
             <input type="date"
                    name="from_date"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                    hx-get="/api/projects/{{.ProjectID}}/runs"
                    hx-target="#pipeline-rows"
                    hx-trigger="change"
@@ -64,10 +64,10 @@
 
         <!-- To Date -->
         <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Date</label>
             <input type="date"
                    name="to_date"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                    hx-get="/api/projects/{{.ProjectID}}/runs"
                    hx-target="#pipeline-rows"
                    hx-trigger="change"
@@ -76,26 +76,26 @@
     </form>
 
     <!-- Quick Filters -->
-    <div class="mt-6 pt-4 border-t border-gray-300">
-        <label class="block text-sm font-medium text-gray-700 mb-3">Quick Filters:</label>
+    <div class="mt-6 pt-4 border-t border-gray-300 dark:border-gray-700">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Filters:</label>
         <div class="flex flex-wrap gap-2">
             <button type="button"
-                    class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-800 text-xs font-medium rounded-full transition"
+                    class="px-3 py-1 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-medium rounded-full transition"
                     onclick="applyQuickFilter('status', 'Succeeded')">
                 ✓ Succeeded
             </button>
             <button type="button"
-                    class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-medium rounded-full transition"
+                    class="px-3 py-1 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white text-xs font-medium rounded-full transition"
                     onclick="applyQuickFilter('status', 'Failed')">
                 ✗ Failed
             </button>
             <button type="button"
-                    class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium rounded-full transition"
+                    class="px-3 py-1 bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600 text-white text-xs font-medium rounded-full transition"
                     onclick="applyQuickFilter('status', 'Running')">
                 ⏳ Running
             </button>
             <button type="button"
-                    class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded-full transition"
+                    class="px-3 py-1 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-medium rounded-full transition"
                     onclick="clearFiltersCompletely()">
                 Clear All
             </button>
@@ -106,28 +106,28 @@
     <div class="mt-4 flex gap-2 items-center justify-between">
         <div class="flex gap-2">
             <button type="button"
-                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                     onclick="clearFilters()"
                     id="clear-filters-btn">
                 Clear Filters
             </button>
         </div>
         <div class="flex gap-2 items-center">
-            <div class="text-sm text-gray-600 flex items-center">
+            <div class="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                 Showing <span id="result-count" class="font-semibold mx-1">0</span> results
-                <span id="filter-loading" class="ml-3 text-blue-600 hidden">
+                <span id="filter-loading" class="ml-3 text-blue-600 dark:text-blue-400 hidden">
                     <span class="inline-block animate-spin">⟳</span> Filtering...
                 </span>
             </div>
-            <div class="flex gap-1 ml-4 pl-4 border-l border-gray-300">
+            <div class="flex gap-1 ml-4 pl-4 border-l border-gray-300 dark:border-gray-700">
                 <button type="button"
-                        class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-900 text-xs font-semibold rounded transition"
+                        class="px-3 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-semibold rounded transition"
                         onclick="exportRuns('json')"
                         title="Export runs as JSON">
                     ⬇ JSON
                 </button>
                 <button type="button"
-                        class="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-900 text-xs font-semibold rounded transition"
+                        class="px-3 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-semibold rounded transition"
                         onclick="exportRuns('csv')"
                         title="Export runs as CSV">
                     ⬇ CSV
