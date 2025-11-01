@@ -139,12 +139,15 @@ local_resource(
 )
 
 # Build Docker image with live updates for compiled binary
-docker_build(
-    ref='c8s-controller:latest',
-    context='.',
+docker_build_with_restart(
+    'c8s-controller',
+    '.',
     dockerfile='Dockerfile.tilt',
     target='controller',
-    only=['bin/controller'],
+    entrypoint=['/app/bin/controller'],
+    only=[
+        './bin/controller',
+    ],
     live_update=[
         sync('bin/controller', '/app/bin/controller'),
     ],
@@ -174,12 +177,15 @@ local_resource(
 )
 
 # Build Docker image with live updates for compiled binary
-docker_build(
-    ref='c8s-webhook:latest',
-    context='.',
+docker_build_with_restart(
+    'c8s-webhook',
+    '.',
     dockerfile='Dockerfile.tilt',
     target='webhook',
-    only=['bin/webhook'],
+    entrypoint=['/app/bin/webhook'],
+    only=[
+        './bin/webhook',
+    ],
     live_update=[
         sync('bin/webhook', '/app/bin/webhook'),
     ],
