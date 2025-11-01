@@ -1,12 +1,23 @@
 import { test, expect } from '../fixtures/test-data';
-import { setupTestAuth } from '../fixtures/auth';
+import { LoginPage } from '../pages/login.page';
 import { DashboardPage } from '../pages/dashboard.page';
 import { PipelineDetailPage } from '../pages/pipeline-detail.page';
 import { TIMEOUTS, TEST_DATA } from '../fixtures/constants';
 
 test.describe('Pipeline Creation - User Story 1 (Functional E2E)', () => {
-  test.beforeEach(async ({ page, testToken }) => {
-    await setupTestAuth(page);
+  test.beforeEach(async ({ page }) => {
+    // Perform actual login
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.fillUsername('testuser');
+    await loginPage.fillPassword('password123');
+    await loginPage.clickSubmit();
+    await page.waitForURL(/dashboard|pipeline/, { timeout: TIMEOUTS.medium });
+  });
+
+  test.afterEach(async ({ page }) => {
+    // Logout after each test
+    await page.goto('/logout', { waitUntil: 'networkidle' }).catch(() => {});
   });
 
   test('should display create pipeline button on dashboard', async ({ page }) => {

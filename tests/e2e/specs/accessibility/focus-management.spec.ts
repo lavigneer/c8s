@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { setupTestAuth } from '../../fixtures/auth';
+import { LoginPage } from '../../pages/login.page';
 import { DashboardPage } from '../../pages/dashboard.page';
 import { BasePage } from '../../pages/base.page';
+import { TIMEOUTS } from '../../fixtures/constants';
 
 /**
  * Focus Management Tests (WCAG 2.1 AA)
@@ -9,7 +10,17 @@ import { BasePage } from '../../pages/base.page';
  */
 test.describe('Focus Management - User Story 2 (Accessibility)', () => {
   test.beforeEach(async ({ page }) => {
-    await setupTestAuth(page);
+    // Login before accessing dashboard
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.fillUsername('testuser');
+    await loginPage.fillPassword('password123');
+    await loginPage.clickSubmit();
+    await page.waitForURL(/dashboard|pipeline/, { timeout: TIMEOUTS.medium });
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.goto('/logout', { waitUntil: 'networkidle' }).catch(() => {});
   });
 
   test('should have visible focus indicator on all interactive elements', async ({ page }) => {

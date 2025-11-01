@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupTestAuth } from '../../fixtures/auth';
+import { LoginPage } from '../../pages/login.page';
 import { DashboardPage } from '../../pages/dashboard.page';
 import { TIMEOUTS } from '../../fixtures/constants';
 
@@ -9,7 +9,17 @@ import { TIMEOUTS } from '../../fixtures/constants';
  */
 test.describe('Screen Reader Compatibility - User Story 2 (Accessibility)', () => {
   test.beforeEach(async ({ page }) => {
-    await setupTestAuth(page);
+    // Login before accessing dashboard
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.fillUsername('testuser');
+    await loginPage.fillPassword('password123');
+    await loginPage.clickSubmit();
+    await page.waitForURL(/dashboard|pipeline/, { timeout: TIMEOUTS.medium });
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.goto('/logout', { waitUntil: 'networkidle' }).catch(() => {});
   });
 
   test('should have semantic HTML structure', async ({ page }) => {

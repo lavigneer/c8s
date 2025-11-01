@@ -21,7 +21,7 @@ test.describe('Color Contrast - User Story 2 (Accessibility)', () => {
 
   test.afterEach(async ({ page }) => {
     // Logout after each test
-    await page.goto('/logout', { waitUntil: 'networkidle' });
+    await page.goto('/logout', { waitUntil: 'networkidle' }).catch(() => {});
   });
 
   test('should have sufficient contrast on login page', async ({ page }) => {
