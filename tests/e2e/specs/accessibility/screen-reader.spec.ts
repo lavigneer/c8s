@@ -84,8 +84,8 @@ test.describe('Screen Reader Compatibility - User Story 2 (Accessibility)', () =
   test('should announce form errors to screen readers', async ({ page }) => {
     await page.goto('/login');
 
-    // Wait for HTMX to be loaded
-    await page.waitForFunction(() => typeof window.htmx !== 'undefined', { timeout: 5000 }).catch(() => {});
+    // Wait for HTMX 2.x to be loaded
+    await page.waitForFunction(() => typeof window.htmx !== 'undefined' && window.htmx.version, { timeout: 5000 }).catch(() => {});
 
     // Try to submit empty form
     const submitButton = page.locator('button[type="submit"]');
