@@ -75,6 +75,33 @@
         </div>
     </form>
 
+    <!-- Quick Filters -->
+    <div class="mt-6 pt-4 border-t border-gray-300">
+        <label class="block text-sm font-medium text-gray-700 mb-3">Quick Filters:</label>
+        <div class="flex flex-wrap gap-2">
+            <button type="button"
+                    class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-800 text-xs font-medium rounded-full transition"
+                    onclick="applyQuickFilter('status', 'Succeeded')">
+                ✓ Succeeded
+            </button>
+            <button type="button"
+                    class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-medium rounded-full transition"
+                    onclick="applyQuickFilter('status', 'Failed')">
+                ✗ Failed
+            </button>
+            <button type="button"
+                    class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium rounded-full transition"
+                    onclick="applyQuickFilter('status', 'Running')">
+                ⏳ Running
+            </button>
+            <button type="button"
+                    class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded-full transition"
+                    onclick="clearFiltersCompletely()">
+                Clear All
+            </button>
+        </div>
+    </div>
+
     <!-- Clear Button -->
     <div class="mt-4 flex gap-2 items-center">
         <button type="button"
@@ -142,6 +169,36 @@ function clearFilters() {
 
     // Trigger filter update with empty filters
     htmx.ajax('GET', '/api/projects/{{.ProjectID}}/runs', '#pipeline-rows');
+}
+
+// Apply a quick filter
+function applyQuickFilter(filterName, filterValue) {
+    const form = document.getElementById('filter-form');
+
+    // Set the filter value
+    const input = form.querySelector(`[name="${filterName}"]`);
+    if (input) {
+        input.value = filterValue;
+        updateURLWithFilters();
+
+        // Trigger HTMX filter update
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+
+        for (let [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+
+        const filterUrl = '/api/projects/{{.ProjectID}}/runs?' + params.toString();
+        htmx.ajax('GET', filterUrl, '#pipeline-rows');
+    }
+}
+
+// Clear all filters completely
+function clearFiltersCompletely() {
+    clearFilters();
 }
 
 // Show/hide loading indicator on filter requests
