@@ -343,22 +343,10 @@ local_resource(
 # E2E Testing
 # ============================================================================
 
-# Manually triggered resource to run E2E tests
+# E2E tests in watch mode - auto-reruns when test files change
 # Click the trigger button in Tilt UI or run: tilt trigger e2e-tests
 local_resource(
     'e2e-tests',
-    'npm run test:e2e',
-    deps=['tests/e2e/', 'playwright.config.ts'],
-    trigger_mode=TRIGGER_MODE_MANUAL,
-    labels=['testing'],
-    resource_deps=['c8s-api-server'],  # Ensure API server is running first
-    auto_init=False  # Don't run tests on Tilt startup
-)
-
-# E2E tests in watch mode - auto-reruns when test files change
-# Usage: tilt trigger e2e-tests-watch to start watching
-local_resource(
-    'e2e-tests-watch',
     'npm run test:e2e -- --watch',
     deps=['tests/e2e/', 'playwright.config.ts'],
     trigger_mode=TRIGGER_MODE_MANUAL,
@@ -406,15 +394,10 @@ print("""
 │   4. Browser auto-refresh shows updates                        │
 │   5. View logs and metrics in Tilt dashboard                   │
 │                                                                  │
-│ E2E Testing:                                                     │
-│   Run all tests once:                                            │
+│ E2E Testing (Watch Mode):                                        │
 │   - Click the trigger button on 'e2e-tests' resource           │
 │   - Or run: tilt trigger e2e-tests                             │
-│                                                                  │
-│   Watch mode (auto-reruns on file change):                      │
-│   - Click the trigger button on 'e2e-tests-watch' resource     │
-│   - Or run: tilt trigger e2e-tests-watch                       │
-│   - Tests will automatically re-run when test files change     │
+│   - Tests automatically re-run when test files change          │
 │                                                                  │
 │ Hot Reload:                                                      │
 │   - Go backend: Automatic rebuild and restart                  │
