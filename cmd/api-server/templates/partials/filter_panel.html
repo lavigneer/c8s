@@ -102,19 +102,37 @@
         </div>
     </div>
 
-    <!-- Clear Button -->
-    <div class="mt-4 flex gap-2 items-center">
-        <button type="button"
-                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="clearFilters()"
-                id="clear-filters-btn">
-            Clear Filters
-        </button>
-        <div class="text-sm text-gray-600 flex items-center">
-            Showing <span id="result-count" class="font-semibold mx-1">0</span> results
-            <span id="filter-loading" class="ml-3 text-blue-600 hidden">
-                <span class="inline-block animate-spin">⟳</span> Filtering...
-            </span>
+    <!-- Clear Button & Export -->
+    <div class="mt-4 flex gap-2 items-center justify-between">
+        <div class="flex gap-2">
+            <button type="button"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    onclick="clearFilters()"
+                    id="clear-filters-btn">
+                Clear Filters
+            </button>
+        </div>
+        <div class="flex gap-2 items-center">
+            <div class="text-sm text-gray-600 flex items-center">
+                Showing <span id="result-count" class="font-semibold mx-1">0</span> results
+                <span id="filter-loading" class="ml-3 text-blue-600 hidden">
+                    <span class="inline-block animate-spin">⟳</span> Filtering...
+                </span>
+            </div>
+            <div class="flex gap-1 ml-4 pl-4 border-l border-gray-300">
+                <button type="button"
+                        class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-900 text-xs font-semibold rounded transition"
+                        onclick="exportRuns('json')"
+                        title="Export runs as JSON">
+                    ⬇ JSON
+                </button>
+                <button type="button"
+                        class="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-900 text-xs font-semibold rounded transition"
+                        onclick="exportRuns('csv')"
+                        title="Export runs as CSV">
+                    ⬇ CSV
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -199,6 +217,15 @@ function applyQuickFilter(filterName, filterValue) {
 // Clear all filters completely
 function clearFiltersCompletely() {
     clearFilters();
+}
+
+// Export pipeline runs in specified format
+function exportRuns(format) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('format', format);
+
+    const exportUrl = '/api/exports/runs?' + params.toString();
+    window.location.href = exportUrl;
 }
 
 // Show/hide loading indicator on filter requests

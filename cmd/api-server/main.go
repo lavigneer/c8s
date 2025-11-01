@@ -130,6 +130,9 @@ func main() {
 		r.Get("/api/artifacts/{artifactId}/download", handlers.DownloadArtifactHandler)
 		r.Get("/api/artifacts/{artifactId}/preview", handlers.PreviewArtifactHandler)
 		r.Delete("/api/artifacts/{artifactId}", handlers.DeleteArtifactHandler)
+
+		// API endpoints - Export
+		r.Get("/api/exports/runs", handlers.ExportPipelineRunsHandler)
 	})
 
 	// 404 handler
