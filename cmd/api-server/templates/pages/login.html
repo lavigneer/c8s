@@ -7,6 +7,7 @@
     <title>Login - C8S Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4"></script>
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <style>
         .login-container {
@@ -214,9 +215,20 @@
                 <p class="login-subtitle">CI/CD Pipeline Dashboard</p>
             </div>
 
-            <div id="error-message" class="login-error" role="alert" aria-live="assertive"></div>
+            <div id="error-message" class="login-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-            <form id="login-form" method="POST" action="/login" hx-boost="true">
+            <form id="login-form"
+                  method="POST"
+                  action="/login"
+                  hx-ext="response-targets"
+                  hx-validate="true"
+                  hx-post="/login"
+                  hx-target="#success-redirect"
+                  hx-target-400="#error-message"
+                  hx-target-422="#error-message"
+                  hx-target-5*="#error-message"
+                  hx-swap="innerHTML"
+                  hx-on="htmx:validation:failed: this.closest('form').querySelector('[aria-invalid=true]')?.focus()">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -227,7 +239,8 @@
                         placeholder="Enter your username"
                         autocomplete="username"
                         required
-                        hx-on="change: if(this.value.trim()) this.removeAttribute('aria-invalid')">
+                        aria-describedby="username-error"
+                        hx-on="input: this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -240,7 +253,8 @@
                         placeholder="Enter your password"
                         autocomplete="current-password"
                         required
-                        hx-on="change: if(this.value.trim()) this.removeAttribute('aria-invalid')">
+                        aria-describedby="password-error"
+                        hx-on="input: this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -269,49 +283,30 @@
     </div>
 
     <script>
-        // HTMX event handlers for form validation
-        document.addEventListener('htmx:beforeRequest', function(evt) {
-            if (evt.detail.target.id !== 'login-form') return;
+        // Handle validation failures - mark invalid fields and show error
+        document.addEventListener('htmx:validation:failed', function(evt) {
+            const input = evt.detail.elt;
+            input.setAttribute('aria-invalid', 'true');
 
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
+            // Show error message
             const errorDiv = document.getElementById('error-message');
-
-            // Clear previous error indicators
-            usernameInput.removeAttribute('aria-invalid');
-            passwordInput.removeAttribute('aria-invalid');
-            errorDiv.classList.remove('show');
-            errorDiv.textContent = '';
-
-            // Validate required fields
-            if (!username) {
-                evt.preventDefault();
-                usernameInput.setAttribute('aria-invalid', 'true');
-                errorDiv.textContent = 'Username or email is required.';
-                errorDiv.classList.add('show');
-                usernameInput.focus();
-                return;
-            }
-
-            if (!password) {
-                evt.preventDefault();
-                passwordInput.setAttribute('aria-invalid', 'true');
-                errorDiv.textContent = 'Password is required.';
-                errorDiv.classList.add('show');
-                passwordInput.focus();
-                return;
-            }
+            errorDiv.textContent = input.validationMessage;
+            errorDiv.classList.add('show');
         });
 
-        // Handle successful login response (redirect to dashboard)
-        document.addEventListener('htmx:responseError', function(evt) {
+        // Clear error message before retrying validation
+        document.addEventListener('htmx:beforeRequest', function(evt) {
             if (evt.detail.target.id !== 'login-form') return;
             const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = 'Login failed. Please check your credentials.';
-            errorDiv.classList.add('show');
-            document.getElementById('username').focus();
+            errorDiv.textContent = '';
+            errorDiv.classList.remove('show');
+        });
+
+        // Handle server-side validation errors (400, 422, 5xx responses)
+        document.addEventListener('htmx:beforeSwap', function(evt) {
+            if (evt.detail.target.id !== 'error-message') return;
+            // Show the error container
+            evt.detail.target.classList.add('show');
         });
 
         // Handle keyboard shortcuts on login page
