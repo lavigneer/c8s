@@ -105,23 +105,23 @@
 
 /* Custom status badge colors */
 .badge-success {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800;
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white;
 }
 
 .badge-error {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800;
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-red-600 text-white;
 }
 
 .badge-warning {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800;
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-amber-500 text-white;
 }
 
 .badge-running {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800;
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white;
 }
 
 .badge-pending {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800;
+    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-500 text-white;
 }
 
 /* Log viewer */
@@ -190,23 +190,23 @@
 
 /* Status Badge Styles */
 .badge-success {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white;
 }
 
 .badge-error {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-red-600 text-white;
 }
 
 .badge-warning {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-amber-500 text-white;
 }
 
 .badge-running {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white;
 }
 
 .badge-pending {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-gray-500 text-white;
 }
 
 /* Filter Controls */
@@ -405,26 +405,7 @@
     @apply bg-gray-50 border-gray-400;
 }
 
-/* Light mode for badges in light theme */
-:root.light .badge-success {
-    @apply bg-green-100 text-green-800;
-}
-
-:root.light .badge-error {
-    @apply bg-red-100 text-red-800;
-}
-
-:root.light .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
-}
-
-:root.light .badge-running {
-    @apply bg-blue-100 text-blue-800;
-}
-
-:root.light .badge-pending {
-    @apply bg-gray-100 text-gray-800;
-}
+/* Light mode badges use base styles (already visible) */
 
 /* Dark Mode Support */
 :root[data-theme="dark"],
@@ -538,25 +519,25 @@
     @apply bg-black bg-opacity-75;
 }
 
-/* Dark mode for badges - ensure good contrast */
+/* Dark mode for badges - use slightly lighter versions for dark background */
 :root.dark .badge-success {
-    @apply bg-green-800 text-green-100 font-semibold;
+    @apply bg-green-700 text-white;
 }
 
 :root.dark .badge-error {
-    @apply bg-red-800 text-red-100 font-semibold;
+    @apply bg-red-700 text-white;
 }
 
 :root.dark .badge-warning {
-    @apply bg-amber-700 text-amber-100 font-semibold;
+    @apply bg-amber-600 text-white;
 }
 
 :root.dark .badge-running {
-    @apply bg-blue-800 text-blue-100 font-semibold;
+    @apply bg-blue-700 text-white;
 }
 
 :root.dark .badge-pending {
-    @apply bg-gray-600 text-gray-100 font-semibold;
+    @apply bg-gray-600 text-white;
 }
 
 /* Dark mode for links */
