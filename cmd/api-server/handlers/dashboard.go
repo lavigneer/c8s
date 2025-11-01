@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
@@ -165,9 +166,13 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add demo artifacts for successful runs
+	artifacts := generateDemoArtifacts(run.ID)
+
 	data := map[string]interface{}{
 		"User":        user,
 		"PipelineRun": run,
+		"Artifacts":   artifacts,
 	}
 
 	if err := dashboard.RenderTemplate(w, "pipeline_detail", data); err != nil {
@@ -223,4 +228,46 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect to dashboard
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+}
+
+// generateDemoArtifacts creates demo artifacts for a pipeline run
+func generateDemoArtifacts(runID string) []*dashboard.ArtifactDTO {
+	return []*dashboard.ArtifactDTO{
+		{
+			ID:        runID + "-artifact-1",
+			Name:      "api-server-v1.2.3.tar.gz",
+			Type:      "binary",
+			MimeType:  "application/gzip",
+			SizeBytes: 45200000, // 45.2 MB
+			URL:       "/api/artifacts/" + runID + "-artifact-1/download",
+			CreatedAt: time.Now(),
+		},
+		{
+			ID:        runID + "-artifact-2",
+			Name:      "test-report.html",
+			Type:      "report",
+			MimeType:  "text/html",
+			SizeBytes: 512000, // 512 KB
+			URL:       "/api/artifacts/" + runID + "-artifact-2/download",
+			CreatedAt: time.Now(),
+		},
+		{
+			ID:        runID + "-artifact-3",
+			Name:      "coverage-report.json",
+			Type:      "report",
+			MimeType:  "application/json",
+			SizeBytes: 256000, // 256 KB
+			URL:       "/api/artifacts/" + runID + "-artifact-3/download",
+			CreatedAt: time.Now(),
+		},
+		{
+			ID:        runID + "-artifact-4",
+			Name:      "build-log.txt",
+			Type:      "log",
+			MimeType:  "text/plain",
+			SizeBytes: 128000, // 128 KB
+			URL:       "/api/artifacts/" + runID + "-artifact-4/download",
+			CreatedAt: time.Now(),
+		},
+	}
 }
