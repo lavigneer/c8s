@@ -218,9 +218,8 @@
             <div id="error-message" class="login-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
             <form id="login-form"
-                  method="POST"
-                  action="/login"
                   hx-ext="response-targets"
+                  hx-validate="true"
                   hx-post="/login"
                   hx-target-400="#error-message"
                   hx-target-422="#error-message"
@@ -280,46 +279,49 @@
     </div>
 
     <script>
-        // Form validation on submit
-        document.getElementById('login-form').addEventListener('submit', function(evt) {
-            const form = this;
+        // Handle validation failures from HTMX
+        document.addEventListener('htmx:validation:failed', function(evt) {
+            const input = evt.detail.elt;
             const errorDiv = document.getElementById('error-message');
-            const usernameInput = form.querySelector('input[name="username"]');
-            const passwordInput = form.querySelector('input[name="password"]');
 
-            // Clear previous errors
-            errorDiv.textContent = '';
-            errorDiv.classList.remove('show');
-            form.querySelectorAll('[aria-invalid="true"]').forEach(el => {
-                el.removeAttribute('aria-invalid');
-            });
+            // Mark field as invalid
+            input.setAttribute('aria-invalid', 'true');
 
-            // Check HTML5 validation
-            if (!form.checkValidity()) {
-                evt.preventDefault();
+            // Set custom validation message based on field
+            const fieldName = input.name;
+            const message = fieldName === 'username'
+                ? 'Username or email is required.'
+                : fieldName === 'password'
+                ? 'Password is required.'
+                : 'Please fill in all required fields.';
 
-                // Find first invalid field
-                const invalidField = form.querySelector(':invalid');
-                if (invalidField) {
-                    invalidField.setAttribute('aria-invalid', 'true');
-
-                    // Set and show custom error message
-                    const fieldName = invalidField.name;
-                    const message = fieldName === 'username'
-                        ? 'Username or email is required.'
-                        : fieldName === 'password'
-                        ? 'Password is required.'
-                        : 'Please fill in all required fields.';
-
-                    errorDiv.textContent = message;
-                    errorDiv.classList.add('show');
-                    invalidField.focus();
-                }
-            }
+            // Show error message
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            input.focus();
         });
 
-        // Clear error indicators when user types
-        document.getElementById('login-form').querySelectorAll('input[required]').forEach(input => {
+        // Clear errors before validation attempt
+        document.addEventListener('htmx:beforeRequest', function(evt) {
+            if (evt.detail.target.id !== 'login-form') return;
+
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '';
+            errorDiv.classList.remove('show');
+
+            document.querySelectorAll('[aria-invalid="true"]').forEach(el => {
+                el.removeAttribute('aria-invalid');
+            });
+        });
+
+        // Show server errors
+        document.addEventListener('htmx:beforeSwap', function(evt) {
+            if (evt.detail.target.id !== 'error-message') return;
+            evt.detail.target.classList.add('show');
+        });
+
+        // Clear error indicator when user types
+        document.querySelectorAll('input[required]').forEach(input => {
             input.addEventListener('input', function() {
                 if (this.value.trim()) {
                     this.removeAttribute('aria-invalid');
@@ -329,10 +331,8 @@
 
         // Handle keyboard shortcuts on login page
         document.addEventListener('keydown', (e) => {
-            // Disable global shortcuts on login page
             if (e.key === '?') {
                 e.preventDefault();
-                // Don't show shortcuts help on login page
             }
         });
     </script>
