@@ -1,62 +1,230 @@
 {{define "partials/log_viewer"}}
-<div class="log-viewer" id="log-viewer-{{.StepID}}">
-    <!-- Log Header -->
-    <div class="log-header sticky top-0 bg-gray-900 border-b border-gray-700 px-4 py-3 flex justify-between items-center">
-        <div>
-            <h3 class="font-semibold text-white">Logs: {{.StepName}}</h3>
-            <p class="text-xs text-gray-400">{{.StepID}}</p>
-        </div>
-        <button class="btn btn-sm bg-gray-700 hover:bg-gray-600 text-white"
-                onclick="clearLogs('log-container-{{.StepID}}')">
+<div class="space-y-4">
+    <!-- Step Selector -->
+    <div class="flex items-center gap-2">
+        <label for="step-selector" class="text-sm font-medium text-gray-700">Select Step:</label>
+        <select id="step-selector" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">-- Choose a step --</option>
+            <option value="step-1">checkout (Succeeded)</option>
+            <option value="step-2">build (Succeeded)</option>
+            <option value="step-3">test (Succeeded)</option>
+        </select>
+        <button id="log-auto-scroll" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition">
+            ⬇ Auto-scroll ON
+        </button>
+        <button id="log-clear" class="px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 text-sm rounded-lg transition">
             Clear
+        </button>
+        <button id="log-download" class="px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 text-sm rounded-lg transition">
+            ⬇ Download
         </button>
     </div>
 
-    <!-- Log Container with SSE -->
-    <div class="log-container" id="log-container-{{.StepID}}"
-         hx-ext="sse"
-         sse-connect="/api/runs/{{.RunID}}/steps/{{.StepID}}/logs"
-         hx-swap="beforeend swap:3s">
-        <div class="log-line text-yellow-400 py-1">Connecting to log stream...</div>
+    <!-- Log Container -->
+    <div id="log-container" class="bg-gray-900 rounded-lg border border-gray-700 h-96 overflow-y-auto p-4 text-gray-100 text-sm font-mono">
+        <div id="log-lines" class="space-y-0">
+            <span class="text-gray-500">Select a step to view logs...</span>
+        </div>
+        <div id="log-loading" class="hidden text-gray-500 mt-2">
+            <span class="inline-block animate-pulse">● Streaming logs...</span>
+        </div>
     </div>
 
-    <!-- Log Footer -->
-    <div class="log-footer sticky bottom-0 bg-gray-950 border-t border-gray-700 px-4 py-2 text-xs text-gray-400">
-        <span id="log-count-{{.StepID}}">0</span> lines
+    <!-- Log Stats -->
+    <div class="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-600 flex justify-between">
+        <span>Lines: <span id="log-line-count" class="font-semibold">0</span></span>
+        <span>Size: <span id="log-size" class="font-semibold">0 B</span></span>
+        <span id="log-status">Ready</span>
     </div>
 </div>
 
 <script>
-// Clear logs function
-function clearLogs(containerId) {
-    const container = document.getElementById(containerId);
-    if (container) {
-        container.innerHTML = '<div class="log-line text-yellow-400 py-1">Logs cleared</div>';
-    }
-}
+// Log Viewer State
+const logViewer = {
+    currentStep: null,
+    currentRunId: '{{.ID}}',
+    autoScroll: true,
+    eventSource: null,
+    logLines: [],
+    totalSize: 0,
 
-// Auto-scroll to bottom on new logs
-document.addEventListener('htmx:sseMessage', function(event) {
-    if (event.detail.event === 'log') {
-        const container = event.target.closest('.log-container');
-        if (container) {
-            setTimeout(() => {
-                container.scrollTop = container.scrollHeight;
-            }, 0);
+    init() {
+        document.getElementById('step-selector').addEventListener('change', (e) => {
+            this.selectStep(e.target.value);
+        });
+
+        document.getElementById('log-auto-scroll').addEventListener('click', () => {
+            this.autoScroll = !this.autoScroll;
+            const btn = document.getElementById('log-auto-scroll');
+            btn.textContent = (this.autoScroll ? '⬇ Auto-scroll ON' : '⬇ Auto-scroll OFF');
+            btn.classList.toggle('bg-blue-600', this.autoScroll);
+            btn.classList.toggle('bg-gray-600', !this.autoScroll);
+            if (this.autoScroll) {
+                this.scrollToBottom();
+            }
+        });
+
+        document.getElementById('log-clear').addEventListener('click', () => {
+            this.clearLogs();
+        });
+
+        document.getElementById('log-download').addEventListener('click', () => {
+            this.downloadLogs();
+        });
+    },
+
+    selectStep(stepId) {
+        if (stepId === this.currentStep) return;
+        this.currentStep = stepId;
+        this.clearLogs();
+
+        if (!stepId) {
+            document.getElementById('log-lines').innerHTML = '<span class="text-gray-500">Select a step to view logs...</span>';
+            return;
         }
+
+        this.streamLogs(stepId);
+    },
+
+    streamLogs(stepId) {
+        if (this.eventSource) {
+            this.eventSource.close();
+        }
+
+        document.getElementById('log-loading').classList.remove('hidden');
+        document.getElementById('log-status').textContent = 'Streaming...';
+
+        const url = `/api/runs/${this.currentRunId}/steps/${stepId}/logs`;
+        this.eventSource = new EventSource(url);
+
+        this.eventSource.addEventListener('log', (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                this.addLogLine(data.line);
+            } catch (e) {
+                console.error('Failed to parse log event:', e);
+            }
+        });
+
+        this.eventSource.addEventListener('complete', (event) => {
+            document.getElementById('log-loading').classList.add('hidden');
+            document.getElementById('log-status').textContent = 'Complete';
+            this.eventSource.close();
+        });
+
+        this.eventSource.addEventListener('error', (event) => {
+            document.getElementById('log-loading').classList.add('hidden');
+            document.getElementById('log-status').textContent = 'Error: Connection lost';
+            this.eventSource.close();
+        });
+    },
+
+    addLogLine(line) {
+        const container = document.getElementById('log-lines');
+
+        if (container.children.length === 1 && container.children[0].tagName === 'SPAN') {
+            container.innerHTML = '';
+        }
+
+        const lineEl = document.createElement('div');
+        lineEl.className = 'text-gray-100';
+        lineEl.innerHTML = this.highlightLogLine(line);
+
+        container.appendChild(lineEl);
+        this.logLines.push(line);
+        this.totalSize += line.length + 1;
+        this.updateStats();
+
+        if (this.autoScroll) {
+            this.scrollToBottom();
+        }
+    },
+
+    highlightLogLine(line) {
+        let html = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html = html.replace(/(\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\])/g, '<span class="text-blue-400">$1</span>');
+        html = html.replace(/\b(ERROR|FAIL|Failed)\b/g, '<span class="text-red-400">$1</span>');
+        html = html.replace(/\b(SUCCESS|PASS|Succeeded)\b/g, '<span class="text-green-400">$1</span>');
+        html = html.replace(/\b(WARN|WARNING)\b/g, '<span class="text-yellow-400">$1</span>');
+        return html;
+    },
+
+    scrollToBottom() {
+        const container = document.getElementById('log-container');
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 0);
+    },
+
+    clearLogs() {
+        document.getElementById('log-lines').innerHTML = '<span class="text-gray-500">Logs cleared. Select a step to view logs...</span>';
+        document.getElementById('log-loading').classList.add('hidden');
+        this.logLines = [];
+        this.totalSize = 0;
+        this.updateStats();
+        document.getElementById('log-status').textContent = 'Ready';
+    },
+
+    updateStats() {
+        document.getElementById('log-line-count').textContent = this.logLines.length;
+        document.getElementById('log-size').textContent = this.formatBytes(this.totalSize);
+    },
+
+    downloadLogs() {
+        if (this.logLines.length === 0) {
+            alert('No logs to download');
+            return;
+        }
+        const content = this.logLines.join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.currentRunId}-${this.currentStep}-logs.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    },
+
+    formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    logViewer.init();
 });
 
-// Update log line count
-function updateLogCount(containerId) {
-    const container = document.getElementById(containerId);
-    if (container) {
-        const count = container.querySelectorAll('.log-line').length;
-        const countEl = document.getElementById(containerId.replace('log-container-', 'log-count-'));
-        if (countEl) {
-            countEl.textContent = count;
-        }
+window.addEventListener('beforeunload', () => {
+    if (logViewer.eventSource) {
+        logViewer.eventSource.close();
     }
-}
+});
 </script>
+
+<style>
+#log-container {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+#log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#log-container::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+#log-container::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+
+#log-container::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
+</style>
 {{end}}
