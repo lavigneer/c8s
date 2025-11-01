@@ -343,9 +343,9 @@ local_resource(
 # E2E Testing
 # ============================================================================
 
-# E2E tests resource - Tilt watches test files and auto-reruns on changes
-# Click the trigger button in Tilt UI or run: tilt trigger e2e-tests
-# Uses serve_cmd because tests run in watch mode and stay open
+# E2E tests resource - Runs tests and reruns on file changes
+# Tilt watches the test files and automatically re-triggers on changes
+# Uses serve_cmd because tests stay open
 local_resource(
     'e2e-tests',
     serve_cmd='npm run test:e2e',
@@ -354,6 +354,19 @@ local_resource(
     labels=['testing'],
     resource_deps=['c8s-api-server'],  # Ensure API server is running first
     auto_init=False  # Don't run tests on Tilt startup
+)
+
+# E2E tests in UI mode for interactive development
+# Provides a browser-based interface for running/filtering tests with live reload
+# Run: tilt trigger e2e-tests-ui
+local_resource(
+    'e2e-tests-ui',
+    serve_cmd='npm run test:e2e:ui',
+    deps=['tests/e2e/', 'playwright.config.ts'],
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['testing'],
+    resource_deps=['c8s-api-server'],
+    auto_init=False
 )
 
 # ============================================================================
@@ -396,9 +409,13 @@ print("""
 │   5. View logs and metrics in Tilt dashboard                   │
 │                                                                  │
 │ E2E Testing:                                                     │
-│   - Trigger manually or let Tilt auto-trigger on file changes  │
-│   - Run: tilt trigger e2e-tests (to manually run)              │
-│   - Tests auto-run when test files change (watch via Tilt)     │
+│   Run all tests (auto-reruns on file change):                    │
+│   - tilt trigger e2e-tests                                      │
+│                                                                  │
+│   Interactive UI mode (for filtering/running specific tests):    │
+│   - tilt trigger e2e-tests-ui                                   │
+│   - Opens browser interface for test selection and filtering     │
+│   - Shows live results                                           │
 │                                                                  │
 │ Hot Reload:                                                      │
 │   - Go backend: Automatic rebuild and restart                  │
