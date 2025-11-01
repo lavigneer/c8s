@@ -230,6 +230,22 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
+// LogoutHandler handles user logout
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Clear auth cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1, // Delete cookie
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	// Redirect to login
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
 // generateDemoArtifacts creates demo artifacts for a pipeline run
 func generateDemoArtifacts(runID string) []*dashboard.ArtifactDTO {
 	return []*dashboard.ArtifactDTO{

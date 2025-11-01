@@ -87,6 +87,7 @@ func main() {
 
 	// Login route (no auth required)
 	router.HandleFunc("/login", handlers.LoginHandler)
+	router.HandleFunc("GET /logout", handlers.LogoutHandler)
 	router.HandleFunc("GET /", redirectToLogin)
 
 	// Dashboard routes (protected by auth)
