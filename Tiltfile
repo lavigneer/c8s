@@ -182,17 +182,22 @@ local_resource(
     labels=['api-server']
 )
 
-# Build Docker image using the precompiled binary from local_resource
-# The binary is built locally by api-server-compile, then COPY'd into the image
-# This is faster than compiling in Docker, especially on Mac
-docker_build(
-    ref='c8s-api-server:latest',
-    context='.',
+# Build Docker image with live updates for compiled binary and assets
+# Follows the recommended pattern from tilt-example-go
+docker_build_with_restart(
+    'c8s-api-server',
+    '.',
     dockerfile='Dockerfile.tilt',
+    entrypoint=['/app/bin/api-server', '-base-dir', '/app'],
     only=[
-        'bin/',
-        'cmd/api-server/templates',
-        'cmd/api-server/static',
+        './bin',
+        './cmd/api-server/static/',
+        './cmd/api-server/templates/',
+      ],
+    live_update=[
+        sync('bin', '/app/bin'),
+        sync('cmd/api-server/templates', '/app/templates'),
+        sync('cmd/api-server/static', '/app/static'),
     ],
 )
 

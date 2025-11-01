@@ -33,7 +33,6 @@ testbin/
 vendor/
 
 # Build artifacts
-bin/
 dist/
 build/
 

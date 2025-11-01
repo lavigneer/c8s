@@ -1,23 +1,23 @@
 # Dockerfile for Tilt Development
 # Optimized for fast rebuilds with locally-compiled binaries
-# Uses COPY to include the precompiled binary and allows syncing of templates/static
+# The binary and assets are synced via docker_build_with_restart live_update
 FROM alpine:3.18
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
-# Copy the locally-compiled binary
-# This is built by the local_resource 'api-server-compile' before docker build runs
-COPY bin/api-server /app/api-server
+# Create a placeholder binary file
+# This will be immediately replaced by the live_update sync of bin/api-server
+ADD bin bin
 
-# Copy templates and static assets
-# These can be live-synced for faster development iteration
+# Copy templates and static assets from source
+# These will also be synced via live_update for development
 COPY cmd/api-server/templates ./templates
 COPY cmd/api-server/static ./static
 
 # Create directories with proper permissions for live_update
-RUN mkdir -p /app/templates /app/static && chmod 777 /app /app/templates /app/static
+RUN mkdir -p /app/templates /app/static /app/bin && chmod -R 777 /app /app/templates /app/static
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/api-server"]
+ENTRYPOINT ["/app/bin/api-server"]
 CMD ["-base-dir", "/app"]
