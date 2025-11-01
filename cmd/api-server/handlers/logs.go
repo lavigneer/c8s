@@ -84,7 +84,7 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 
 			// Format log entry
 			logEntry := map[string]interface{}{
-				"message":   line,
+				"line":      line,
 				"timestamp": time.Now().Format(time.RFC3339),
 			}
 			data, _ := json.Marshal(logEntry)
