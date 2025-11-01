@@ -1,5 +1,5 @@
 import { Page, expect } from '@playwright/test';
-import { injectAxe, checkA11y } from 'axe-playwright';
+import { AxeBuilder } from '@axe-core/playwright';
 
 /**
  * Base Page Object class providing common functionality for all page objects
@@ -70,25 +70,21 @@ export class BasePage {
   }
 
   /**
-   * Inject axe accessibility audit into page
-   */
-  async injectAccessibilityAudit() {
-    await injectAxe(this.page);
-  }
-
-  /**
    * Run accessibility audit on page
    * Checks for WCAG 2.1 Level AA compliance
    */
   async runAccessibilityAudit(options?: any) {
     try {
-      await checkA11y(this.page, null, {
-        detailedReport: true,
-        detailedReportOptions: {
-          html: true,
-        },
-        ...options,
-      });
+      const results = await new AxeBuilder({ page: this.page })
+        .withTags(['wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      if (results.violations.length > 0) {
+        console.log(`Found ${results.violations.length} accessibility violations`);
+        throw new Error(`Accessibility violations found: ${results.violations.map((v) => v.id).join(', ')}`);
+      }
+
+      return results;
     } catch (error) {
       // Accessibility violations found - will be logged
       throw error;

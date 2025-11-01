@@ -108,12 +108,12 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
     }
   });
 
-  test('should retrieve artifact metadata via API', async ({ apiRequest }) => {
+  test('should retrieve artifact metadata via API', async ({ request }) => {
     const pipelineId = 'test-123';
     const artifactId = 'artifact-456';
 
     // Try to get artifact via API
-    const response = await apiRequest.get(`/test/pipelines/${pipelineId}/artifacts/${artifactId}`);
+    const response = await request.get(`/test/pipelines/${pipelineId}/artifacts/${artifactId}`);
 
     // Should be either 200 (success) or 404 (not found)
     expect([200, 404]).toContain(response.status());

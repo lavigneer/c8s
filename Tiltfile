@@ -340,6 +340,22 @@ local_resource(
 )
 
 # ============================================================================
+# E2E Testing
+# ============================================================================
+
+# Manually triggered resource to run E2E tests
+# Click the trigger button in Tilt UI or run: tilt trigger e2e-tests
+local_resource(
+    'e2e-tests',
+    'npm run test:e2e',
+    deps=['tests/e2e/', 'playwright.config.ts'],
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['testing'],
+    resource_deps=['c8s-api-server'],  # Ensure API server is running first
+    auto_init=False  # Don't run tests on Tilt startup
+)
+
+# ============================================================================
 # Sample Pipelines (Optional)
 # ============================================================================
 
@@ -377,6 +393,11 @@ print("""
 │   3. Tilt automatically detects changes and rebuilds           │
 │   4. Browser auto-refresh shows updates                        │
 │   5. View logs and metrics in Tilt dashboard                   │
+│                                                                  │
+│ E2E Testing:                                                     │
+│   - Click the trigger button on 'e2e-tests' resource           │
+│   - Or run: tilt trigger e2e-tests                             │
+│   - Tests run against the live development server              │
 │                                                                  │
 │ Hot Reload:                                                      │
 │   - Go backend: Automatic rebuild and restart                  │

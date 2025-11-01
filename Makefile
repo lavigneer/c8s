@@ -178,6 +178,29 @@ check-deps: ## Check if required dependencies are installed
 	@echo "  ✓ k3d installed"
 	@echo "All dependencies are installed"
 
+##@ E2E Testing
+
+.PHONY: test-e2e
+test-e2e: ## Run all E2E tests
+	npm run test:e2e
+
+.PHONY: test-e2e-ui
+test-e2e-ui: ## Run E2E tests with interactive UI
+	npm run test:e2e:ui
+
+.PHONY: test-e2e-debug
+test-e2e-debug: ## Run E2E tests with Playwright debugger
+	npm run test:e2e:debug
+
+.PHONY: test-e2e-report
+test-e2e-report: ## View E2E test HTML report
+	npm run test:e2e:report
+
+.PHONY: test-e2e-install
+test-e2e-install: ## Install E2E test dependencies and browser binaries
+	npm install
+	npx playwright install
+
 ##@ Local Development
 
 .PHONY: run-controller

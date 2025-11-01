@@ -24,7 +24,7 @@ const config = defineConfig({
     video: 'retain-on-failure',
   },
 
-  projects: [
+  projects: process.env.ALL_BROWSERS === 'true' ? [
     // Desktop browsers
     {
       name: 'chromium-desktop',
@@ -86,13 +86,22 @@ const config = defineConfig({
         viewport: { width: 390, height: 844 },
       },
     },
+  ] : [
+    // Development: Run only chromium-desktop by default
+    {
+      name: 'chromium-desktop',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
   ],
 
   webServer: {
-    command: 'echo "Assuming application server running on port 8080"',
+    command: 'echo "Ensure Tilt is running: tilt up"',
     port: 8080,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    reuseExistingServer: true,
+    timeout: 5000,
   },
 });
 

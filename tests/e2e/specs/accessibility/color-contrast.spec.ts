@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { injectAxe, checkA11y } from 'axe-playwright';
+import { AxeBuilder } from '@axe-core/playwright';
 import { setupTestAuth } from '../../fixtures/auth';
 import { DashboardPage } from '../../pages/dashboard.page';
 
@@ -15,20 +15,20 @@ test.describe('Color Contrast - User Story 2 (Accessibility)', () => {
   test('should have sufficient contrast on login page', async ({ page }) => {
     await page.goto('/login');
 
-    // Inject axe for accessibility audit
-    await injectAxe(page);
-
     try {
-      // Run color-contrast check
-      await checkA11y(page, null, {
-        runOnly: {
-          type: 'rule',
-          values: ['color-contrast'],
-        },
-      });
+      // Run color-contrast check using AxeBuilder
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      // Check for color-contrast violations
+      const violations = results.violations.filter((v) => v.id === 'color-contrast');
+      if (violations.length > 0) {
+        console.log('Color contrast violations on login page:', violations.length);
+      }
     } catch (error) {
       // Log violations but don't fail hard - some might be intentional
-      console.log('Color contrast violations on login page');
+      console.log('Color contrast check error on login page');
     }
   });
 
@@ -36,17 +36,19 @@ test.describe('Color Contrast - User Story 2 (Accessibility)', () => {
     const dashboardPage = new DashboardPage(page);
     await dashboardPage.goto();
 
-    await injectAxe(page);
-
     try {
-      await checkA11y(page, null, {
-        runOnly: {
-          type: 'rule',
-          values: ['color-contrast'],
-        },
-      });
+      // Run color-contrast check using AxeBuilder
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      // Check for color-contrast violations
+      const violations = results.violations.filter((v) => v.id === 'color-contrast');
+      if (violations.length > 0) {
+        console.log('Color contrast violations on dashboard:', violations.length);
+      }
     } catch (error) {
-      console.log('Color contrast violations on dashboard');
+      console.log('Color contrast check error on dashboard');
     }
   });
 
