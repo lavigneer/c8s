@@ -9,7 +9,9 @@
                 <div class="flex items-center flex-1 min-w-0">
                     <div class="artifact-icon text-2xl mr-4">📦</div>
                     <div class="artifact-info flex-1 min-w-0">
-                        <div class="artifact-name font-semibold text-gray-900 truncate">{{.Name}}</div>
+                        <div class="artifact-name font-semibold text-gray-900 truncate hover:text-blue-600 cursor-pointer transition"
+                             data-copy="{{.Name}}"
+                             title="Click to copy artifact name">{{.Name}}</div>
                         <div class="artifact-meta text-sm text-gray-600 mt-1">
                             <span class="inline-block">{{.Type}}</span>
                             <span class="inline-block mx-2">•</span>

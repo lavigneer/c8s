@@ -6,7 +6,9 @@
             <div class="font-semibold text-gray-900 text-lg">{{.Name}}</div>
             <div class="pipeline-meta text-sm text-gray-600 mt-1 space-y-1">
                 <div>
-                    <span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{{slice .CommitSHA 0 7}}</span>
+                    <span class="font-mono bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-xs cursor-pointer transition"
+                          data-copy="{{.CommitSHA}}"
+                          title="Click to copy full commit SHA">{{slice .CommitSHA 0 7}}</span>
                     <span class="text-gray-500">on</span>
                     <span class="font-medium">{{.Branch}}</span>
                 </div>
