@@ -29,20 +29,11 @@ export const test = base.extend<TestDataFixture>({
     await use(url);
   },
 
-  apiRequest: async ({ browser }, use) => {
-    // Create API request context with authentication
-    const context = await browser!.newContext({
-      baseURL: process.env.API_URL || 'http://localhost:8080/api',
-      extraHTTPHeaders: {
-        'Authorization': `Bearer ${process.env.TEST_AUTH_TOKEN || 'test_token'}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const request = context.request;
+  apiRequest: async ({ page }, use) => {
+    // Create API request context using page's context to share cookies
+    // This ensures auth cookies from login are included in API requests
+    const request = page.context().request;
     await use(request);
-
-    await context.close();
   },
 });
 
