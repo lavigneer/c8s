@@ -540,23 +540,23 @@
 
 /* Dark mode for badges - ensure good contrast */
 :root.dark .badge-success {
-    @apply bg-green-900 text-green-200;
+    @apply bg-green-800 text-green-100 font-semibold;
 }
 
 :root.dark .badge-error {
-    @apply bg-red-900 text-red-200;
+    @apply bg-red-800 text-red-100 font-semibold;
 }
 
 :root.dark .badge-warning {
-    @apply bg-yellow-900 text-yellow-200;
+    @apply bg-amber-700 text-amber-100 font-semibold;
 }
 
 :root.dark .badge-running {
-    @apply bg-blue-900 text-blue-200;
+    @apply bg-blue-800 text-blue-100 font-semibold;
 }
 
 :root.dark .badge-pending {
-    @apply bg-gray-700 text-gray-200;
+    @apply bg-gray-600 text-gray-100 font-semibold;
 }
 
 /* Dark mode for links */
