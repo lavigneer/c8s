@@ -49,10 +49,12 @@ class ThemeManager {
         if (theme === this.DARK_CLASS) {
             root.classList.remove(this.LIGHT_CLASS);
             root.classList.add(this.DARK_CLASS);
+            root.classList.add('dark');
             document.body.classList.add('dark');
             localStorage.setItem(this.STORAGE_KEY, this.DARK_CLASS);
         } else {
             root.classList.remove(this.DARK_CLASS);
+            root.classList.remove('dark');
             root.classList.add(this.LIGHT_CLASS);
             document.body.classList.remove('dark');
             localStorage.setItem(this.STORAGE_KEY, this.LIGHT_CLASS);
@@ -90,8 +92,19 @@ class ThemeManager {
      * Set up theme toggle buttons
      */
     setupToggleButtons() {
-        document.querySelectorAll('[data-theme-toggle]').forEach(button => {
-            button.addEventListener('click', () => this.toggle());
+        const buttons = document.querySelectorAll('[data-theme-toggle]');
+
+        // If no buttons found, retry after a short delay
+        if (buttons.length === 0) {
+            setTimeout(() => this.setupToggleButtons(), 100);
+            return;
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggle();
+            });
         });
     }
 
