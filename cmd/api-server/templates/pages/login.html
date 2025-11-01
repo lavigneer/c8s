@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - C8S Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <style>
         .login-container {
@@ -215,7 +216,7 @@
 
             <div id="error-message" class="login-error" role="alert" aria-live="assertive"></div>
 
-            <form id="login-form" method="POST" action="/login">
+            <form id="login-form" method="POST" action="/login" hx-boost="true">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -226,7 +227,7 @@
                         placeholder="Enter your username"
                         autocomplete="username"
                         required
-                        hx-change="if(this.value.trim()) this.removeAttribute('aria-invalid')">
+                        hx-on="change: if(this.value.trim()) this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -239,7 +240,7 @@
                         placeholder="Enter your password"
                         autocomplete="current-password"
                         required
-                        hx-change="if(this.value.trim()) this.removeAttribute('aria-invalid')">
+                        hx-on="change: if(this.value.trim()) this.removeAttribute('aria-invalid')">
                 </div>
 
                 <div class="form-group">
@@ -268,8 +269,10 @@
     </div>
 
     <script>
-        // Form validation for accessibility
-        document.getElementById('login-form').addEventListener('submit', function(evt) {
+        // HTMX event handlers for form validation
+        document.addEventListener('htmx:beforeRequest', function(evt) {
+            if (evt.detail.target.id !== 'login-form') return;
+
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const usernameInput = document.getElementById('username');
@@ -302,19 +305,13 @@
             }
         });
 
-        // Clear error indicators when user starts typing
-        ['username', 'password'].forEach(id => {
-            document.getElementById(id).addEventListener('input', function() {
-                if (this.value.trim()) {
-                    this.removeAttribute('aria-invalid');
-                    // Clear error if both fields are now filled
-                    const username = document.getElementById('username').value.trim();
-                    const password = document.getElementById('password').value.trim();
-                    if (username && password) {
-                        document.getElementById('error-message').classList.remove('show');
-                    }
-                }
-            });
+        // Handle successful login response (redirect to dashboard)
+        document.addEventListener('htmx:responseError', function(evt) {
+            if (evt.detail.target.id !== 'login-form') return;
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = 'Login failed. Please check your credentials.';
+            errorDiv.classList.add('show');
+            document.getElementById('username').focus();
         });
 
         // Handle keyboard shortcuts on login page
