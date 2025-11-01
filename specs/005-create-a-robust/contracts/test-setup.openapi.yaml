@@ -1,0 +1,501 @@
+openapi: 3.0.0
+info:
+  title: Test Data Setup & Teardown API
+  description: Internal API endpoints used by e2e tests to setup and cleanup test data
+  version: 1.0.0
+  x-internal: true
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://staging.example.com
+    description: Staging environment
+
+paths:
+  /api/test/pipelines:
+    post:
+      summary: Create a test pipeline
+      description: Creates a new pipeline with predefined configuration for testing
+      tags:
+        - Test Data Setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePipelineRequest'
+      responses:
+        '201':
+          description: Pipeline created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        '400':
+          description: Invalid request body
+        '401':
+          description: Unauthorized - test auth token invalid
+        '409':
+          description: Pipeline with same name already exists
+      security:
+        - TestBearer: []
+
+  /api/test/pipelines/{pipelineId}:
+    get:
+      summary: Get test pipeline details
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pipeline found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        '404':
+          description: Pipeline not found
+      security:
+        - TestBearer: []
+
+    delete:
+      summary: Delete a test pipeline
+      description: Removes pipeline and all associated runs, logs, and artifacts
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Pipeline deleted successfully
+        '404':
+          description: Pipeline not found
+        '500':
+          description: Internal error during deletion
+      security:
+        - TestBearer: []
+
+  /api/test/pipelines/{pipelineId}/runs:
+    post:
+      summary: Create a test pipeline run
+      description: Triggers execution of a pipeline with test configuration
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunRequest'
+      responses:
+        '201':
+          description: Pipeline run created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRun'
+        '404':
+          description: Pipeline not found
+      security:
+        - TestBearer: []
+
+  /api/test/pipelines/{pipelineId}/runs/{runId}:
+    get:
+      summary: Get pipeline run details
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Run found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineRun'
+        '404':
+          description: Run not found
+      security:
+        - TestBearer: []
+
+    delete:
+      summary: Delete a pipeline run
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Run deleted successfully
+        '404':
+          description: Run not found
+      security:
+        - TestBearer: []
+
+  /api/test/artifacts:
+    post:
+      summary: Create a test artifact
+      description: Uploads a file artifact for testing artifact download functionality
+      tags:
+        - Test Data Setup
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Artifact filename
+        - name: pipelineId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Associated pipeline ID
+      responses:
+        '201':
+          description: Artifact created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Artifact'
+        '400':
+          description: Invalid parameters or file
+      security:
+        - TestBearer: []
+
+  /api/test/artifacts/{artifactId}:
+    delete:
+      summary: Delete a test artifact
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Artifact deleted
+        '404':
+          description: Artifact not found
+      security:
+        - TestBearer: []
+
+  /api/test/projects:
+    post:
+      summary: Create a test project
+      description: Creates a new project with test configuration
+      tags:
+        - Test Data Setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '409':
+          description: Project with same name exists
+      security:
+        - TestBearer: []
+
+  /api/test/projects/{projectId}:
+    delete:
+      summary: Delete a test project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted
+        '404':
+          description: Project not found
+      security:
+        - TestBearer: []
+
+  /api/test/webhooks:
+    post:
+      summary: Create a test webhook
+      description: Creates a webhook for testing webhook management UI
+      tags:
+        - Test Data Setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+      security:
+        - TestBearer: []
+
+  /api/test/webhooks/{webhookId}:
+    delete:
+      summary: Delete a test webhook
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Webhook deleted
+      security:
+        - TestBearer: []
+
+  /api/test/cleanup:
+    post:
+      summary: Cleanup all test data
+      description: Removes all test data created during test run (emergency cleanup)
+      tags:
+        - Test Data Cleanup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                testRunId:
+                  type: string
+                  description: ID of the test run whose data to cleanup
+      responses:
+        '200':
+          description: Cleanup complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                    description: Number of resources deleted
+        '400':
+          description: Invalid test run ID
+      security:
+        - TestBearer: []
+
+components:
+  schemas:
+    CreatePipelineRequest:
+      type: object
+      required:
+        - name
+        - repository
+      properties:
+        name:
+          type: string
+          example: test-pipeline-001
+        repository:
+          type: string
+          example: github.com/test/repo
+        branches:
+          type: array
+          items:
+            type: string
+          example: ['main', 'develop']
+        timeout:
+          type: integer
+          example: 3600
+          description: Timeout in seconds
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              image:
+                type: string
+              commands:
+                type: array
+                items:
+                  type: string
+
+    Pipeline:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        repository:
+          type: string
+        branches:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: ['active', 'archived']
+
+    CreateRunRequest:
+      type: object
+      required:
+        - branch
+      properties:
+        branch:
+          type: string
+          example: main
+        parameters:
+          type: object
+          additionalProperties: true
+
+    PipelineRun:
+      type: object
+      properties:
+        id:
+          type: string
+        pipelineId:
+          type: string
+        branch:
+          type: string
+        status:
+          type: string
+          enum: ['pending', 'running', 'success', 'failed', 'cancelled']
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Duration in seconds
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: test-project-001
+        description:
+          type: string
+        owner:
+          type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Artifact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        pipelineId:
+          type: string
+        size:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+        downloadUrl:
+          type: string
+
+    CreateWebhookRequest:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: ['pipeline.run.started', 'pipeline.run.completed', 'pipeline.run.failed']
+        secret:
+          type: string
+
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastTriggeredAt:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    TestBearer:
+      type: http
+      scheme: bearer
+      description: Test authentication token (test-specific, not for production users)

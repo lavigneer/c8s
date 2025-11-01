@@ -75,6 +75,20 @@ tilt_modules/
 .tiltrc
 .tilt_log.txt
 
-# Node/npm (for Tailwind CSS build)
+# Node/npm (for Tailwind CSS build and Playwright tests)
 node_modules/
 package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+tests/e2e/**/*.log
+
+# Node.js build/dist
+npm-debug.log
+npm-debug.log.*
+lerna-debug.log*

@@ -46,6 +46,7 @@ After finishing work:
 2. Review changes with `git diff HEAD~N` (where N is number of commits)
 
 ## Recent Changes
+- 005-create-a-robust: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 - 004-create-a-front: **COMPLETED** - Full web dashboard implementation (all 5 user stories)
   - Pipeline history and status visualization (US1)
   - Real-time log streaming with SSE (US2)
@@ -56,7 +57,6 @@ After finishing work:
   - Authentication and authorization (FR-010)
   - Mobile-responsive design (FR-012)
 - 002-i-want-to: Added Go 1.25.0
-- 001-build-a-continuous: Added
 
 ## Dashboard Implementation Details
 **Status**: COMPLETE, TESTED, AND ENHANCED (Phase 2)
