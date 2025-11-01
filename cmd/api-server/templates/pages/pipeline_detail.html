@@ -20,32 +20,32 @@
             <!-- Commit -->
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Commit</span>
-                <span class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{{slice .PipelineRun.CommitSHA 0 7}}</span>
+                <span class="font-mono text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1 rounded">{{slice .PipelineRun.CommitSHA 0 7}}</span>
             </div>
 
             <!-- Branch -->
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Branch</span>
-                <span class="font-medium">{{.PipelineRun.Branch}}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{.PipelineRun.Branch}}</span>
             </div>
 
             <!-- Author -->
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Author</span>
-                <span class="font-medium">{{.PipelineRun.Author}}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{.PipelineRun.Author}}</span>
             </div>
 
             <!-- Triggered -->
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Triggered</span>
-                <span class="text-sm">{{formatTime .PipelineRun.TriggeredAt}}</span>
+                <span class="text-sm text-gray-900 dark:text-white">{{formatTime .PipelineRun.TriggeredAt}}</span>
             </div>
 
             <!-- Started -->
             {{if .PipelineRun.StartedAt}}
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Started</span>
-                <span class="text-sm">{{formatTime .PipelineRun.StartedAt}}</span>
+                <span class="text-sm text-gray-900 dark:text-white">{{formatTime .PipelineRun.StartedAt}}</span>
             </div>
             {{end}}
 
@@ -53,19 +53,19 @@
             {{if .PipelineRun.DurationSeconds}}
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Duration</span>
-                <span class="font-medium">{{formatDuration .PipelineRun.DurationSeconds}}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{formatDuration .PipelineRun.DurationSeconds}}</span>
             </div>
             {{end}}
 
             <!-- Steps/Artifacts -->
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Steps</span>
-                <span class="font-medium">{{.PipelineRun.StepCount}}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{.PipelineRun.StepCount}}</span>
             </div>
 
             <div>
                 <span class="text-gray-600 dark:text-gray-400 block">Artifacts</span>
-                <span class="font-medium">{{.PipelineRun.ArtifactCount}}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{.PipelineRun.ArtifactCount}}</span>
             </div>
         </div>
     </div>
