@@ -74,3 +74,7 @@ cover.out
 tilt_modules/
 .tiltrc
 .tilt_log.txt
+
+# Node/npm (for Tailwind CSS build)
+node_modules/
+package-lock.json

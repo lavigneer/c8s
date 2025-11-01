@@ -1,0 +1,12 @@
+{
+  "name": "c8s-dashboard",
+  "version": "1.0.0",
+  "description": "C8S CI/CD Dashboard UI",
+  "scripts": {
+    "build:css": "tailwindcss -i ./cmd/api-server/static/css/input.css -o ./cmd/api-server/static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./cmd/api-server/static/css/input.css -o ./cmd/api-server/static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}
