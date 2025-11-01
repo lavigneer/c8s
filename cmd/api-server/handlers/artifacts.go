@@ -46,13 +46,45 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Verify user has access to this artifact
-	// TODO: Fetch artifact metadata from database/cache
-	// TODO: Stream artifact content from S3 or object storage
-	// TODO: Set appropriate headers (Content-Disposition, Content-Type, etc.)
+	// Demo artifacts mapping (in production, fetch from storage)
+	demoArtifacts := map[string]string{
+		"hello-world-run-001-artifact-1": "api-server-v1.2.3.tar.gz",
+		"hello-world-run-001-artifact-2": "test-report.html",
+		"hello-world-run-001-artifact-3": "coverage-report.json",
+		"hello-world-run-001-artifact-4": "build-log.txt",
+	}
 
-	// Placeholder: return 404 for now
-	dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+	filename, ok := demoArtifacts[artifactID]
+	if !ok {
+		dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		return
+	}
+
+	// Generate demo content based on artifact type
+	var content []byte
+	contentType := "application/octet-stream"
+
+	switch filename {
+	case "api-server-v1.2.3.tar.gz":
+		content = []byte("This would be a binary tar.gz file containing the compiled api-server binary")
+		contentType = "application/gzip"
+	case "test-report.html":
+		content = generateTestReportHTML()
+		contentType = "text/html; charset=utf-8"
+	case "coverage-report.json":
+		content = generateCoverageReportJSON()
+		contentType = "application/json"
+	case "build-log.txt":
+		content = generateBuildLog()
+		contentType = "text/plain; charset=utf-8"
+	}
+
+	// Set appropriate headers for download
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
+	w.WriteHeader(http.StatusOK)
+	w.Write(content)
 }
 
 // PreviewArtifactHandler returns a preview of an artifact (for reports, etc.)
@@ -64,22 +96,51 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Verify user has access to this artifact
+	// Demo artifacts mapping
+	demoArtifacts := map[string]string{
+		"hello-world-run-001-artifact-1": "api-server-v1.2.3.tar.gz",
+		"hello-world-run-001-artifact-2": "test-report.html",
+		"hello-world-run-001-artifact-3": "coverage-report.json",
+		"hello-world-run-001-artifact-4": "build-log.txt",
+	}
+
+	filename, ok := demoArtifacts[artifactID]
+	if !ok {
+		dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		return
+	}
 
 	// Check if HTMX request
 	if dashboard.IsHTMXRequest(r) {
 		// Return HTML fragment for HTMX embedding
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		// TODO: Generate HTML preview of artifact content
-		// For now, return placeholder
-		io.WriteString(w, `<div class="text-gray-600">Preview content would be rendered here</div>`)
+
+		// Generate preview based on artifact type
+		switch filename {
+		case "test-report.html":
+			// Return HTML test report directly
+			w.Write(generateTestReportHTML())
+		case "coverage-report.json":
+			// Return JSON coverage report in HTML format
+			io.WriteString(w, `<pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
+			w.Write(generateCoverageReportJSON())
+			io.WriteString(w, `</pre>`)
+		case "build-log.txt":
+			// Return build log in HTML format
+			io.WriteString(w, `<pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
+			w.Write(generateBuildLog())
+			io.WriteString(w, `</pre>`)
+		default:
+			io.WriteString(w, `<div class="text-gray-600 p-4">Preview not available for this artifact type</div>`)
+		}
 		return
 	}
 
 	// Return JSON preview metadata
 	dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"artifact_id": artifactID,
-		"preview":    "Preview not available for this artifact type",
+		"filename":   filename,
+		"preview":    "Use HTMX request to get HTML preview",
 	})
 }
 
@@ -139,4 +200,98 @@ func parseArtifactSize(header http.Header) int64 {
 	}
 
 	return size
+}
+
+// generateTestReportHTML generates a demo HTML test report
+func generateTestReportHTML() []byte {
+	return []byte(`
+<div class="test-report p-6 bg-white rounded-lg">
+  <h2 class="text-2xl font-bold text-gray-900 mb-4">Test Report</h2>
+
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="bg-green-50 border border-green-200 rounded p-4">
+      <div class="text-3xl font-bold text-green-600">156</div>
+      <div class="text-sm text-gray-600">Tests Passed</div>
+    </div>
+    <div class="bg-red-50 border border-red-200 rounded p-4">
+      <div class="text-3xl font-bold text-red-600">0</div>
+      <div class="text-sm text-gray-600">Tests Failed</div>
+    </div>
+    <div class="bg-yellow-50 border border-yellow-200 rounded p-4">
+      <div class="text-3xl font-bold text-yellow-600">2</div>
+      <div class="text-sm text-gray-600">Tests Skipped</div>
+    </div>
+    <div class="bg-blue-50 border border-blue-200 rounded p-4">
+      <div class="text-3xl font-bold text-blue-600">98.1%</div>
+      <div class="text-sm text-gray-600">Pass Rate</div>
+    </div>
+  </div>
+
+  <div class="space-y-3">
+    <h3 class="font-semibold text-gray-900">Test Suites</h3>
+    <div class="space-y-2">
+      <div class="flex justify-between p-3 bg-green-50 rounded border border-green-200">
+        <span class="font-mono text-sm">cmd/api-server</span>
+        <span class="text-sm text-green-600">✓ 45 passed</span>
+      </div>
+      <div class="flex justify-between p-3 bg-green-50 rounded border border-green-200">
+        <span class="font-mono text-sm">pkg/dashboard</span>
+        <span class="text-sm text-green-600">✓ 68 passed</span>
+      </div>
+      <div class="flex justify-between p-3 bg-green-50 rounded border border-green-200">
+        <span class="font-mono text-sm">pkg/apis</span>
+        <span class="text-sm text-green-600">✓ 43 passed, 2 skipped</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 text-sm text-gray-600">
+    <p>Total Duration: 12.3s</p>
+    <p>Generated: 2025-10-27T04:30:35Z</p>
+  </div>
+</div>
+`)
+}
+
+// generateCoverageReportJSON generates a demo JSON coverage report
+func generateCoverageReportJSON() []byte {
+	return []byte(`{
+  "coverage": {
+    "overall": 78.5,
+    "packages": [
+      {
+        "name": "github.com/org/c8s/cmd/api-server",
+        "coverage": 82.1,
+        "lines_covered": 328,
+        "lines_total": 400
+      },
+      {
+        "name": "github.com/org/c8s/pkg/dashboard",
+        "coverage": 75.3,
+        "lines_covered": 421,
+        "lines_total": 559
+      },
+      {
+        "name": "github.com/org/c8s/pkg/apis",
+        "coverage": 79.2,
+        "lines_covered": 365,
+        "lines_total": 461
+      }
+    ]
+  },
+  "generated": "2025-10-27T04:30:35Z"
+}`)
+}
+
+// generateBuildLog generates a demo build log
+func generateBuildLog() []byte {
+	return []byte(`[2025-10-27T04:30:16Z] Step started: build
+[2025-10-27T04:30:17Z] $ echo 'Starting build process'
+[2025-10-27T04:30:17Z] Starting build process
+[2025-10-27T04:30:18Z] $ go build -o bin/app ./cmd/api-server
+[2025-10-27T04:30:19Z] go: downloading github.com/go-chi/chi/v5
+[2025-10-27T04:30:20Z] go: downloading sigs.k8s.io/controller-runtime
+[2025-10-27T04:30:22Z] Build completed successfully
+[2025-10-27T04:30:23Z] Artifacts: bin/app (45.2 MB)
+[2025-10-27T04:30:24Z] Step completed with status: Succeeded`)
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
@@ -248,42 +249,52 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // generateDemoArtifacts creates demo artifacts for a pipeline run
 func generateDemoArtifacts(runID string) []*dashboard.ArtifactDTO {
-	return []*dashboard.ArtifactDTO{
+	artifacts := []*dashboard.ArtifactDTO{
 		{
-			ID:        runID + "-artifact-1",
+			ID:        "hello-world-run-001-artifact-1",
 			Name:      "api-server-v1.2.3.tar.gz",
 			Type:      "binary",
 			MimeType:  "application/gzip",
 			SizeBytes: 45200000, // 45.2 MB
-			URL:       "/api/artifacts/" + runID + "-artifact-1/download",
+			URL:       "/api/artifacts/hello-world-run-001-artifact-1/download",
 			CreatedAt: time.Now(),
 		},
 		{
-			ID:        runID + "-artifact-2",
+			ID:        "hello-world-run-001-artifact-2",
 			Name:      "test-report.html",
 			Type:      "report",
 			MimeType:  "text/html",
 			SizeBytes: 512000, // 512 KB
-			URL:       "/api/artifacts/" + runID + "-artifact-2/download",
+			URL:       "/api/artifacts/hello-world-run-001-artifact-2/download",
 			CreatedAt: time.Now(),
 		},
 		{
-			ID:        runID + "-artifact-3",
+			ID:        "hello-world-run-001-artifact-3",
 			Name:      "coverage-report.json",
 			Type:      "report",
 			MimeType:  "application/json",
 			SizeBytes: 256000, // 256 KB
-			URL:       "/api/artifacts/" + runID + "-artifact-3/download",
+			URL:       "/api/artifacts/hello-world-run-001-artifact-3/download",
 			CreatedAt: time.Now(),
 		},
 		{
-			ID:        runID + "-artifact-4",
+			ID:        "hello-world-run-001-artifact-4",
 			Name:      "build-log.txt",
 			Type:      "log",
 			MimeType:  "text/plain",
 			SizeBytes: 128000, // 128 KB
-			URL:       "/api/artifacts/" + runID + "-artifact-4/download",
+			URL:       "/api/artifacts/hello-world-run-001-artifact-4/download",
 			CreatedAt: time.Now(),
 		},
 	}
+
+	// For non-demo runs, use runID-based artifact IDs
+	if runID != "hello-world-run-001" {
+		for i, artifact := range artifacts {
+			artifact.ID = runID + "-artifact-" + strconv.Itoa(i+1)
+			artifact.URL = "/api/artifacts/" + artifact.ID + "/download"
+		}
+	}
+
+	return artifacts
 }
