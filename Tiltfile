@@ -345,10 +345,10 @@ local_resource(
 
 # E2E tests resource - Tilt watches test files and auto-reruns on changes
 # Click the trigger button in Tilt UI or run: tilt trigger e2e-tests
-# Tilt's auto_init=False means it won't run on startup, but will watch files
+# Uses serve_cmd because tests run in watch mode and stay open
 local_resource(
     'e2e-tests',
-    'npm run test:e2e',
+    serve_cmd='npm run test:e2e',
     deps=['tests/e2e/', 'playwright.config.ts'],
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['testing'],
