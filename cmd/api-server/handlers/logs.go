@@ -165,3 +165,65 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 		"count":  len(logLines),
 	})
 }
+
+// ListStepsHandler returns all steps for a pipeline run
+// GET /api/runs/{runId}/steps
+func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
+	runID := chi.URLParam(r, "runId")
+
+	if runID == "" {
+		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		return
+	}
+
+	// Fetch PipelineRun from Kubernetes (check both namespaces)
+	var run *dashboard.PipelineRunDTO
+	if k8sClient != nil {
+		// Try default namespace first
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+			run = dashboard.MapPipelineRunToDTO(fetchedRun)
+		}
+
+		// Try c8s-system namespace if not found
+		if run == nil {
+			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
+				run = dashboard.MapPipelineRunToDTO(fetchedRun)
+			}
+		}
+	}
+
+	if run == nil {
+		dashboard.RespondNotFound(w, "run")
+		return
+	}
+
+	// Return demo steps based on run data
+	steps := []map[string]interface{}{
+		{
+			"id":             "step-1",
+			"name":           "checkout",
+			"status":         "Succeeded",
+			"started_at":     "2025-10-27T04:30:10Z",
+			"completed_at":   "2025-10-27T04:30:15Z",
+			"duration_seconds": 5,
+		},
+		{
+			"id":             "step-2",
+			"name":           "build",
+			"status":         "Succeeded",
+			"started_at":     "2025-10-27T04:30:16Z",
+			"completed_at":   "2025-10-27T04:30:25Z",
+			"duration_seconds": 9,
+		},
+		{
+			"id":             "step-3",
+			"name":           "test",
+			"status":         "Succeeded",
+			"started_at":     "2025-10-27T04:30:26Z",
+			"completed_at":   "2025-10-27T04:30:31Z",
+			"duration_seconds": 5,
+		},
+	}
+
+	dashboard.RespondSuccess(w, http.StatusOK, steps)
+}

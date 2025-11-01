@@ -29,11 +29,43 @@ type InMemoryLogStorage struct {
 	logs map[string]string
 }
 
-// NewInMemoryLogStorage creates a new in-memory log storage
+// NewInMemoryLogStorage creates a new in-memory log storage with demo data
 func NewInMemoryLogStorage() *InMemoryLogStorage {
-	return &InMemoryLogStorage{
+	storage := &InMemoryLogStorage{
 		logs: make(map[string]string),
 	}
+	storage.populateDemoLogs()
+	return storage
+}
+
+// populateDemoLogs adds sample logs for testing
+func (s *InMemoryLogStorage) populateDemoLogs() {
+	demoLogs := map[string]string{
+		"hello-world-run-001/step-1": `[2025-10-27T04:30:10Z] Step started: checkout
+[2025-10-27T04:30:11Z] $ git clone https://github.com/example/repo.git
+[2025-10-27T04:30:12Z] Cloning into 'repo'...
+[2025-10-27T04:30:13Z] remote: Counting objects: 1000, done
+[2025-10-27T04:30:14Z] Receiving objects: 100% (1000/1000)
+[2025-10-27T04:30:15Z] Step completed with status: Succeeded`,
+		"hello-world-run-001/step-2": `[2025-10-27T04:30:16Z] Step started: build
+[2025-10-27T04:30:17Z] $ echo 'Starting build process'
+[2025-10-27T04:30:17Z] Starting build process
+[2025-10-27T04:30:18Z] $ go build -o bin/app ./cmd/api-server
+[2025-10-27T04:30:19Z] go: downloading github.com/go-chi/chi/v5
+[2025-10-27T04:30:20Z] go: downloading sigs.k8s.io/controller-runtime
+[2025-10-27T04:30:22Z] Build completed successfully
+[2025-10-27T04:30:23Z] Artifacts: bin/app (45.2 MB)
+[2025-10-27T04:30:24Z] Step completed with status: Succeeded`,
+		"hello-world-run-001/step-3": `[2025-10-27T04:30:25Z] Step started: test
+[2025-10-27T04:30:26Z] $ go test ./...
+[2025-10-27T04:30:27Z] ok      github.com/org/c8s/cmd/api-server  0.234s
+[2025-10-27T04:30:28Z] ok      github.com/org/c8s/pkg/dashboard   0.456s
+[2025-10-27T04:30:29Z] ok      github.com/org/c8s/pkg/apis        0.123s
+[2025-10-27T04:30:30Z] Coverage: 78.5%
+[2025-10-27T04:30:31Z] Step completed with status: Succeeded`,
+	}
+
+	s.logs = demoLogs
 }
 
 // SetLog sets log content for a step (for testing)
