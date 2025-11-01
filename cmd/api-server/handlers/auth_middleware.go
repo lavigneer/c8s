@@ -21,6 +21,8 @@ type User struct {
 
 // AuthMiddleware validates bearer token and attaches user to context
 // This is a basic implementation that can be extended with proper JWT/OAuth2 validation
+// For HTML page requests without auth, redirects to login
+// For API requests without auth, returns 401 Unauthorized
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try to get token from Authorization header first
@@ -34,6 +36,17 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		if token == "" {
+			// If no token, check if this is an HTML page request or API request
+			acceptHeader := r.Header.Get("Accept")
+			isHTMLRequest := strings.Contains(acceptHeader, "text/html") || acceptHeader == ""
+
+			if isHTMLRequest {
+				// For HTML requests, redirect to login
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+
+			// For API requests, return 401
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

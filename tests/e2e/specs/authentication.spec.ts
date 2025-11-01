@@ -104,8 +104,12 @@ test.describe('Authentication - User Story 1 (Functional E2E)', () => {
     await expect(page).toHaveURL(/login/, { timeout: TIMEOUTS.medium });
   });
 
-  test.skip('should restrict access to protected dashboard route when not authenticated', async ({ page }) => {
-    // Skipped: Auth redirect not working as expected in test environment
-    // The dashboard appears to be accessible without auth in current setup
+  test('should restrict access to protected dashboard route when not authenticated', async ({ page }) => {
+    // Try to access protected route without logging in
+    await page.goto('/dashboard', { waitUntil: 'networkidle' });
+
+    // Should redirect to login
+    await page.waitForURL(/login/, { timeout: TIMEOUTS.medium });
+    expect(page.url()).toContain('/login');
   });
 });
