@@ -62,7 +62,7 @@
          class="bg-white rounded-lg shadow-md overflow-hidden">
 
         <!-- Pipeline Rows -->
-        <div id="pipeline-rows" class="divide-y divide-gray-200" hx-indicator=".htmx-loading">
+        <div id="pipeline-rows" class="divide-y divide-gray-200">
             {{if .PipelineRuns}}
                 {{range .PipelineRuns}}
                     {{template "partials/pipeline_row" .}}
@@ -72,8 +72,8 @@
             {{end}}
         </div>
 
-        <!-- Loading Skeleton (shown while fetching) -->
-        <div class="htmx-loading divide-y divide-gray-200">
+        <!-- Loading Skeleton (shown only during manual filter/search AJAX requests) -->
+        <div id="pipeline-list-loading" class="htmx-request divide-y divide-gray-200" style="display:none">
             {{range seq 3}}
             <div class="animate-pulse p-6 border-b border-gray-200">
                 <div class="flex justify-between items-start mb-4">
