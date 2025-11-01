@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/org/c8s/pkg/dashboard/helpers"
 )
 
@@ -13,8 +14,11 @@ var Templates *template.Template
 
 // LoadTemplates parses all templates from templates/ directory with custom functions
 func LoadTemplates(basePath string) error {
-	// Create function map with custom template helpers
-	funcMap := template.FuncMap{
+	// Start with Sprig's template functions (provides add, sub, mul, div, seq, etc.)
+	funcMap := sprig.FuncMap()
+
+	// Add custom template helpers
+	customFuncs := template.FuncMap{
 		"formatTime":       FormatTimestamp,
 		"formatDuration":   FormatDuration,
 		"formatBytes":      FormatBytes,
@@ -24,15 +28,12 @@ func LoadTemplates(basePath string) error {
 		"isWithinLastDay":  IsWithinLastDay,
 		"isWithinLastWeek": IsWithinLastWeek,
 		"slice":            sliceString,
-		"eq":               eq,
-		"ne":               ne,
-		"lt":               lt,
-		"le":               le,
-		"gt":               gt,
-		"ge":               ge,
 		"dict":             helpers.Dict,
-		"add":              helpers.Add,
-		"sub":              helpers.Sub,
+	}
+
+	// Merge custom functions into the Sprig function map
+	for name, fn := range customFuncs {
+		funcMap[name] = fn
 	}
 
 	pattern := filepath.Join(basePath, "templates/**/*.html")
