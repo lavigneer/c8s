@@ -37,8 +37,8 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Get actual log storage implementation
-	// For now, use in-memory storage for testing
-	logStorage := dashboard.NewInMemoryLogStorage()
+	// For now, use in-memory storage for testing - include demo logs for this run
+	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
 
 	// Send initial connection message
 	fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n")
@@ -108,7 +108,7 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Get actual log storage
-	logStorage := dashboard.NewInMemoryLogStorage()
+	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
 
 	// Get logs
 	reader, err := logStorage.GetStepLogs(r.Context(), runID, stepID)
@@ -153,7 +153,7 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Get actual log storage
-	logStorage := dashboard.NewInMemoryLogStorage()
+	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
 
 	// Get log snapshot
 	logLines, err := logStorage.GetLogSnapshot(r.Context(), runID, stepID, lines)
