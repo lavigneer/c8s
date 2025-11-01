@@ -7,9 +7,9 @@ import { BasePage } from './base.page';
  */
 export class DashboardPage extends BasePage {
   // Selectors
-  private heading = 'h1:has-text("Pipeline Runs")';
-  private pipelineList = 'table tbody tr';
-  private filterInput = 'input[placeholder*="Search"]';
+  private heading = 'h1:has-text("Pipeline History")';
+  private pipelineList = '#pipeline-rows';
+  private filterInput = 'input[placeholder*="Search"], input[placeholder*="Filter"]';
   private createButton = 'button:has-text("Create"), button:has-text("New")';
   private navProjects = 'a:has-text("Projects")';
   private navSettings = 'a:has-text("Settings")';
