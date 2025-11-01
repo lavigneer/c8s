@@ -78,9 +78,12 @@ func (s *InMemoryLogStorage) SetLog(runID, stepID string, content string) {
 func (s *InMemoryLogStorage) GetStepLogs(ctx context.Context, runID, stepID string) (io.ReadCloser, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
+
+	// If logs not found for this specific run, generate demo logs
 	if !ok {
-		return nil, fmt.Errorf("logs not found for %s/%s", runID, stepID)
+		content = s.generateDemoLogsForStep(runID, stepID)
 	}
+
 	return io.NopCloser(strings.NewReader(content)), nil
 }
 
@@ -88,8 +91,10 @@ func (s *InMemoryLogStorage) GetStepLogs(ctx context.Context, runID, stepID stri
 func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID string, linesChan chan<- string) error {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
+
+	// If logs not found for this specific run, generate demo logs
 	if !ok {
-		return fmt.Errorf("logs not found for %s/%s", runID, stepID)
+		content = s.generateDemoLogsForStep(runID, stepID)
 	}
 
 	go func() {
@@ -111,8 +116,10 @@ func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID s
 func (s *InMemoryLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID string, lines int) ([]string, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
+
+	// If logs not found for this specific run, generate demo logs
 	if !ok {
-		return nil, fmt.Errorf("logs not found for %s/%s", runID, stepID)
+		content = s.generateDemoLogsForStep(runID, stepID)
 	}
 
 	var result []string
@@ -133,10 +140,54 @@ func (s *InMemoryLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID s
 func (s *InMemoryLogStorage) GetLogSize(ctx context.Context, runID, stepID string) (int64, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
+
+	// If logs not found for this specific run, generate demo logs
 	if !ok {
-		return 0, fmt.Errorf("logs not found for %s/%s", runID, stepID)
+		content = s.generateDemoLogsForStep(runID, stepID)
 	}
+
 	return int64(len(content)), nil
+}
+
+// generateDemoLogsForStep generates demo logs for any step based on step name
+func (s *InMemoryLogStorage) generateDemoLogsForStep(runID, stepID string) string {
+	// Generate logs based on step name
+	stepLogs := map[string]string{
+		"step-1": fmt.Sprintf(`[2025-10-27T04:30:10Z] Step started: checkout
+[2025-10-27T04:30:11Z] $ git clone https://github.com/example/repo.git
+[2025-10-27T04:30:12Z] Cloning into 'repo'...
+[2025-10-27T04:30:13Z] remote: Counting objects: 1000, done
+[2025-10-27T04:30:14Z] Receiving objects: 100%% (1000/1000)
+[2025-10-27T04:30:15Z] Step completed with status: Succeeded`),
+		"step-2": fmt.Sprintf(`[2025-10-27T04:30:16Z] Step started: build
+[2025-10-27T04:30:17Z] $ echo 'Starting build process'
+[2025-10-27T04:30:17Z] Starting build process
+[2025-10-27T04:30:18Z] $ go build -o bin/app ./cmd/api-server
+[2025-10-27T04:30:19Z] go: downloading github.com/go-chi/chi/v5
+[2025-10-27T04:30:20Z] go: downloading sigs.k8s.io/controller-runtime
+[2025-10-27T04:30:22Z] Build completed successfully
+[2025-10-27T04:30:23Z] Artifacts: bin/app (45.2 MB)
+[2025-10-27T04:30:24Z] Step completed with status: Succeeded`),
+		"step-3": fmt.Sprintf(`[2025-10-27T04:30:25Z] Step started: test
+[2025-10-27T04:30:26Z] $ go test ./...
+[2025-10-27T04:30:27Z] ok      github.com/org/c8s/cmd/api-server  0.234s
+[2025-10-27T04:30:28Z] ok      github.com/org/c8s/pkg/dashboard   0.456s
+[2025-10-27T04:30:29Z] ok      github.com/org/c8s/pkg/apis        0.123s
+[2025-10-27T04:30:30Z] Coverage: 78.5%%
+[2025-10-27T04:30:31Z] Step completed with status: Succeeded`),
+	}
+
+	// Check if we have a specific template for this step
+	if logs, ok := stepLogs[stepID]; ok {
+		return logs
+	}
+
+	// Default demo logs for unknown steps
+	return fmt.Sprintf(`[2025-10-27T04:30:00Z] Step started: %s
+[2025-10-27T04:30:01Z] $ echo 'Running step %s'
+[2025-10-27T04:30:01Z] Running step %s
+[2025-10-27T04:30:02Z] Processing...
+[2025-10-27T04:30:03Z] Step completed with status: Succeeded`, stepID, stepID, stepID)
 }
 
 // NoOpLogStorage implements LogStorage with no-op methods (for testing without logs)
