@@ -30,6 +30,12 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, ok := GetUserFromContext(r.Context())
+	if !ok {
+		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
 	// Parse pagination parameters
 	params := dashboard.ParsePaginationParams(r.URL.Query())
 
@@ -38,9 +44,23 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	branch := r.URL.Query().Get("branch")
 	search := r.URL.Query().Get("search")
 
-	// TODO: Fetch PipelineRuns from Kubernetes
-	// For now, return empty list
-	runs := []*v1alpha1.PipelineRun{}
+	// Fetch PipelineRuns from Kubernetes (check both user namespace and c8s-system for test data)
+	var runs []*v1alpha1.PipelineRun
+	if k8sClient != nil {
+		// Query user namespace first
+		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
+			for i := range userRuns.Items {
+				runs = append(runs, &userRuns.Items[i])
+			}
+		}
+
+		// Also query c8s-system for test data
+		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
+			for i := range sysRuns.Items {
+				runs = append(runs, &sysRuns.Items[i])
+			}
+		}
+	}
 
 	// Transform to DTOs
 	dtos := make([]*dashboard.PipelineRunDTO, len(runs))
@@ -119,9 +139,30 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Fetch PipelineRun from Kubernetes
-	// For now, return not found
-	dashboard.RespondNotFound(w, "run")
+	// Fetch PipelineRun from Kubernetes (check both default and c8s-system namespaces)
+	var run *v1alpha1.PipelineRun
+	if k8sClient != nil {
+		// Try default namespace first
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+			run = fetchedRun
+		}
+
+		// Try c8s-system namespace if not found
+		if run == nil {
+			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
+				run = fetchedRun
+			}
+		}
+	}
+
+	if run == nil {
+		dashboard.RespondNotFound(w, "run")
+		return
+	}
+
+	// Convert to DTO
+	dto := dashboard.MapPipelineRunToDTO(run)
+	dashboard.RespondSuccess(w, http.StatusOK, dto)
 }
 
 // FetchPipelineRuns queries Kubernetes for pipeline runs with optional filters

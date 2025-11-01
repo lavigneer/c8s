@@ -17,8 +17,10 @@ func ServeStatic(staticDir string) http.Handler {
 // StaticWithCacheControl serves static files with appropriate cache control headers
 func StaticWithCacheControl(staticDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Strip /static/ prefix from URL path
+		cleanPath := strings.TrimPrefix(r.URL.Path, "/static/")
 		// Get file path
-		filePath := filepath.Join(staticDir, r.URL.Path)
+		filePath := filepath.Join(staticDir, cleanPath)
 
 		// Determine cache duration based on file type
 		ext := filepath.Ext(filePath)

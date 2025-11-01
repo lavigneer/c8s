@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -23,9 +24,30 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		projectID = "default-project"
 	}
 
-	// TODO: Fetch initial pipeline runs from Kubernetes
-	// For now, use empty list
+	// Fetch initial pipeline runs from Kubernetes
 	var runs []*dashboard.PipelineRunDTO
+	if k8sClient != nil {
+		// Query both user namespace and c8s-system for test data
+		var pipelineRuns []*v1alpha1.PipelineRun
+
+		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
+			for i := range userRuns.Items {
+				pipelineRuns = append(pipelineRuns, &userRuns.Items[i])
+			}
+		}
+
+		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
+			for i := range sysRuns.Items {
+				pipelineRuns = append(pipelineRuns, &sysRuns.Items[i])
+			}
+		}
+
+		// Convert to DTOs
+		runs = make([]*dashboard.PipelineRunDTO, len(pipelineRuns))
+		for i, run := range pipelineRuns {
+			runs[i] = dashboard.MapPipelineRunToDTO(run)
+		}
+	}
 
 	// Parse pagination parameters
 	params := dashboard.ParsePaginationParams(r.URL.Query())
@@ -34,12 +56,23 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	total := len(runs)
 	paginationMeta := dashboard.CalculatePagination(total, params.Page, params.PerPage)
 
+	// Get branches for filter
+	var branches []string
+	branchMap := make(map[string]bool)
+	for _, run := range runs {
+		if !branchMap[run.Branch] {
+			branches = append(branches, run.Branch)
+			branchMap[run.Branch] = true
+		}
+	}
+
 	// Prepare data for template
 	data := map[string]interface{}{
 		"User":         user,
 		"ProjectID":    projectID,
 		"PipelineRuns": runs,
 		"Pagination":   paginationMeta,
+		"Branches":     branches,
 	}
 
 	// Render template
@@ -107,15 +140,34 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Fetch PipelineRun details from Kubernetes
+	// Fetch PipelineRun details from Kubernetes (check both namespaces)
 	var run *dashboard.PipelineRunDTO
+	if k8sClient != nil {
+		// Try default namespace first
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+			run = dashboard.MapPipelineRunToDTO(fetchedRun)
+		}
+
+		// Try c8s-system namespace if not found
+		if run == nil {
+			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
+				run = dashboard.MapPipelineRunToDTO(fetchedRun)
+			}
+		}
+	}
+
+	if run == nil {
+		http.Error(w, "Pipeline run not found", http.StatusNotFound)
+		return
+	}
 
 	data := map[string]interface{}{
-		"User": user,
-		"Run":  run,
+		"User":        user,
+		"PipelineRun": run,
 	}
 
 	if err := dashboard.RenderTemplate(w, "pipeline_detail", data); err != nil {
+		log.Printf("ERROR: Failed to render pipeline details: %v", err)
 		http.Error(w, "Failed to render pipeline details", http.StatusInternalServerError)
 		return
 	}
