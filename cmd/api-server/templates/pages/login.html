@@ -221,14 +221,11 @@
                   method="POST"
                   action="/login"
                   hx-ext="response-targets"
-                  hx-validate="true"
                   hx-post="/login"
-                  hx-target="#success-redirect"
                   hx-target-400="#error-message"
                   hx-target-422="#error-message"
                   hx-target-5*="#error-message"
-                  hx-swap="innerHTML"
-                  hx-on="htmx:validation:failed: this.closest('form').querySelector('[aria-invalid=true]')?.focus()">
+                  hx-swap="innerHTML">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -283,39 +280,51 @@
     </div>
 
     <script>
-        // Handle validation failures - mark invalid fields and show error
-        document.addEventListener('htmx:validation:failed', function(evt) {
-            const input = evt.detail.elt;
-            input.setAttribute('aria-invalid', 'true');
-
-            // Set custom validation message if not already set
-            if (!input.validationMessage) {
-                if (input.name === 'username') {
-                    input.setCustomValidity('Username or email is required.');
-                } else if (input.name === 'password') {
-                    input.setCustomValidity('Password is required.');
-                }
-            }
-
-            // Show error message
+        // Form validation on submit
+        document.getElementById('login-form').addEventListener('submit', function(evt) {
+            const form = this;
             const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = input.validationMessage;
-            errorDiv.classList.add('show');
-        });
+            const usernameInput = form.querySelector('input[name="username"]');
+            const passwordInput = form.querySelector('input[name="password"]');
 
-        // Clear error message before retrying validation
-        document.addEventListener('htmx:beforeRequest', function(evt) {
-            if (evt.detail.target.id !== 'login-form') return;
-            const errorDiv = document.getElementById('error-message');
+            // Clear previous errors
             errorDiv.textContent = '';
             errorDiv.classList.remove('show');
+            form.querySelectorAll('[aria-invalid="true"]').forEach(el => {
+                el.removeAttribute('aria-invalid');
+            });
+
+            // Check HTML5 validation
+            if (!form.checkValidity()) {
+                evt.preventDefault();
+
+                // Find first invalid field
+                const invalidField = form.querySelector(':invalid');
+                if (invalidField) {
+                    invalidField.setAttribute('aria-invalid', 'true');
+
+                    // Set and show custom error message
+                    const fieldName = invalidField.name;
+                    const message = fieldName === 'username'
+                        ? 'Username or email is required.'
+                        : fieldName === 'password'
+                        ? 'Password is required.'
+                        : 'Please fill in all required fields.';
+
+                    errorDiv.textContent = message;
+                    errorDiv.classList.add('show');
+                    invalidField.focus();
+                }
+            }
         });
 
-        // Handle server-side validation errors (400, 422, 5xx responses)
-        document.addEventListener('htmx:beforeSwap', function(evt) {
-            if (evt.detail.target.id !== 'error-message') return;
-            // Show the error container
-            evt.detail.target.classList.add('show');
+        // Clear error indicators when user types
+        document.getElementById('login-form').querySelectorAll('input[required]').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.removeAttribute('aria-invalid');
+                }
+            });
         });
 
         // Handle keyboard shortcuts on login page
