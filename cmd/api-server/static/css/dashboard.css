@@ -1,7 +1,352 @@
-/* C8S Dashboard - Tailwind CSS */
-/* This file contains custom utilities and overrides for the C8S dashboard */
+/* C8S Dashboard - CSS Variable-Based Theme System */
+/* This file uses CSS custom properties for light/dark mode switching */
 
-/* HTMX Loading States and Indicators */
+/* ============================================================================ */
+/* THEME VARIABLES */
+/* ============================================================================ */
+
+/* Light Mode (Default) */
+:root {
+    color-scheme: light;
+
+    /* Backgrounds */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --bg-hover: #e5e7eb;
+
+    /* Text */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+
+    /* Borders */
+    --border-primary: #e5e7eb;
+    --border-secondary: #d1d5db;
+
+    /* Status Colors */
+    --status-success: #059669;
+    --status-success-bg: #ecfdf5;
+    --status-error: #dc2626;
+    --status-error-bg: #fef2f2;
+    --status-warning: #d97706;
+    --status-warning-bg: #fffbeb;
+    --status-info: #0891b2;
+    --status-info-bg: #ecf8fb;
+
+    /* Badge Colors */
+    --badge-success: #059669;
+    --badge-success-text: #ffffff;
+    --badge-error: #dc2626;
+    --badge-error-text: #ffffff;
+    --badge-warning: #ea580c;
+    --badge-warning-text: #ffffff;
+    --badge-running: #2563eb;
+    --badge-running-text: #ffffff;
+    --badge-pending: #6b7280;
+    --badge-pending-text: #ffffff;
+
+    /* Interactive */
+    --accent-primary: #3b82f6;
+    --accent-secondary: #8b5cf6;
+    --accent-hover: #2563eb;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-dark: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode */
+:root.dark {
+    color-scheme: dark;
+
+    /* Backgrounds */
+    --bg-primary: #1f2937;
+    --bg-secondary: #111827;
+    --bg-tertiary: #374151;
+    --bg-hover: #374151;
+
+    /* Text */
+    --text-primary: #f3f4f6;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+
+    /* Borders */
+    --border-primary: #374151;
+    --border-secondary: #4b5563;
+
+    /* Status Colors */
+    --status-success: #10b981;
+    --status-success-bg: #064e3b;
+    --status-error: #f87171;
+    --status-error-bg: #7f1d1d;
+    --status-warning: #fbbf24;
+    --status-warning-bg: #78350f;
+    --status-info: #06b6d4;
+    --status-info-bg: #164e63;
+
+    /* Badge Colors */
+    --badge-success: #10b981;
+    --badge-success-text: #ffffff;
+    --badge-error: #f87171;
+    --badge-error-text: #ffffff;
+    --badge-warning: #fbbf24;
+    --badge-warning-text: #000000;
+    --badge-running: #60a5fa;
+    --badge-running-text: #ffffff;
+    --badge-pending: #9ca3af;
+    --badge-pending-text: #ffffff;
+
+    /* Interactive */
+    --accent-primary: #60a5fa;
+    --accent-secondary: #a78bfa;
+    --accent-hover: #3b82f6;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    --shadow-dark: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================ */
+/* BASE STYLES */
+/* ============================================================================ */
+
+* {
+    color: inherit;
+}
+
+html,
+body {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================================================ */
+/* TYPOGRAPHY & SPACING */
+/* ============================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+}
+
+p, span, div {
+    color: var(--text-primary);
+}
+
+/* ============================================================================ */
+/* BUTTONS & INTERACTIVE */
+/* ============================================================================ */
+
+a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+button {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: var(--accent-hover);
+}
+
+button:disabled {
+    background-color: var(--text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ============================================================================ */
+/* FORMS */
+/* ============================================================================ */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* ============================================================================ */
+/* CONTAINERS & CARDS */
+/* ============================================================================ */
+
+.bg-white {
+    background-color: var(--bg-primary);
+}
+
+.bg-gray-50 {
+    background-color: var(--bg-secondary);
+}
+
+.bg-gray-100 {
+    background-color: var(--bg-tertiary);
+}
+
+.border-gray-200 {
+    border-color: var(--border-primary);
+}
+
+.border-gray-300 {
+    border-color: var(--border-secondary);
+}
+
+.shadow-md {
+    box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+    box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================================ */
+/* TEXT COLORS */
+/* ============================================================================ */
+
+.text-gray-900 {
+    color: var(--text-primary);
+}
+
+.text-gray-600 {
+    color: var(--text-secondary);
+}
+
+.text-gray-500 {
+    color: var(--text-tertiary);
+}
+
+.text-gray-400 {
+    color: var(--text-tertiary);
+}
+
+.text-gray-700 {
+    color: var(--text-secondary);
+}
+
+/* ============================================================================ */
+/* BADGES - STATUS INDICATORS */
+/* ============================================================================ */
+
+.badge-success {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--badge-success);
+    color: var(--badge-success-text);
+}
+
+.badge-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--badge-error);
+    color: var(--badge-error-text);
+}
+
+.badge-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--badge-warning);
+    color: var(--badge-warning-text);
+}
+
+.badge-running {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--badge-running);
+    color: var(--badge-running-text);
+}
+
+.badge-pending {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--badge-pending);
+    color: var(--badge-pending-text);
+}
+
+/* ============================================================================ */
+/* HOVER STATES */
+/* ============================================================================ */
+
+.hover\:bg-gray-50:hover {
+    background-color: var(--bg-secondary);
+}
+
+.hover\:bg-gray-300:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.hover\:text-gray-900:hover {
+    color: var(--text-primary);
+}
+
+/* ============================================================================ */
+/* HTMX LOADING STATES */
+/* ============================================================================ */
+
 .htmx-request .htmx-indicator {
     display: inline-block !important;
 }
@@ -25,8 +370,8 @@
     display: inline-block;
     width: 1em;
     height: 1em;
-    border: 2px solid rgba(59, 130, 246, 0.1);
-    border-top-color: #3b82f6;
+    border: 2px solid var(--text-tertiary);
+    border-top-color: var(--accent-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     vertical-align: middle;
@@ -44,15 +389,15 @@
 /* Loading Skeleton */
 .skeleton {
     animation: skeleton-loading 1s infinite alternate;
-    background-color: #e5e7eb;
+    background-color: var(--bg-tertiary);
 }
 
 @keyframes skeleton-loading {
     0% {
-        background-color: #e5e7eb;
+        background-color: var(--bg-tertiary);
     }
     100% {
-        background-color: #f3f4f6;
+        background-color: var(--bg-secondary);
     }
 }
 
@@ -85,7 +430,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(to right, #3b82f6, #8b5cf6, #3b82f6);
+    background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
     background-size: 200% 100%;
     animation: progress-bar 1.5s ease-in-out infinite;
     z-index: 9999;
@@ -103,453 +448,234 @@
     }
 }
 
-/* Custom status badge colors */
-.badge-success {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white;
-}
-
-.badge-error {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-red-600 text-white;
-}
-
-.badge-warning {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-amber-500 text-white;
-}
-
-.badge-running {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white;
-}
-
-.badge-pending {
-    @apply inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-500 text-white;
-}
+/* ============================================================================ */
+/* PIPELINE & LOG VIEWERS */
+/* ============================================================================ */
 
 /* Log viewer */
 .log-viewer {
-    @apply bg-gray-900 text-gray-200 font-mono text-xs leading-relaxed p-4 rounded-lg border border-gray-700 max-h-96 overflow-y-auto;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+    max-height: 24rem;
+    overflow-y: auto;
 }
 
 .log-line {
-    @apply whitespace-pre-wrap break-words;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .log-error {
-    @apply text-red-400;
+    color: var(--status-error);
 }
 
 .log-warning {
-    @apply text-yellow-400;
+    color: var(--status-warning);
 }
 
 .log-success {
-    @apply text-green-400;
+    color: var(--status-success);
 }
 
-/* Table styles */
-.table-row-hover:hover {
-    @apply bg-gray-50 dark:bg-gray-800;
-}
-
-/* Custom form focus styles */
-.form-input:focus {
-    @apply ring-2 ring-blue-500 ring-opacity-50;
+.log-info {
+    color: var(--status-info);
 }
 
 /* Pipeline List Styles */
 .pipeline-row {
-    @apply border-b border-gray-200 transition-colors;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.2s ease;
 }
 
 .pipeline-row:last-child {
-    @apply border-b-0;
+    border-bottom: none;
 }
 
 .pipeline-row:hover {
-    @apply bg-gray-50;
+    background-color: var(--bg-secondary);
 }
 
 .pipeline-meta {
-    @apply text-sm text-gray-600;
-}
-
-.pipeline-info {
-    @apply flex flex-col gap-2;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
 }
 
 .pipeline-status {
-    @apply flex items-center gap-2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .pipeline-time {
-    @apply text-sm text-gray-600 text-center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
 }
 
-.pipeline-actions {
-    @apply flex gap-2 justify-end;
+/* ============================================================================ */
+/* STEP STATUS */
+/* ============================================================================ */
+
+.step-item {
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.2s ease;
 }
 
-/* Status Badge Styles */
-.badge-success {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-green-600 text-white;
+.step-item:last-child {
+    border-bottom: none;
 }
 
-.badge-error {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-red-600 text-white;
+.step-item:hover {
+    background-color: var(--bg-secondary);
 }
 
-.badge-warning {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-amber-500 text-white;
+.step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
-.badge-running {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white;
+.step-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
-.badge-pending {
-    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-gray-500 text-white;
+.step-time {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
 }
 
-/* Filter Controls */
+.step-details {
+    background-color: var(--bg-tertiary);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.step-image {
+    font-family: monospace;
+    font-size: 0.75rem;
+    background-color: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-primary);
+}
+
+.step-commands {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.step-commands code {
+    font-family: monospace;
+    font-size: 0.75rem;
+    background-color: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-primary);
+    display: block;
+}
+
+.step-exit-code {
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+
+/* ============================================================================ */
+/* FILTERS & FORMS */
+/* ============================================================================ */
+
 .filters {
-    @apply grid grid-cols-1 md:grid-cols-4 gap-4;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
 }
 
 .filter-input,
 .filter-select {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.375rem;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
-/* Empty State */
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================================================ */
+/* EMPTY STATE */
+/* ============================================================================ */
+
 .empty-state {
-    @apply flex flex-col items-center justify-center py-12 text-center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
 }
 
 .empty-icon {
-    @apply text-6xl mb-4;
+    font-size: 3.75rem;
+    margin-bottom: 1rem;
 }
 
 .empty-state h3 {
-    @apply text-2xl font-bold text-gray-900 mb-2;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
 }
 
 .empty-state p {
-    @apply text-gray-600 mb-6 max-w-sm;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    max-width: 28rem;
 }
 
-/* Step Status Styles */
-.step-item {
-    @apply border-b border-gray-200 transition-colors;
-}
-
-.step-item:last-child {
-    @apply border-b-0;
-}
-
-.step-item:hover {
-    @apply bg-gray-50;
-}
-
-.step-header {
-    @apply flex justify-between items-center gap-4;
-}
-
-.step-name {
-    @apply flex items-center gap-3;
-}
-
-.step-time {
-    @apply text-sm text-gray-600;
-}
-
-.step-details {
-    @apply bg-gray-50 rounded p-3 mb-3 text-sm space-y-2;
-}
-
-.step-image {
-    @apply font-mono text-xs bg-white px-2 py-1 rounded border border-gray-200;
-}
-
-.step-commands {
-    @apply space-y-1;
-}
-
-.step-commands code {
-    @apply font-mono text-xs bg-white px-2 py-1 rounded border border-gray-200 block;
-}
-
-.step-exit-code {
-    @apply font-mono text-xs;
-}
-
-/* Log Viewer Styles */
-.log-viewer {
-    @apply bg-gray-900 text-gray-200 font-mono text-sm leading-relaxed rounded-lg border border-gray-700 overflow-hidden flex flex-col max-h-96;
-}
-
-.log-header {
-    @apply sticky top-0 bg-gray-900 border-b border-gray-700 px-4 py-3 flex justify-between items-center z-10;
-}
-
-.log-header h3 {
-    @apply text-white font-semibold;
-}
-
-.log-header p {
-    @apply text-gray-400 text-xs mt-1;
-}
-
-.log-container {
-    @apply flex-1 overflow-y-auto p-4 bg-gray-950;
-}
-
-.log-line {
-    @apply whitespace-pre-wrap break-words py-1;
-}
-
-.log-line.loading {
-    @apply text-yellow-400;
-}
-
-.log-error {
-    @apply text-red-400;
-}
-
-.log-warning {
-    @apply text-yellow-400;
-}
-
-.log-success {
-    @apply text-green-400;
-}
-
-.log-info {
-    @apply text-blue-400;
-}
-
-.log-footer {
-    @apply sticky bottom-0 bg-gray-950 border-t border-gray-700 px-4 py-2 text-xs text-gray-400;
-}
-
-/* Light Mode Support (Default) */
-:root[data-theme="light"],
-:root.light {
-    color-scheme: light;
-}
-
-:root.light {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f9fafb;
-    --bg-tertiary: #f3f4f6;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --border-color: #e5e7eb;
-}
-
-/* Light mode element overrides */
-:root.light body {
-    @apply bg-white text-gray-900;
-}
-
-:root.light .dark\:bg-gray-900 {
-    @apply bg-white;
-}
-
-:root.light .dark\:bg-gray-800 {
-    @apply bg-gray-50;
-}
-
-:root.light .dark\:bg-gray-700 {
-    @apply bg-gray-100;
-}
-
-:root.light .dark\:text-gray-100 {
-    @apply text-gray-900;
-}
-
-:root.light .dark\:text-gray-200 {
-    @apply text-gray-800;
-}
-
-:root.light .dark\:text-gray-300 {
-    @apply text-gray-700;
-}
-
-:root.light .dark\:text-gray-400 {
-    @apply text-gray-600;
-}
-
-:root.light .dark\:border-gray-700 {
-    @apply border-gray-200;
-}
-
-:root.light .dark\:border-gray-600 {
-    @apply border-gray-300;
-}
-
-/* Light mode for form inputs */
-:root.light input[type="text"],
-:root.light input[type="email"],
-:root.light input[type="password"],
-:root.light input[type="date"],
-:root.light select,
-:root.light textarea {
-    @apply bg-white text-gray-900 border-gray-300;
-}
-
-:root.light input[type="text"]:focus,
-:root.light input[type="email"]:focus,
-:root.light input[type="password"]:focus,
-:root.light input[type="date"]:focus,
-:root.light select:focus,
-:root.light textarea:focus {
-    @apply bg-gray-50 border-gray-400;
-}
-
-/* Light mode badges use base styles (already visible) */
-
-/* Dark Mode Support */
-:root[data-theme="dark"],
-:root.dark {
-    color-scheme: dark;
-}
-
-/* Dark mode overrides for common elements */
-:root.dark {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --border-color: #475569;
-}
-
-:root.dark body {
-    @apply bg-gray-950 text-gray-100;
-}
-
-:root.dark .bg-white,
-:root.dark.bg-white {
-    background-color: rgb(31, 41, 55) !important;
-}
-
-:root.dark .bg-gray-50,
-:root.dark.bg-gray-50 {
-    background-color: rgb(31, 41, 55) !important;
-}
-
-:root.dark .bg-gray-100,
-:root.dark.bg-gray-100 {
-    background-color: rgb(55, 65, 81) !important;
-}
-
-:root.dark .bg-gray-200,
-:root.dark.bg-gray-200 {
-    background-color: rgb(75, 85, 99) !important;
-}
-
-:root.dark .text-gray-900 {
-    @apply text-gray-100;
-}
-
-:root.dark .text-gray-600 {
-    @apply text-gray-300;
-}
-
-:root.dark .text-gray-500 {
-    @apply text-gray-400;
-}
-
-:root.dark .text-gray-400 {
-    @apply text-gray-300;
-}
-
-:root.dark .text-gray-700 {
-    @apply text-gray-200;
-}
-
-:root.dark .border-gray-200 {
-    @apply border-gray-700;
-}
-
-:root.dark .border-gray-300 {
-    @apply border-gray-600;
-}
-
-:root.dark .shadow-md,
-:root.dark .shadow-lg {
-    @apply shadow-xl;
-}
-
-:root.dark .hover\:bg-gray-50:hover {
-    @apply bg-gray-700;
-}
-
-:root.dark .hover\:bg-gray-300:hover {
-    @apply bg-gray-600;
-}
+/* ============================================================================ */
+/* MODALS */
+/* ============================================================================ */
 
-:root.dark .hover\:text-gray-900:hover {
-    @apply text-gray-100;
+.modal-content {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
-:root.dark input[type="text"],
-:root.dark input[type="email"],
-:root.dark input[type="password"],
-:root.dark input[type="date"],
-:root.dark select,
-:root.dark textarea {
-    @apply bg-gray-700 text-gray-100 border-gray-600;
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.75);
 }
 
-:root.dark input[type="text"]:focus,
-:root.dark input[type="email"]:focus,
-:root.dark input[type="password"]:focus,
-:root.dark input[type="date"]:focus,
-:root.dark select:focus,
-:root.dark textarea:focus {
-    @apply bg-gray-600 border-gray-500 text-gray-100;
-}
-
-:root.dark input::placeholder {
-    @apply text-gray-400;
-}
-
-/* Dark mode for modal backgrounds */
-:root.dark .modal-content {
-    @apply bg-gray-800;
-}
-
-:root.dark .modal-overlay {
-    @apply bg-black bg-opacity-75;
-}
-
-/* Dark mode for badges - use slightly lighter versions for dark background */
-:root.dark .badge-success {
-    @apply bg-green-700 text-white;
-}
-
-:root.dark .badge-error {
-    @apply bg-red-700 text-white;
-}
-
-:root.dark .badge-warning {
-    @apply bg-amber-600 text-white;
-}
-
-:root.dark .badge-running {
-    @apply bg-blue-700 text-white;
-}
+/* ============================================================================ */
+/* TABLES */
+/* ============================================================================ */
 
-:root.dark .badge-pending {
-    @apply bg-gray-600 text-white;
+.table-row-hover:hover {
+    background-color: var(--bg-secondary);
 }
 
-/* Dark mode for links */
-:root.dark a {
-    @apply text-blue-400 hover:text-blue-300;
-}
+/* ============================================================================ */
+/* FORM FOCUS STYLES */
+/* ============================================================================ */
 
-/* Dark mode for buttons */
-:root.dark button {
-    @apply text-gray-100;
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
