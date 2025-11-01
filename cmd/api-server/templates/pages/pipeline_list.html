@@ -8,6 +8,50 @@
         <p class="text-gray-600">View and monitor your pipeline runs</p>
     </div>
 
+    <!-- Quick Stats -->
+    {{if .PipelineRuns}}
+    <div class="grid grid-cols-4 gap-4 mb-8">
+        {{$total := len .PipelineRuns}}
+        {{$succeeded := 0}}
+        {{$failed := 0}}
+        {{$running := 0}}
+        {{range .PipelineRuns}}
+            {{if eq .Status "Succeeded"}}{{$succeeded = add $succeeded 1}}{{end}}
+            {{if eq .Status "Failed"}}{{$failed = add $failed 1}}{{end}}
+            {{if eq .Status "Running"}}{{$running = add $running 1}}{{end}}
+        {{end}}
+
+        <!-- Total Runs -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+            <div class="text-gray-600 text-sm">Total Runs</div>
+            <div class="text-3xl font-bold text-blue-600">{{$total}}</div>
+        </div>
+
+        <!-- Success Rate -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+            <div class="text-gray-600 text-sm">Success Rate</div>
+            {{if gt $total 0}}
+                {{$rate := div (mul $succeeded 100) $total}}
+                <div class="text-3xl font-bold text-green-600">{{$rate}}%</div>
+            {{else}}
+                <div class="text-3xl font-bold text-green-600">—</div>
+            {{end}}
+        </div>
+
+        <!-- Failed Runs -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+            <div class="text-gray-600 text-sm">Failed</div>
+            <div class="text-3xl font-bold text-red-600">{{$failed}}</div>
+        </div>
+
+        <!-- Currently Running -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+            <div class="text-gray-600 text-sm">Running</div>
+            <div class="text-3xl font-bold text-yellow-600">{{$running}}</div>
+        </div>
+    </div>
+    {{end}}
+
     <!-- Filter Panel -->
     {{template "partials/filter_panel" .}}
 
