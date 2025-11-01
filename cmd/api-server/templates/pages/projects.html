@@ -6,10 +6,10 @@
     <div class="mb-8">
         <div class="flex justify-between items-center">
             <div>
-                <h1 class="text-4xl font-bold text-gray-900 mb-2">Projects</h1>
-                <p class="text-gray-600">Manage your CI/CD pipelines</p>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">Projects</h1>
+                <p class="text-gray-600 dark:text-gray-400">Manage your CI/CD pipelines</p>
             </div>
-            <button class="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 font-semibold rounded-lg transition"
+            <button class="btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white px-6 py-3 font-semibold rounded-lg transition"
                     onclick="showCreateProjectModal()">
                 + New Project
             </button>
@@ -21,19 +21,19 @@
     <div id="projects-list" class="space-y-4">
         {{if .Projects}}
             {{range .Projects}}
-            <div class="project-card bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div class="project-card bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-lg p-6 hover:shadow-lg dark:hover:shadow-xl transition">
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex-1">
-                        <h3 class="text-xl font-bold text-gray-900">{{.Name}}</h3>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{.Name}}</h3>
                         {{if .Description}}
-                        <p class="text-sm text-gray-600 mt-1">{{.Description}}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{.Description}}</p>
                         {{end}}
                     </div>
-                    <div class="text-right text-sm text-gray-600">
+                    <div class="text-right text-sm text-gray-600 dark:text-gray-400">
                         {{if .LastRunAt}}
                             <div>Last run: {{formatTime .LastRunAt}}</div>
                         {{else}}
-                            <div class="text-gray-400">No runs yet</div>
+                            <div class="text-gray-400 dark:text-gray-500">No runs yet</div>
                         {{end}}
                     </div>
                 </div>
@@ -41,41 +41,41 @@
                 <!-- Project Details -->
                 <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                        <span class="text-gray-600 font-medium">Repository:</span>
-                        <a href="{{.RepoURL}}" target="_blank" class="text-blue-600 hover:underline block truncate">
+                        <span class="text-gray-600 dark:text-gray-300 font-medium">Repository:</span>
+                        <a href="{{.RepoURL}}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline block truncate">
                             {{.RepoURL}}
                         </a>
                     </div>
                     <div>
-                        <span class="text-gray-600 font-medium">Namespace:</span>
-                        <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{{.Namespace}}</span>
+                        <span class="text-gray-600 dark:text-gray-300 font-medium">Namespace:</span>
+                        <span class="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1 rounded">{{.Namespace}}</span>
                     </div>
                 </div>
 
                 <!-- Webhook Configuration -->
-                <div class="bg-gray-50 rounded p-4 mb-4">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-4 mb-4">
                     <div class="flex justify-between items-center mb-2">
-                        <h4 class="font-semibold text-gray-900">Webhook URL</h4>
-                        <button class="text-sm text-blue-600 hover:underline"
+                        <h4 class="font-semibold text-gray-900 dark:text-white">Webhook URL</h4>
+                        <button class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                                 onclick="copyWebhookURL('{{.ID}}')">
                             Copy
                         </button>
                     </div>
-                    <code id="webhook-{{.ID}}" class="text-xs bg-white px-3 py-2 rounded border border-gray-200 block break-all">
+                    <code id="webhook-{{.ID}}" class="text-xs bg-white dark:bg-gray-600 text-gray-900 dark:text-white px-3 py-2 rounded border border-gray-200 dark:border-gray-500 block break-all">
                         {{.WebhookURL}}
                     </code>
                 </div>
 
                 <!-- Actions -->
                 <div class="flex gap-2">
-                    <a href="/dashboard?projectId={{.ID}}" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
+                    <a href="/dashboard?projectId={{.ID}}" class="btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white px-4 py-2 rounded text-sm transition">
                         View Pipelines
                     </a>
-                    <button class="btn bg-gray-200 hover:bg-gray-300 text-gray-900 px-4 py-2 rounded text-sm transition"
+                    <button class="btn bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded text-sm transition"
                             onclick="showWebhookInstructions('{{.Name}}')">
                         Webhook Instructions
                     </button>
-                    <button class="btn bg-red-100 hover:bg-red-200 text-red-900 px-4 py-2 rounded text-sm transition"
+                    <button class="btn bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-red-900 dark:text-red-100 px-4 py-2 rounded text-sm transition"
                             hx-delete="/api/projects/{{.ID}}"
                             hx-confirm="Are you sure you want to delete this project?">
                         Delete
@@ -93,16 +93,16 @@
 
     <!-- Webhook Instructions Modal -->
     <div class="modal hidden" id="webhook-instructions-modal">
-        <div class="modal-content max-w-2xl">
+        <div class="modal-content max-w-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-900">Webhook Setup Instructions</h2>
-                <button onclick="closeModal('webhook-instructions-modal')" class="text-gray-600 hover:text-gray-900 text-2xl">×</button>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Webhook Setup Instructions</h2>
+                <button onclick="closeModal('webhook-instructions-modal')" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl">×</button>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <h3 class="font-semibold text-gray-900 mb-2">GitHub Setup</h3>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">GitHub Setup</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300">
                         <li>Go to your repository Settings</li>
                         <li>Click "Webhooks" in the sidebar</li>
                         <li>Click "Add webhook"</li>
@@ -112,15 +112,15 @@
                     </ol>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-200 rounded p-4">
-                    <p class="text-sm text-blue-900">
+                <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded p-4">
+                    <p class="text-sm text-blue-900 dark:text-blue-200">
                         <strong>Tip:</strong> The webhook will automatically trigger pipelines when you push to any branch or open a pull request.
                     </p>
                 </div>
             </div>
 
             <div class="mt-6">
-                <button class="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition"
+                <button class="btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white px-6 py-2 rounded transition"
                         onclick="closeModal('webhook-instructions-modal')">
                     Close
                 </button>
