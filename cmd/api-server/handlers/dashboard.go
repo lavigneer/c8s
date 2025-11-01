@@ -227,8 +227,10 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// Redirect to dashboard
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	// Use HX-Redirect header for HTMX-based requests
+	// This tells HTMX to follow the redirect instead of processing the response as content
+	w.Header().Set("HX-Redirect", "/dashboard")
+	w.WriteHeader(http.StatusOK)
 }
 
 // LogoutHandler handles user logout
@@ -243,8 +245,9 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// Redirect to login
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// Use HX-Redirect header for HTMX-based requests
+	w.Header().Set("HX-Redirect", "/login")
+	w.WriteHeader(http.StatusOK)
 }
 
 // generateDemoArtifacts creates demo artifacts for a pipeline run
