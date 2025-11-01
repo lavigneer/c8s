@@ -19,7 +19,31 @@ tests/
 # Add commands for 
 
 ## Code Style
-: Follow standard conventions
+Follow standard conventions
+
+## Git Workflow
+- **Commit after each significant feature** or bug fix
+- **Commit format:** `[Txxx] Feature description` (e.g., `[T084] Implement Dashboard Pipeline Runs`)
+- **Always include footer:**
+  ```
+  🤖 Generated with Claude Code
+
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  ```
+- **Use git status and git diff --cached --stat before committing**
+- Commit logical units of work, not partial implementations
+
+## Development Checklist
+Before starting work on a feature:
+1. Check current `git status`
+2. Create a todo list for the task
+3. Work on the feature in small, logical steps
+4. Test changes thoroughly
+5. Commit with meaningful message when feature is complete
+
+After finishing work:
+1. Verify `git log` shows commits for completed work
+2. Review changes with `git diff HEAD~N` (where N is number of commits)
 
 ## Recent Changes
 - 004-create-a-front: Added Go 1.24.0 (backend API server), HTML5/CSS3/JavaScript (frontend with HTMX)

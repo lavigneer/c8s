@@ -1,0 +1,26 @@
+{
+  "commitFrequency": "after-significant-features",
+  "commitStyle": {
+    "format": "[T###] Feature name or fix description",
+    "examples": [
+      "[T084] Implement Dashboard Pipeline Runs Display and Details",
+      "[T081-T082] Implement Phase 8: Polish & Error Handling"
+    ],
+    "footer": "🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+  },
+  "reminders": {
+    "commit-after": [
+      "Implementing a new feature or handler",
+      "Fixing a bug or issue",
+      "Adding test data or fixtures",
+      "Refactoring significant code sections",
+      "Adding new dependencies or configurations"
+    ],
+    "skip-commit-for": [
+      "Simple documentation updates",
+      "Comments or minor formatting",
+      "Intermediate changes during development"
+    ]
+  },
+  "notes": "Always check git status before starting a task and commit after completing logical units of work. Use 'git status' and 'git diff --cached --stat' to review changes before committing."
+}
