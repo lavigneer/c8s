@@ -214,9 +214,41 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Fetch PipelineRuns from Kubernetes and extract unique branches
-	// For now, return empty list
-	branches := []string{}
+	user, ok := GetUserFromContext(r.Context())
+	if !ok {
+		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	// Fetch PipelineRuns from Kubernetes (check both namespaces)
+	var runs []*v1alpha1.PipelineRun
+	if k8sClient != nil {
+		// Query user namespace first
+		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
+			for i := range userRuns.Items {
+				runs = append(runs, &userRuns.Items[i])
+			}
+		}
+
+		// Also query c8s-system for test data
+		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
+			for i := range sysRuns.Items {
+				runs = append(runs, &sysRuns.Items[i])
+			}
+		}
+	}
+
+	// Extract unique branch names
+	branchMap := make(map[string]bool)
+	var branches []string
+
+	for _, run := range runs {
+		dto := dashboard.MapPipelineRunToDTO(run)
+		if !branchMap[dto.Branch] && dto.Branch != "" {
+			branches = append(branches, dto.Branch)
+			branchMap[dto.Branch] = true
+		}
+	}
 
 	dashboard.RespondSuccess(w, http.StatusOK, branches)
 }

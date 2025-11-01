@@ -10,6 +10,24 @@
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/sse.js"></script>
     <script src="/static/js/keyboard_shortcuts.js"></script>
+    <script>
+        // HTMX Configuration
+        htmx.config.timeout = 30000; // 30 second timeout
+        htmx.config.defaultIndicatorStyle = 'spinner'; // Use spinner for loading
+
+        // Add retry logic for failed requests
+        document.addEventListener('htmx:responseError', function(event) {
+            // Retry on specific status codes
+            if ([408, 429, 500, 502, 503, 504].includes(event.detail.xhr.status)) {
+                // Retry after 1 second
+                setTimeout(() => {
+                    if (event.detail.xhr.request) {
+                        htmx.ajax('GET', event.detail.xhr.request.url, event.detail.target);
+                    }
+                }, 1000);
+            }
+        });
+    </script>
 </head>
 <body class="bg-white dark:bg-gray-900">
     {{template "partials/nav" .}}

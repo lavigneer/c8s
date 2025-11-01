@@ -76,14 +76,18 @@
     </form>
 
     <!-- Clear Button -->
-    <div class="mt-4 flex gap-2">
+    <div class="mt-4 flex gap-2 items-center">
         <button type="button"
-                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition"
-                onclick="clearFilters()">
+                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onclick="clearFilters()"
+                id="clear-filters-btn">
             Clear Filters
         </button>
         <div class="text-sm text-gray-600 flex items-center">
             Showing <span id="result-count" class="font-semibold mx-1">0</span> results
+            <span id="filter-loading" class="ml-3 text-blue-600 hidden">
+                <span class="inline-block animate-spin">⟳</span> Filtering...
+            </span>
         </div>
     </div>
 </div>
@@ -140,6 +144,21 @@ function clearFilters() {
     htmx.ajax('GET', '/api/projects/{{.ProjectID}}/runs', '#pipeline-rows');
 }
 
+// Show/hide loading indicator on filter requests
+document.addEventListener('htmx:sendingStart', function(event) {
+    const filterLoading = document.getElementById('filter-loading');
+    if (filterLoading) {
+        filterLoading.classList.remove('hidden');
+    }
+});
+
+document.addEventListener('htmx:sendingEnd', function(event) {
+    const filterLoading = document.getElementById('filter-loading');
+    if (filterLoading) {
+        filterLoading.classList.add('hidden');
+    }
+});
+
 // Add event listeners to update URL when filters change
 document.addEventListener('DOMContentLoaded', function() {
     initializeFiltersFromURL();
@@ -154,6 +173,16 @@ document.addEventListener('htmx:afterSwap', function(event) {
     if (event.detail.target.id === 'pipeline-rows') {
         const count = event.detail.target.querySelectorAll('[id^="pipeline-"]').length;
         document.getElementById('result-count').textContent = count;
+    }
+});
+
+// Handle HTMX errors with user-friendly messages
+document.addEventListener('htmx:responseError', function(event) {
+    console.error('Filter error:', event.detail.xhr.status, event.detail.xhr.statusText);
+    // Show error notification (could integrate with a toast library)
+    const resultCount = document.getElementById('result-count');
+    if (resultCount) {
+        resultCount.textContent = '0';
     }
 });
 </script>
