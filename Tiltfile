@@ -149,7 +149,7 @@ docker_build(
     target='controller',
     only=['bin/'],
     live_update=[
-        sync('bin/controller', '/app/bin/controller'),
+        sync('bin/controller', '/controller'),
     ],
 )
 
@@ -187,7 +187,7 @@ docker_build(
     target='webhook',
     only=['bin/'],
     live_update=[
-        sync('bin/webhook', '/app/bin/webhook'),
+        sync('bin/webhook', '/webhook'),
     ],
 )
 

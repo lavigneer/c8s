@@ -8,32 +8,32 @@
 # ============================================================================
 FROM alpine:3.18 AS controller
 RUN apk add --no-cache ca-certificates
-WORKDIR /app
+WORKDIR /
 
-# Add all binaries (will be replaced by live_update with specific binary)
-ADD bin bin
+# Copy placeholder binary from bin directory
+# Will be replaced by live_update sync
+COPY bin/controller /controller
+RUN chmod +x /controller
 
-# Create directories with proper permissions for live_update
-RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
 USER 65532:65532
 
-ENTRYPOINT ["/app/bin/controller"]
+ENTRYPOINT ["/controller"]
 
 # ============================================================================
 # Webhook
 # ============================================================================
 FROM alpine:3.18 AS webhook
 RUN apk add --no-cache ca-certificates
-WORKDIR /app
+WORKDIR /
 
-# Add all binaries (will be replaced by live_update with specific binary)
-ADD bin bin
+# Copy placeholder binary from bin directory
+# Will be replaced by live_update sync
+COPY bin/webhook /webhook
+RUN chmod +x /webhook
 
-# Create directories with proper permissions for live_update
-RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
 USER 65532:65532
 
-ENTRYPOINT ["/app/bin/webhook"]
+ENTRYPOINT ["/webhook"]
 
 # ============================================================================
 # API Server
