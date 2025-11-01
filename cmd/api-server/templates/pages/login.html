@@ -218,13 +218,12 @@
             <div id="error-message" class="login-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
             <form id="login-form"
-                  hx-ext="response-targets"
                   hx-post="/login"
+                  hx-ext="response-targets"
                   hx-target-400="#error-message"
                   hx-target-422="#error-message"
                   hx-target-5*="#error-message"
-                  hx-swap="innerHTML"
-                  hx-on="submit: validateLoginForm(event)">
+                  hx-swap="innerHTML">
                 <div class="form-group">
                     <label for="username" class="form-label">Username or Email</label>
                     <input
@@ -279,12 +278,10 @@
     </div>
 
     <script>
-        // Validate form before HTMX submission
-        function validateLoginForm(evt) {
-            const form = evt.detail.target;
+        // Handle form submission with validation
+        document.getElementById('login-form').addEventListener('htmx:beforeRequest', function(evt) {
+            const form = this;
             const errorDiv = document.getElementById('error-message');
-            const usernameInput = form.querySelector('input[name="username"]');
-            const passwordInput = form.querySelector('input[name="password"]');
 
             // Clear previous errors
             errorDiv.textContent = '';
@@ -311,31 +308,13 @@
                     errorDiv.classList.add('show');
                     invalidField.focus();
                 }
-                return;
             }
-
-            // Clear errors before HTMX request
-            errorDiv.textContent = '';
-            errorDiv.classList.remove('show');
-        }
+        });
 
         // Show server errors from response-targets
         document.addEventListener('htmx:beforeSwap', function(evt) {
             if (evt.detail.target.id !== 'error-message') return;
             evt.detail.target.classList.add('show');
-        });
-
-        // Handle successful login - navigate to dashboard
-        document.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id !== 'login-form') return;
-            // If no error message is shown, login was successful
-            const errorDiv = document.getElementById('error-message');
-            if (!errorDiv.classList.contains('show')) {
-                // Wait a moment for any redirects, then navigate
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 100);
-            }
         });
 
         // Clear error indicator when user types
