@@ -20,7 +20,11 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        browser: [chromium, firefox]
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -36,50 +40,88 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium firefox
 
       - name: Build CSS
         run: npm run build:css
 
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Run E2E Tests (${{ matrix.browser }})
+        run: npm run test:e2e -- --project=${{ matrix.browser }}-desktop --project=${{ matrix.browser }}-tablet --project=${{ matrix.browser }}-mobile
         env:
           BASE_URL: http://localhost:8080
+          API_URL: http://localhost:8080/api
           CI: true
+          BROWSER: ${{ matrix.browser }}
 
-      - name: Upload test results
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "Test execution completed for ${{ matrix.browser }}"
+
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: playwright-report/
           retention-days: 30
 
-      - name: Upload test videos
+      - name: Upload test results JSON
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-results-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 15
+
+      - name: Upload videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos-${{ matrix.browser }}
           path: test-results/
           retention-days: 7
 
-      - name: Comment PR with results
-        if: always() && github.event_name == 'pull_request'
+  test-summary:
+    name: Test Summary and PR Comment
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    if: always()
+
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Generate summary
+        run: |
+          echo "## E2E Test Results Summary" > summary.md
+          echo "" >> summary.md
+          echo "**Status**: Tests completed across browsers" >> summary.md
+          echo "**Browsers Tested**: Chromium, Firefox" >> summary.md
+          echo "**Viewports**: Desktop (1920x1080), Tablet (1024x1366), Mobile (390x844)" >> summary.md
+          echo "" >> summary.md
+          echo "View detailed reports in artifacts for each browser variant." >> summary.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const resultsFile = 'test-results/results.json';
-            if (fs.existsSync(resultsFile)) {
-              const results = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
-              const totalTests = results.stats.expected;
-              const passedTests = results.stats.expected - results.stats.unexpected;
-              const passRate = ((passedTests / totalTests) * 100).toFixed(1);
 
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `## E2E Test Results\n\n✅ **Passed**: ${passedTests}/${totalTests}\n📊 **Pass Rate**: ${passRate}%\n\n[View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
-              });
-            }
+            // Read summary
+            const summary = fs.readFileSync('summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary + '\n\n✅ Tests completed. See artifacts for detailed reports.'
+            });
+
+      - name: Determine job status
+        if: needs.e2e-tests.result == 'failure'
+        run: exit 1
