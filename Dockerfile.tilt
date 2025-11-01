@@ -10,8 +10,8 @@ FROM alpine:3.18 AS controller
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
-# Add placeholder binary (will be replaced by live_update)
-ADD bin/controller bin/controller
+# Add all binaries (will be replaced by live_update with specific binary)
+ADD bin bin
 
 # Create directories with proper permissions for live_update
 RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin
@@ -26,8 +26,8 @@ FROM alpine:3.18 AS webhook
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
-# Add placeholder binary (will be replaced by live_update)
-ADD bin/webhook bin/webhook
+# Add all binaries (will be replaced by live_update with specific binary)
+ADD bin bin
 
 # Create directories with proper permissions for live_update
 RUN mkdir -p /app/bin && chmod -R 777 /app /app/bin

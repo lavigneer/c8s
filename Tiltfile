@@ -147,7 +147,7 @@ docker_build(
     context='.',
     dockerfile='Dockerfile.tilt',
     target='controller',
-    only=['bin/controller'],
+    only=['bin/'],
     live_update=[
         sync('bin/controller', '/app/bin/controller'),
     ],
@@ -185,7 +185,7 @@ docker_build(
     context='.',
     dockerfile='Dockerfile.tilt',
     target='webhook',
-    only=['bin/webhook'],
+    only=['bin/'],
     live_update=[
         sync('bin/webhook', '/app/bin/webhook'),
     ],
