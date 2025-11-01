@@ -12,8 +12,8 @@
 #
 # Alternatively, trigger cluster creation from the Tilt UI if needed.
 
-# Extensions can be loaded here if needed, but standard docker_build with k8s
-# restart_policy handles most development workflows efficiently
+# Load Tilt extensions for recommended Go development workflow
+load('ext://restart_process', 'docker_build_with_restart')
 
 # Configuration with defaults - use simple assignments instead of config API
 with_samples = True
@@ -166,24 +166,45 @@ k8s_resource(
 )
 
 # ============================================================================
-# API Server Component (HTMX Frontend)
+# API Server Component (HTMX Frontend) - Recommended Go Pattern
 # ============================================================================
+# Following the Tilt recommended pattern:
+# 1. Compile Go code locally with local_resource
+# 2. Use docker_build_with_restart to sync binaries and templates
+# 3. Live updates provide fast feedback for both Go and template changes
 
+# Compile API server locally
+local_resource(
+    'api-server-compile',
+    'CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server',
+    deps=['cmd/api-server/', 'pkg/', 'go.mod', 'go.sum'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['api-server']
+)
+
+# Build Docker image using the precompiled binary from local_resource
+# The binary is built locally by api-server-compile, then COPY'd into the image
+# This is faster than compiling in Docker, especially on Mac
 docker_build(
     ref='c8s-api-server:latest',
     context='.',
-    dockerfile='Dockerfile',
-    target='api-server',
-    only=['cmd/controller/', 'cmd/webhook/', 'cmd/api-server/', 'pkg/', 'hack/', 'go.mod', 'go.sum', 'Dockerfile', 'Makefile', 'PROJECT'],
+    dockerfile='Dockerfile.tilt',
+    only=[
+        'bin/',
+        'cmd/api-server/templates',
+        'cmd/api-server/static',
+    ],
 )
 
 # Track API Server deployment
+# Depends on api-server-compile to ensure binary is ready
 k8s_resource(
     'c8s-api-server',
     port_forwards=['8080:8080'],  # Forward dashboard to localhost:8080
     labels=['api-server'],
     trigger_mode=TRIGGER_MODE_AUTO,
-    pod_readiness='wait'
+    pod_readiness='wait',
+    resource_deps=['api-server-compile']  # Ensure local compilation happens first
 )
 
 # ============================================================================

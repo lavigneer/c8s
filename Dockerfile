@@ -46,18 +46,24 @@ USER 65532:65532
 ENTRYPOINT ["/webhook"]
 
 # API Server image
+# Supports both production builds (via Dockerfile) and Tilt development (via docker_build_with_restart)
 FROM alpine:3.18 AS api-server
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
-# Copy the api-server binary
+
+# For production builds: Copy the precompiled binary from builder stage
 COPY --from=builder /workspace/bin/api-server /app/api-server
-# Copy templates and static assets
+
+# Copy templates and static assets from source
+# In Tilt development, these will be overridden by live_update syncs
 COPY cmd/api-server/templates ./templates
 COPY cmd/api-server/static ./static
-# Create directories with proper permissions for Tilt live_update (don't restrict until after sync)
+
+# Create directories with proper permissions for Tilt live_update
+# Tilt will sync the binary and assets into these locations during development
 RUN mkdir -p /app/templates /app/static && chmod 777 /app /app/templates /app/static
+
 EXPOSE 8080
-# Note: For production, use USER 65532:65532; for local dev, Tilt needs write access
 
 ENTRYPOINT ["/app/api-server"]
 CMD ["-base-dir", "/app"]
