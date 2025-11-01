@@ -150,5 +150,32 @@ func TemplateFuncMap() template.FuncMap {
 		"le":               le,
 		"gt":               gt,
 		"ge":               ge,
+		"add":              add,
+		"sub":              sub,
+		"mul":              mul,
+		"div":              divInt,
 	}
+}
+
+// add returns the sum of two integers
+func add(a, b int) int {
+	return a + b
+}
+
+// sub returns the difference of two integers
+func sub(a, b int) int {
+	return a - b
+}
+
+// mul returns the product of two integers
+func mul(a, b int) int {
+	return a * b
+}
+
+// divInt returns the quotient of two integers
+func divInt(a, b int) int {
+	if b == 0 {
+		return 0
+	}
+	return a / b
 }
