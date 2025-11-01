@@ -44,17 +44,26 @@ func RequestLoggerMiddleware(next http.Handler) http.Handler {
 // responseWriter wraps http.ResponseWriter to capture status code
 type responseWriter struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode      int
+	headerWritten   bool
 }
 
 // WriteHeader captures the status code
 func (rw *responseWriter) WriteHeader(code int) {
+	if rw.headerWritten {
+		return // Avoid calling WriteHeader multiple times
+	}
 	rw.statusCode = code
+	rw.headerWritten = true
 	rw.ResponseWriter.WriteHeader(code)
 }
 
 // Write implements http.ResponseWriter
 func (rw *responseWriter) Write(b []byte) (int, error) {
+	// Ensure WriteHeader is called before writing (with 200 status by default)
+	if !rw.headerWritten {
+		rw.WriteHeader(http.StatusOK)
+	}
 	return rw.ResponseWriter.Write(b)
 }
 

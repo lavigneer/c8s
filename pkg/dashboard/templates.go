@@ -111,5 +111,6 @@ func RenderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 		return fmt.Errorf("templates not loaded")
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Don't call WriteHeader here - let it be called implicitly when template writes
 	return Templates.ExecuteTemplate(w, name, data)
 }
