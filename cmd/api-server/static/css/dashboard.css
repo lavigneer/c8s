@@ -447,19 +447,39 @@
 }
 
 :root.dark .bg-white {
-    @apply bg-gray-900;
-}
-
-:root.dark .bg-gray-50 {
-    @apply bg-gray-900;
-}
-
-:root.dark .bg-gray-100 {
     @apply bg-gray-800;
 }
 
-:root.dark .bg-gray-200 {
+:root.dark .bg-gray-50 {
+    @apply bg-gray-800;
+}
+
+:root.dark .bg-gray-100 {
     @apply bg-gray-700;
+}
+
+:root.dark .bg-gray-200 {
+    @apply bg-gray-600;
+}
+
+:root.dark .text-gray-900 {
+    @apply text-gray-100;
+}
+
+:root.dark .text-gray-600 {
+    @apply text-gray-300;
+}
+
+:root.dark .text-gray-500 {
+    @apply text-gray-400;
+}
+
+:root.dark .text-gray-400 {
+    @apply text-gray-300;
+}
+
+:root.dark .text-gray-700 {
+    @apply text-gray-200;
 }
 
 :root.dark .border-gray-200 {
@@ -470,24 +490,21 @@
     @apply border-gray-600;
 }
 
-:root.dark .text-gray-900 {
-    @apply text-gray-100;
-}
-
-:root.dark .text-gray-600 {
-    @apply text-gray-400;
-}
-
-:root.dark .text-gray-500 {
-    @apply text-gray-500;
+:root.dark .shadow-md,
+:root.dark .shadow-lg {
+    @apply shadow-xl;
 }
 
 :root.dark .hover\:bg-gray-50:hover {
-    @apply bg-gray-900;
+    @apply bg-gray-700;
 }
 
 :root.dark .hover\:bg-gray-300:hover {
-    @apply bg-gray-700;
+    @apply bg-gray-600;
+}
+
+:root.dark .hover\:text-gray-900:hover {
+    @apply text-gray-100;
 }
 
 :root.dark input[type="text"],
@@ -496,7 +513,7 @@
 :root.dark input[type="date"],
 :root.dark select,
 :root.dark textarea {
-    @apply bg-gray-800 text-gray-100 border-gray-600;
+    @apply bg-gray-700 text-gray-100 border-gray-600;
 }
 
 :root.dark input[type="text"]:focus,
@@ -505,14 +522,49 @@
 :root.dark input[type="date"]:focus,
 :root.dark select:focus,
 :root.dark textarea:focus {
-    @apply bg-gray-700 border-gray-500;
+    @apply bg-gray-600 border-gray-500 text-gray-100;
+}
+
+:root.dark input::placeholder {
+    @apply text-gray-400;
 }
 
 /* Dark mode for modal backgrounds */
 :root.dark .modal-content {
-    @apply bg-gray-900;
+    @apply bg-gray-800;
 }
 
 :root.dark .modal-overlay {
     @apply bg-black bg-opacity-75;
+}
+
+/* Dark mode for badges - ensure good contrast */
+:root.dark .badge-success {
+    @apply bg-green-900 text-green-200;
+}
+
+:root.dark .badge-error {
+    @apply bg-red-900 text-red-200;
+}
+
+:root.dark .badge-warning {
+    @apply bg-yellow-900 text-yellow-200;
+}
+
+:root.dark .badge-running {
+    @apply bg-blue-900 text-blue-200;
+}
+
+:root.dark .badge-pending {
+    @apply bg-gray-700 text-gray-200;
+}
+
+/* Dark mode for links */
+:root.dark a {
+    @apply text-blue-400 hover:text-blue-300;
+}
+
+/* Dark mode for buttons */
+:root.dark button {
+    @apply text-gray-100;
 }
