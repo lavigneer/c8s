@@ -111,9 +111,9 @@ test.describe('Screen Reader Compatibility - User Story 2 (Accessibility)', () =
       // Should have error alerts and/or marked invalid fields
       expect(errors.hasAlerts || errors.hasInvalidFields).toBeTruthy();
 
-      // If there are alerts, they should have content
-      if (errors.hasAlerts) {
-        expect(errors.alertText).toBeTruthy();
+      // If there are alerts or visible error div, they should have content
+      if (errors.hasAlerts || errors.errorDivVisible) {
+        expect(errors.alertText || errors.errorDivText).toBeTruthy();
       }
     }
   });
