@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/aws/aws-sdk-go v1.44.327
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.28.15
