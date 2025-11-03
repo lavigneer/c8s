@@ -23,10 +23,10 @@ func InitK8sClient(client *dashboard.K8sClient) {
 
 // ListProjectsHandler returns projects for authenticated user
 // GET /api/projects
+// Authorization: viewer or higher (read access)
 func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := CheckUserExists(w, r)
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -37,10 +37,20 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Map to DTOs
-	dtos := make([]*dashboard.ProjectDTO, len(configs.Items))
-	for i, config := range configs.Items {
-		dtos[i] = mapPipelineConfigToProjectDTO(&config, user.Namespace)
+	// Map to DTOs - filter by user's access
+	dtos := make([]*dashboard.ProjectDTO, 0, len(configs.Items))
+	for _, config := range configs.Items {
+		// Check if user has read access to this project
+		hasAccess, err := authzService.UserHasProjectAccess(r.Context(), user.ID, config.Name)
+		if err != nil {
+			// Log but continue (user might not have role binding)
+			fmt.Printf("authorization check failed for project %s: %v\n", config.Name, err)
+			continue
+		}
+
+		if hasAccess {
+			dtos = append(dtos, mapPipelineConfigToProjectDTO(&config, user.Namespace))
+		}
 	}
 
 	dashboard.RespondSuccess(w, http.StatusOK, dtos)
@@ -48,10 +58,10 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 // CreateProjectHandler creates new project (PipelineConfig)
 // POST /api/projects
+// Authorization: editor or higher (write access required)
 func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := CheckUserExists(w, r)
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -107,16 +117,21 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetWebhookConfigHandler returns webhook configuration for project
 // GET /api/projects/{projectId}/webhook
+// Authorization: editor or higher (admin access for webhook config)
 func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := CheckUserExists(w, r)
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
 		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		return
+	}
+
+	// Check authorization: webhook config is admin-level access
+	if !CheckProjectAccessAction(w, r, user, projectID, ActionAdmin) {
 		return
 	}
 
@@ -141,16 +156,21 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteProjectHandler deletes a project
 // DELETE /api/projects/{projectId}
+// Authorization: admin only (requires admin role)
 func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := CheckUserExists(w, r)
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
 		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		return
+	}
+
+	// Check authorization: delete requires admin role
+	if !CheckProjectAccessAction(w, r, user, projectID, ActionDelete) {
 		return
 	}
 

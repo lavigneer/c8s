@@ -17,6 +17,8 @@ limitations under the License.
 package auth
 
 import (
+	"errors"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -38,24 +40,21 @@ type Claims struct {
 
 // Valid implements jwt.Claims interface for custom validation
 func (c Claims) Valid() error {
-	// Let the standard claims do their validation first
-	if err := c.RegisteredClaims.Valid(); err != nil {
-		return err
-	}
-
 	// Validate required fields
 	if c.Subject == "" {
-		return jwt.NewValidationError("missing subject claim", jwt.ValidationErrorClaimsInvalid)
+		return errors.New("missing subject claim")
 	}
 
 	if c.Name == "" {
-		return jwt.NewValidationError("missing name claim", jwt.ValidationErrorClaimsInvalid)
+		return errors.New("missing name claim")
 	}
 
 	if c.Namespace == "" {
-		return jwt.NewValidationError("missing namespace claim", jwt.ValidationErrorClaimsInvalid)
+		return errors.New("missing namespace claim")
 	}
 
+	// Standard claims validation is handled by jwt.RegisteredClaims
+	// which is embedded and will be validated by the parser
 	return nil
 }
 

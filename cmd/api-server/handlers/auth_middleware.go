@@ -88,7 +88,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Validate token and extract user information
 		var user *User
-		var err error
 
 		// Use NoOp validator if enabled (development only)
 		if jwtNoOpValidator != nil {
