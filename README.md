@@ -328,11 +328,18 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Documentation
 
-- [Quick Start Guide](./specs/001-build-a-continuous/quickstart.md)
+### Getting Started
+- **[Getting Started Guide](./docs/GETTING_STARTED.md)** - Installation (5 min), first pipeline, dashboard tour
+- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues, diagnostics, debug commands
+- [Quick Start Guide](./specs/001-build-a-continuous/quickstart.md) - Legacy quickstart
+
+### Reference
 - [Feature Specification](./specs/001-build-a-continuous/spec.md)
 - [Implementation Plan](./specs/001-build-a-continuous/plan.md)
 - [Data Model](./specs/001-build-a-continuous/data-model.md)
 - [API Contracts](./specs/001-build-a-continuous/contracts/)
+- [CLI Reference](./docs/CLI_REFERENCE.md) (coming soon)
+- [Security Guide](./docs/SECURITY.md) (coming soon)
 
 ## Community
 
@@ -342,8 +349,22 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Status
 
-🚧 **Active Development** - This project is under active development. APIs may change.
+✅ **Core Features Complete** - C8S is feature-complete for Phase 1 core functionality.
 
-Current Phase: **Phase 1 - Setup & Project Initialization** ✅
+### Phase 1 Completion: 54% (7 of 13 phases)
 
-See [tasks.md](./specs/001-build-a-continuous/tasks.md) for implementation progress.
+**Completed Phases** ✅
+- S1: Authentication Implementation
+- S2: Authorization Implementation
+- C1: Error Handling
+- S3: Webhook Signature Validation
+- S4: Request Size Limit Middleware
+- S5: Information Disclosure Fixes
+- S6: CORS Configuration
+
+**In Progress** 🚀
+- D1-D3: Critical Documentation (Getting Started, Troubleshooting, README)
+- S7: Optional Security Enhancements
+- T1: Handler Unit Tests
+
+See [PHASE1_PROGRESS_UPDATE.md](./PHASE1_PROGRESS_UPDATE.md) for detailed progress and [tasks.md](./specs/001-build-a-continuous/tasks.md) for implementation details.
