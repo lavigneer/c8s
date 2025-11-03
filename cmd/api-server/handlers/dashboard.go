@@ -29,18 +29,12 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	// Fetch initial pipeline runs from Kubernetes
 	var runs []*dashboard.PipelineRunDTO
 	if k8sClient != nil {
-		// Query both user namespace and c8s-system for test data
+		// Query user's namespace for pipeline runs
 		var pipelineRuns []*v1alpha1.PipelineRun
 
 		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
 			for i := range userRuns.Items {
 				pipelineRuns = append(pipelineRuns, &userRuns.Items[i])
-			}
-		}
-
-		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
-			for i := range sysRuns.Items {
-				pipelineRuns = append(pipelineRuns, &sysRuns.Items[i])
 			}
 		}
 
@@ -97,18 +91,15 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch user's projects from Kubernetes
-	// For development, also check c8s-system namespace for test data
 	var projects []*dashboard.ProjectDTO
 	if k8sClient != nil {
-		namespaces := []string{user.Namespace, "c8s-system"}
 		projectMap := make(map[string]*dashboard.ProjectDTO)
 
-		for _, ns := range namespaces {
-			configs, err := k8sClient.ListPipelineConfigs(r.Context(), ns)
-			if err == nil && configs != nil {
-				for _, config := range configs.Items {
-					projectMap[config.Name] = mapPipelineConfigToProjectDTO(&config, ns)
-				}
+		// Query user's namespace for pipeline configs
+		configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
+		if err == nil && configs != nil {
+			for _, config := range configs.Items {
+				projectMap[config.Name] = mapPipelineConfigToProjectDTO(&config, user.Namespace)
 			}
 		}
 
@@ -146,19 +137,12 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch PipelineRun details from Kubernetes (check both namespaces)
+	// Fetch PipelineRun details from Kubernetes
 	var run *dashboard.PipelineRunDTO
 	if k8sClient != nil {
-		// Try default namespace first
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+		// Try user's namespace
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
 			run = dashboard.MapPipelineRunToDTO(fetchedRun)
-		}
-
-		// Try c8s-system namespace if not found
-		if run == nil {
-			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
-				run = dashboard.MapPipelineRunToDTO(fetchedRun)
-			}
 		}
 	}
 

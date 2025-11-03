@@ -206,19 +206,18 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch PipelineRun from Kubernetes (check both namespaces)
+	user, ok := GetUserFromContext(r.Context())
+	if !ok {
+		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	// Fetch PipelineRun from Kubernetes (user's namespace)
 	var run *dashboard.PipelineRunDTO
 	if k8sClient != nil {
-		// Try default namespace first
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+		// Query user's namespace
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
 			run = dashboard.MapPipelineRunToDTO(fetchedRun)
-		}
-
-		// Try c8s-system namespace if not found
-		if run == nil {
-			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
-				run = dashboard.MapPipelineRunToDTO(fetchedRun)
-			}
 		}
 	}
 

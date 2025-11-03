@@ -37,20 +37,13 @@ func ExportPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse filter parameters
 	filters := ParseFilters(r)
 
-	// Fetch PipelineRuns from Kubernetes
+	// Fetch PipelineRuns from Kubernetes (user's namespace)
 	var runs []*dashboard.PipelineRunDTO
 	if k8sClient != nil {
 		// Query user namespace
 		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
 			for i := range userRuns.Items {
 				runs = append(runs, dashboard.MapPipelineRunToDTO(&userRuns.Items[i]))
-			}
-		}
-
-		// Also query c8s-system for test data
-		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
-			for i := range sysRuns.Items {
-				runs = append(runs, dashboard.MapPipelineRunToDTO(&sysRuns.Items[i]))
 			}
 		}
 	}

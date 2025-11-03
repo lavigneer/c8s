@@ -42,20 +42,13 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse filter parameters
 	filters := ParseFilters(r)
 
-	// Fetch PipelineRuns from Kubernetes (check both user namespace and c8s-system for test data)
+	// Fetch PipelineRuns from Kubernetes (user's namespace)
 	var runs []*v1alpha1.PipelineRun
 	if k8sClient != nil {
-		// Query user namespace first
+		// Query user namespace
 		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
 			for i := range userRuns.Items {
 				runs = append(runs, &userRuns.Items[i])
-			}
-		}
-
-		// Also query c8s-system for test data
-		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
-			for i := range sysRuns.Items {
-				runs = append(runs, &sysRuns.Items[i])
 			}
 		}
 	}
@@ -146,19 +139,18 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch PipelineRun from Kubernetes (check both default and c8s-system namespaces)
+	user, ok := GetUserFromContext(r.Context())
+	if !ok {
+		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	// Fetch PipelineRun from Kubernetes (user's namespace)
 	var run *v1alpha1.PipelineRun
 	if k8sClient != nil {
-		// Try default namespace first
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "default", runID); err == nil {
+		// Query user's namespace
+		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
 			run = fetchedRun
-		}
-
-		// Try c8s-system namespace if not found
-		if run == nil {
-			if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), "c8s-system", runID); err == nil {
-				run = fetchedRun
-			}
 		}
 	}
 
@@ -220,20 +212,13 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch PipelineRuns from Kubernetes (check both namespaces)
+	// Fetch PipelineRuns from Kubernetes (user's namespace)
 	var runs []*v1alpha1.PipelineRun
 	if k8sClient != nil {
-		// Query user namespace first
+		// Query user namespace
 		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
 			for i := range userRuns.Items {
 				runs = append(runs, &userRuns.Items[i])
-			}
-		}
-
-		// Also query c8s-system for test data
-		if sysRuns, err := k8sClient.ListPipelineRuns(r.Context(), "c8s-system"); err == nil && sysRuns != nil {
-			for i := range sysRuns.Items {
-				runs = append(runs, &sysRuns.Items[i])
 			}
 		}
 	}
