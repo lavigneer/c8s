@@ -16,13 +16,31 @@ export class LogViewerPage extends BasePage {
   }
 
   async getLogCount(): Promise<number> {
-    const logs = this.page.locator(this.logLine);
-    return await logs.count();
+    try {
+      const logs = this.page.locator(this.logLine);
+      const count = await logs.count();
+      return count;
+    } catch {
+      // Log elements might not exist yet
+      return 0;
+    }
   }
 
   async filterLogs(query: string) {
-    await this.fill(this.filterInput, query);
-    await this.page.waitForLoadState('networkidle');
+    try {
+      const filterInput = this.page.locator(this.filterInput);
+      const exists = await filterInput.isVisible({ timeout: 1000 }).catch(() => false);
+      if (exists) {
+        await this.fill(this.filterInput, query);
+        await this.page.waitForLoadState('networkidle');
+      } else {
+        // Filter input not found, skip
+        throw new Error('Filter input not available');
+      }
+    } catch (e) {
+      // Filter might not be available
+      throw e;
+    }
   }
 
   async downloadLogs() {

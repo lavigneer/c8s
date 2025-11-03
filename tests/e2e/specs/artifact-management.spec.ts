@@ -12,7 +12,8 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should display artifact list page', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    // Navigate to pipeline run details page where artifacts are shown
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     // Wait for page to load
     await page.waitForLoadState('networkidle');
@@ -24,7 +25,8 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should display artifact count', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    // Navigate to pipeline run details page where artifacts are shown
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     const count = await artifactPage.getArtifactCount();
     expect(typeof count).toBe('number');
@@ -33,7 +35,8 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should support artifact upload', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    // Navigate to pipeline run details page where artifacts are shown
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     // Check if upload button exists
     const uploadButton = page.locator('button:has-text("Upload")');
@@ -64,7 +67,7 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should support artifact download', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     const count = await artifactPage.getArtifactCount();
 
@@ -89,7 +92,7 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should support artifact deletion', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     const initialCount = await artifactPage.getArtifactCount();
 
@@ -121,7 +124,7 @@ test.describe('Artifact Management - User Story 1 (Functional E2E)', () => {
 
   test('should display artifact information in list', async ({ page }) => {
     const artifactPage = new ArtifactManagerPage(page);
-    await page.goto('/dashboard/pipelines/test-123/artifacts');
+    await page.goto('/dashboard/runs/hello-world-run-001');
 
     const count = await artifactPage.getArtifactCount();
 

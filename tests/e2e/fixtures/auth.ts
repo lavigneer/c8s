@@ -21,11 +21,17 @@ export async function setupTestAuth(page: Page) {
     }
   ]);
 
-  // Also set localStorage for any client-side usage
-  await page.evaluate(({ token }) => {
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('auth_user_id', 'test-user-123');
-    localStorage.setItem('auth_user_name', 'Test User');
+  // Set localStorage before page navigation using addInitScript
+  // This ensures localStorage is available before any page loads
+  await page.addInitScript(({ token }) => {
+    try {
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('auth_user_id', 'test-user-123');
+      localStorage.setItem('auth_user_name', 'Test User');
+    } catch (e) {
+      // localStorage might not be available in some contexts (e.g., error pages)
+      // This is fine - the backend auth cookie is what matters
+    }
   }, { token: testToken });
 }
 
@@ -33,30 +39,56 @@ export async function setupTestAuth(page: Page) {
  * Clear authentication from page
  */
 export async function clearTestAuth(page: Page) {
-  await page.evaluate(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user_id');
-    localStorage.removeItem('auth_user_name');
-  });
+  try {
+    await page.evaluate(() => {
+      try {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user_id');
+        localStorage.removeItem('auth_user_name');
+      } catch (e) {
+        // localStorage might not be available
+      }
+    });
+  } catch (e) {
+    // Page context might not be available
+  }
 }
 
 /**
  * Get current test auth token
  */
 export async function getTestAuthToken(page: Page): Promise<string> {
-  return (
-    (await page.evaluate(() => localStorage.getItem('auth_token'))) || 'test_token_default'
-  );
+  try {
+    return (
+      (await page.evaluate(() => {
+        try {
+          return localStorage.getItem('auth_token');
+        } catch {
+          return null;
+        }
+      })) || 'test_token_default'
+    );
+  } catch (e) {
+    return 'test_token_default';
+  }
 }
 
 /**
  * Verify auth token is present
  */
 export async function verifyAuthTokenPresent(page: Page): Promise<boolean> {
-  return await page.evaluate(() => {
-    const token = localStorage.getItem('auth_token');
-    return !!token && token.length > 0;
-  });
+  try {
+    return await page.evaluate(() => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        return !!token && token.length > 0;
+      } catch {
+        return false;
+      }
+    });
+  } catch (e) {
+    return false;
+  }
 }
 
 export { expect };
