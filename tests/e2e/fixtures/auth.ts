@@ -7,15 +7,26 @@ import { Page, expect } from '@playwright/test';
 
 export async function setupTestAuth(page: Page) {
   /**
-   * Inject test authentication token into page before navigation
-   * This allows tests to access protected resources
+   * Set test authentication cookie
+   * The backend expects an 'auth_token' HTTP cookie for authentication
    */
-  await page.addInitScript(() => {
-    const testToken = localStorage.getItem('auth_token') || 'test_token_' + Date.now();
-    localStorage.setItem('auth_token', testToken);
+  const testToken = 'test_token_' + Date.now();
+
+  // Set the auth_token cookie that the backend expects
+  await page.context().addCookies([
+    {
+      name: 'auth_token',
+      value: testToken,
+      url: 'http://localhost:8080'
+    }
+  ]);
+
+  // Also set localStorage for any client-side usage
+  await page.evaluate(({ token }) => {
+    localStorage.setItem('auth_token', token);
     localStorage.setItem('auth_user_id', 'test-user-123');
     localStorage.setItem('auth_user_name', 'Test User');
-  });
+  }, { token: testToken });
 }
 
 /**

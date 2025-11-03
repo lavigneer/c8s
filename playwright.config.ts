@@ -98,10 +98,10 @@ const config = defineConfig({
   ],
 
   webServer: {
-    command: 'echo "Ensure Tilt is running: tilt up"',
+    command: 'go run ./cmd/api-server/main.go -base-dir ./cmd/api-server',
     port: 8080,
     reuseExistingServer: true,
-    timeout: 5000,
+    timeout: 30000,
   },
 });
 

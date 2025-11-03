@@ -32,7 +32,19 @@ export class LoginPage extends BasePage {
   }
 
   async clickSubmit() {
-    await this.click(this.submitButton);
+    // Click submit - may trigger navigation or validation errors
+    const submitPromise = this.click(this.submitButton);
+
+    // Try to wait for navigation, but don't fail if it doesn't happen
+    // (e.g., when form validation fails)
+    await Promise.race([
+      this.page.waitForNavigation({ waitUntil: 'networkidle', timeout: 2000 }).catch(() => {}),
+      this.page.waitForTimeout(500), // Give time for validation or navigation to happen
+      submitPromise,
+    ]);
+
+    // Wait for any pending requests
+    await this.page.waitForLoadState('networkidle').catch(() => {});
   }
 
   async login(email: string, password: string) {
