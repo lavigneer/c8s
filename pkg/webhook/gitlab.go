@@ -175,6 +175,15 @@ func (h *GitLabHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	writeSuccessResponse(w, "Pipeline run created successfully")
 }
 
+// VerifyToken verifies the GitLab webhook token (public for testing)
+func (h *GitLabHandler) VerifyToken(
+	ctx context.Context,
+	token string,
+	repoConn *c8sv1alpha1.RepositoryConnection,
+) error {
+	return h.verifyToken(ctx, token, repoConn)
+}
+
 // verifyToken verifies the GitLab webhook token
 func (h *GitLabHandler) verifyToken(
 	ctx context.Context,

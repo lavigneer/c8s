@@ -178,6 +178,16 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	writeSuccessResponse(w, "Pipeline run created successfully")
 }
 
+// VerifySignature verifies the GitHub webhook HMAC signature (public for testing)
+func (h *GitHubHandler) VerifySignature(
+	ctx context.Context,
+	signature string,
+	payload []byte,
+	repoConn *c8sv1alpha1.RepositoryConnection,
+) error {
+	return h.verifySignature(ctx, signature, payload, repoConn)
+}
+
 // verifySignature verifies the GitHub webhook HMAC signature
 func (h *GitHubHandler) verifySignature(
 	ctx context.Context,
