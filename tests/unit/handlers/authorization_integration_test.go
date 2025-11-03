@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dashboard
+package handlers
 
 import (
 	"net/http"
@@ -145,50 +145,6 @@ func TestUserCanAccessOwnProjects(t *testing.T) {
 	assert.False(t, canDelete)
 }
 
-// TestRoleInheritanceHierarchy verifies role inheritance chain
-func TestRoleInheritanceHierarchy(t *testing.T) {
-	// Role hierarchy: Admin > Editor > Viewer
-	// Each role inherits permissions of lower roles
-
-	// Admin inherits all permissions
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleAdmin.Level())    // Can do admin
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleEditor.Level())   // Can do editor
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleViewer.Level())   // Can do viewer
-
-	// Editor inherits viewer permissions
-	assert.False(t, dashboard.RoleEditor.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleEditor.Level())  // Can do editor
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleViewer.Level())  // Can do viewer
-
-	// Viewer has minimal permissions
-	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
-	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleEditor.Level()) // Cannot do editor
-	assert.True(t, dashboard.RoleViewer.Level() >= dashboard.RoleViewer.Level())  // Can do viewer
-}
-
-// TestMultipleProjectAccessControl verifies access control per project
-func TestMultipleProjectAccessControl(t *testing.T) {
-	// User might have different roles in different projects
-	// Example:
-	// - Admin in project-alpha
-	// - Editor in project-beta
-	// - No access to project-gamma
-
-	alphaRole := dashboard.RoleAdmin
-	betaRole := dashboard.RoleEditor
-	gammaRole := dashboard.Role("")
-
-	// In alpha, can do anything
-	assert.True(t, alphaRole.Level() >= dashboard.RoleAdmin.Level())
-
-	// In beta, can write but not delete
-	assert.True(t, betaRole.Level() >= dashboard.RoleEditor.Level())
-	assert.False(t, betaRole.Level() >= dashboard.RoleAdmin.Level())
-
-	// In gamma, has no access
-	assert.False(t, gammaRole.Level() >= dashboard.RoleViewer.Level())
-}
-
 // TestAuthorizationServiceErrorHandling verifies graceful error handling
 func TestAuthorizationServiceErrorHandling(t *testing.T) {
 	// If ProjectAccessService returns error:
@@ -231,46 +187,4 @@ func TestConsistentAuthorizationAcrossEndpoints(t *testing.T) {
 
 	// All delete/admin endpoints require admin
 	assert.Equal(t, dashboard.RoleAdmin, dashboard.RoleAdmin)
-}
-
-// TestConcurrentAuthorizationChecks verifies concurrent safety
-func TestConcurrentAuthorizationChecks(t *testing.T) {
-	// Multiple goroutines can check authorization concurrently
-	// This test verifies the concept (actual concurrency testing in later phase)
-
-	roles := []dashboard.Role{
-		dashboard.RoleAdmin,
-		dashboard.RoleEditor,
-		dashboard.RoleViewer,
-	}
-
-	// Each role's level should be consistent
-	for _, role := range roles {
-		level := role.Level()
-		assert.True(t, level >= 0)
-		assert.True(t, level <= 3)
-	}
-}
-
-// TestAuthorizationDecisionBoundary verifies boundary conditions
-func TestAuthorizationDecisionBoundary(t *testing.T) {
-	tests := []struct {
-		name        string
-		userLevel   int
-		requiredLevel int
-		shouldAllow bool
-	}{
-		{"Exact match allows", 2, 2, true},
-		{"Higher allows", 3, 2, true},
-		{"Lower denies", 1, 2, false},
-		{"Zero level denies", 0, 1, false},
-		{"Max level admin", 3, 3, true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			allowed := tt.userLevel >= tt.requiredLevel
-			assert.Equal(t, tt.shouldAllow, allowed)
-		})
-	}
 }

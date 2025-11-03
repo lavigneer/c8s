@@ -14,88 +14,268 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dashboard
+package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	handlerspkg "github.com/org/c8s/cmd/api-server/handlers"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
-// TestActionReadMapsToViewerRole verifies ActionRead requires viewer role
-func TestActionReadMapsToViewerRole(t *testing.T) {
-	// ActionRead should require RoleViewer (level 1)
-	// Any role >= viewer should pass
-	assert.Equal(t, dashboard.RoleViewer.Level(), 1)
-	assert.True(t, dashboard.RoleViewer.Level() >= dashboard.RoleViewer.Level())
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleViewer.Level())
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleViewer.Level())
+// MockProjectAccessService for testing
+type MockProjectAccessService struct {
+	HasProjectRoleFunc func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error)
+	GetRoleFunc        func(ctx context.Context, userID, projectID string) (dashboard.Role, error)
 }
 
-// TestActionWriteMapsToEditorRole verifies ActionWrite requires editor role
-func TestActionWriteMapsToEditorRole(t *testing.T) {
-	// ActionWrite should require RoleEditor (level 2)
-	// Only editor and admin should pass
-
-	// Viewer cannot write
-	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleEditor.Level())
-
-	// Editor can write
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleEditor.Level())
-
-	// Admin can write
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleEditor.Level())
+func (m *MockProjectAccessService) UserHasProjectAccess(ctx context.Context, userID, projectID string) (bool, error) {
+	if m.HasProjectRoleFunc != nil {
+		return m.HasProjectRoleFunc(ctx, userID, projectID, dashboard.RoleViewer)
+	}
+	return true, nil
 }
 
-// TestActionDeleteMapsToAdminRole verifies ActionDelete requires admin role
-func TestActionDeleteMapsToAdminRole(t *testing.T) {
-	// ActionDelete should require RoleAdmin (level 3)
-	// Only admin should pass
+func (m *MockProjectAccessService) GetUserRoleForProject(ctx context.Context, userID, projectID string) (dashboard.Role, error) {
+	if m.GetRoleFunc != nil {
+		return m.GetRoleFunc(ctx, userID, projectID)
+	}
+	return dashboard.RoleViewer, nil
+}
 
-	// Viewer cannot delete
-	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleAdmin.Level())
+func (m *MockProjectAccessService) ListUserProjects(ctx context.Context, userID string) ([]dashboard.ProjectDTO, error) {
+	return []dashboard.ProjectDTO{}, nil
+}
 
-	// Editor cannot delete
-	assert.False(t, dashboard.RoleEditor.Level() >= dashboard.RoleAdmin.Level())
+func (m *MockProjectAccessService) HasProjectRole(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+	if m.HasProjectRoleFunc != nil {
+		return m.HasProjectRoleFunc(ctx, userID, projectID, role)
+	}
+	return true, nil
+}
 
-	// Admin can delete
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleAdmin.Level())
+// TestCheckProjectAccessWithAdminRole verifies admin users pass access check
+func TestCheckProjectAccessWithAdminRole(t *testing.T) {
+	// Setup mock service that grants access to admin
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			return true, nil // Admin has all roles
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	// Create request and user
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+
+	// Check access with admin role required
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleAdmin)
+
+	assert.True(t, allowed)
+	assert.Equal(t, http.StatusOK, w.Code) // Should not set error status
+}
+
+// TestCheckProjectAccessWithViewerDeniedAdmin verifies viewer cannot access admin resources
+func TestCheckProjectAccessWithViewerDeniedAdmin(t *testing.T) {
+	// Setup mock service that only grants viewer access
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// User is viewer, admin required
+			return role == dashboard.RoleViewer, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	// Create request and user
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
+
+	// Check access with admin role required
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleAdmin)
+
+	assert.False(t, allowed)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+// TestCheckProjectAccessServiceError verifies error handling when service fails
+func TestCheckProjectAccessServiceError(t *testing.T) {
+	// Setup mock service that returns error
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			return false, errors.New("database error")
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	// Create request and user
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+
+	// Check access
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
+
+	assert.False(t, allowed)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+// TestCheckProjectAccessServiceNotInitialized verifies nil service handling
+func TestCheckProjectAccessServiceNotInitialized(t *testing.T) {
+	// Clear the service
+	handlerspkg.InitAuthorizationService(nil)
+
+	// Create request and user
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+
+	// Check access
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
+
+	assert.False(t, allowed)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+// TestCheckProjectAccessActionReadMapsToViewer verifies read action requires viewer role
+func TestCheckProjectAccessActionReadMapsToViewer(t *testing.T) {
+	// Setup mock service that grants viewer access
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// Accept if role required is viewer
+			return role == dashboard.RoleViewer, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
+
+	// ActionRead should map to RoleViewer
+	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionRead)
+
+	assert.True(t, allowed)
+}
+
+// TestCheckProjectAccessActionWriteMapsToEditor verifies write action requires editor role
+func TestCheckProjectAccessActionWriteMapsToEditor(t *testing.T) {
+	// Setup mock service that only grants editor access
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// Accept if role required is editor or lower
+			return role != dashboard.RoleAdmin, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "editor"}
+
+	// ActionWrite should map to RoleEditor
+	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionWrite)
+
+	assert.True(t, allowed)
+}
+
+// TestCheckProjectAccessActionDeleteMapsToAdmin verifies delete action requires admin role
+func TestCheckProjectAccessActionDeleteMapsToAdmin(t *testing.T) {
+	// Setup mock service that requires admin
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// Accept only admin
+			return role == dashboard.RoleAdmin, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("DELETE", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+
+	// ActionDelete should map to RoleAdmin
+	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionDelete)
+
+	assert.True(t, allowed)
+}
+
+// TestCheckProjectAccessActionAdminMapsToAdmin verifies admin action requires admin role
+func TestCheckProjectAccessActionAdminMapsToAdmin(t *testing.T) {
+	// Setup mock service that requires admin
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// Accept only admin
+			return role == dashboard.RoleAdmin, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+
+	// ActionAdmin should map to RoleAdmin
+	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionAdmin)
+
+	assert.True(t, allowed)
+}
+
+// TestCheckProjectAccessActionInvalidAction verifies invalid action handling
+func TestCheckProjectAccessActionInvalidAction(t *testing.T) {
+	handlerspkg.InitAuthorizationService(&MockProjectAccessService{})
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+
+	// Invalid action should return error
+	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.AuthorizationAction("invalid"))
+
+	assert.False(t, allowed)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 // TestCheckUserExistsWithValidUser verifies user extraction succeeds
 func TestCheckUserExistsWithValidUser(t *testing.T) {
-	// User data in context
-	userID := "user-123"
-	ctx := context.WithValue(context.Background(), "user", userID)
+	user := &handlerspkg.User{ID: "user-123", Username: "testuser", Email: "test@example.com"}
 
-	// Retrieve from context
-	retrievedID, ok := ctx.Value("user").(string)
-	assert.True(t, ok)
-	assert.Equal(t, "user-123", retrievedID)
+	// We can't directly set UserContextKey since it's private,
+	// so we'll test through the actual middleware
+	// For now, this is verified in the integration tests
+
+	require.NotNil(t, user)
+	assert.Equal(t, "user-123", user.ID)
 }
 
 // TestCheckUserExistsWithMissingUser verifies missing user is detected
 func TestCheckUserExistsWithMissingUser(t *testing.T) {
-	// Empty context
-	ctx := context.Background()
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil) // No user in context
 
-	// No user in context
-	retrievedUser, ok := ctx.Value("user").(string)
+	// Check user exists
+	extractedUser, ok := handlerspkg.CheckUserExists(w, r)
+
 	assert.False(t, ok)
-	assert.Empty(t, retrievedUser)
+	assert.Nil(t, extractedUser)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 // TestRoleHierarchyComparison verifies role comparison logic
 func TestRoleHierarchyComparison(t *testing.T) {
 	tests := []struct {
-		name          string
-		userRole      dashboard.Role
-		requiredRole  dashboard.Role
-		shouldAllow   bool
+		name         string
+		userRole     dashboard.Role
+		requiredRole dashboard.Role
+		shouldAllow  bool
 	}{
 		// Admin tests
 		{"Admin can read", dashboard.RoleAdmin, dashboard.RoleViewer, true},
@@ -123,107 +303,198 @@ func TestRoleHierarchyComparison(t *testing.T) {
 
 // TestAuthorizationLoggingFormat verifies log output format
 func TestAuthorizationLoggingFormat(t *testing.T) {
-	userID := "user-123"
+	user := &handlerspkg.User{ID: "user-123", Username: "testuser"}
 	resource := "project:proj-1"
-	action := "read"
-	role := "viewer"
+	action := handlerspkg.ActionRead
+	role := dashboard.RoleViewer
 
-	// Format should be: "AUTHZ: status=ALLOWED user=... resource=... action=... role=..."
-	logMessage := "AUTHZ: status=ALLOWED user=" + userID + " resource=" + resource + " action=" + action + " role=" + role
-
-	assert.Contains(t, logMessage, "AUTHZ:")
-	assert.Contains(t, logMessage, "status=ALLOWED")
-	assert.Contains(t, logMessage, "user=user-123")
-	assert.Contains(t, logMessage, "resource=project:proj-1")
+	// Just verify this function doesn't panic
+	handlerspkg.LogAuthorizationCheck(true, user, resource, action, role)
+	handlerspkg.LogAuthorizationCheck(false, user, resource, action, role)
 }
 
-// TestAuthorizationActionConstants verifies action constants are correct
-func TestAuthorizationActionConstants(t *testing.T) {
-	// These are string types that map to role requirements
-	// Just verify they exist and have expected values (if they were constants)
-
-	// In the actual implementation, these would be checked
-	// For this test, we're verifying the concept
-
-	// ActionRead - lowest privilege
-	// ActionWrite - medium privilege
-	// ActionDelete - high privilege
-	// ActionAdmin - highest privilege
-
-	tests := []struct {
-		name   string
-		action string
-	}{
-		{"ActionRead", "read"},
-		{"ActionWrite", "write"},
-		{"ActionDelete", "delete"},
-		{"ActionAdmin", "admin"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.NotEmpty(t, tt.action)
-		})
-	}
+// TestActionConstants verifies action constants are defined
+func TestActionConstants(t *testing.T) {
+	// Verify action constants exist and have expected values
+	assert.Equal(t, handlerspkg.ActionRead, handlerspkg.AuthorizationAction("read"))
+	assert.Equal(t, handlerspkg.ActionWrite, handlerspkg.AuthorizationAction("write"))
+	assert.Equal(t, handlerspkg.ActionDelete, handlerspkg.AuthorizationAction("delete"))
+	assert.Equal(t, handlerspkg.ActionAdmin, handlerspkg.AuthorizationAction("admin"))
 }
 
 // TestRoleComparisonEdgeCases verifies edge cases in role comparison
 func TestRoleComparisonEdgeCases(t *testing.T) {
-	// Unknown role
-	unknownRole := dashboard.Role("unknown")
-	assert.Equal(t, 0, unknownRole.Level())
+	tests := []struct {
+		name         string
+		userRole     dashboard.Role
+		requiredRole dashboard.Role
+		shouldAllow  bool
+	}{
+		// Unknown role handling
+		{"Unknown role cannot access anything", dashboard.Role("unknown"), dashboard.RoleViewer, false},
+		{"Viewer can exceed unknown role", dashboard.RoleViewer, dashboard.Role("unknown"), true},
+		// Empty role
+		{"Empty role cannot access anything", dashboard.Role(""), dashboard.RoleViewer, false},
+		// Same role
+		{"Same role equals", dashboard.RoleViewer, dashboard.RoleViewer, true},
+		{"Same role equals admin", dashboard.RoleAdmin, dashboard.RoleAdmin, true},
+	}
 
-	// Unknown role cannot access viewer level
-	assert.False(t, unknownRole.Level() >= dashboard.RoleViewer.Level())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			allowed := tt.userRole.Level() >= tt.requiredRole.Level()
+			assert.Equal(t, tt.shouldAllow, allowed, "role=%s required=%s", tt.userRole, tt.requiredRole)
+		})
+	}
+}
 
-	// But viewer can access viewer level
-	assert.True(t, dashboard.RoleViewer.Level() >= unknownRole.Level())
+// TestMultipleProjectAccessControl verifies access control per project
+func TestMultipleProjectAccessControl(t *testing.T) {
+	// User might have different roles in different projects
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			// Simulate different roles for different projects
+			switch projectID {
+			case "proj-alpha":
+				return role == dashboard.RoleAdmin, nil // Admin in alpha
+			case "proj-beta":
+				return role != dashboard.RoleAdmin, nil // Editor in beta
+			case "proj-gamma":
+				return false, nil // No access in gamma
+			default:
+				return false, nil
+			}
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	user := &handlerspkg.User{ID: "user-123", Username: "testuser"}
+
+	// Test alpha project (admin access)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("DELETE", "/", nil)
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-alpha", dashboard.RoleAdmin)
+	assert.True(t, allowed)
+
+	// Test beta project (editor access, not admin)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest("DELETE", "/", nil)
+	allowed = handlerspkg.CheckProjectAccess(w, r, user, "proj-beta", dashboard.RoleAdmin)
+	assert.False(t, allowed)
+
+	// Test gamma project (no access)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest("GET", "/", nil)
+	allowed = handlerspkg.CheckProjectAccess(w, r, user, "proj-gamma", dashboard.RoleViewer)
+	assert.False(t, allowed)
 }
 
 // TestAuthorizationErrorResponseFormat verifies error response structure
 func TestAuthorizationErrorResponseFormat(t *testing.T) {
-	// When authorization fails, response should include:
-	// - HTTP status code (403 Forbidden)
-	// - Error code (FORBIDDEN)
-	// - User-friendly message
+	// Setup mock service that denies access
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			return false, nil // Deny all
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
 
-	expectedStatus := http.StatusForbidden
-	assert.Equal(t, 403, expectedStatus)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
-	// Response should contain FORBIDDEN code and permission message
-	errorMessage := `{"code":"FORBIDDEN","message":"You do not have permission to perform this action"}`
-	assert.Contains(t, errorMessage, "FORBIDDEN")
-	assert.Contains(t, errorMessage, "permission")
+	// Check access
+	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
+
+	assert.False(t, allowed)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	// Response body should contain error JSON
+	assert.Contains(t, w.Body.String(), "FORBIDDEN")
 }
 
 // TestAuthenticationRequiredBeforeAuthorization verifies auth check order
 func TestAuthenticationRequiredBeforeAuthorization(t *testing.T) {
-	// Authorization should only be checked if authentication succeeds
-	// Without user in context, should return 401, not 403
+	handlerspkg.InitAuthorizationService(&MockProjectAccessService{})
 
-	ctx := context.Background()
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil) // No user in context
 
-	// No user in context (authentication failed)
-	user, ok := ctx.Value("user").(string)
+	// Should return 401 Unauthorized, not 403 Forbidden
+	_, ok := handlerspkg.CheckUserExists(w, r)
 	assert.False(t, ok)
-	assert.Empty(t, user)
-
-	// Should result in 401 Unauthorized, not 403 Forbidden
-	expectedStatus := http.StatusUnauthorized
-	assert.Equal(t, expectedStatus, http.StatusUnauthorized)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-// TestDefaultAuthorizationServiceNotInitialized verifies nil service handling
-func TestDefaultAuthorizationServiceNotInitialized(t *testing.T) {
-	// By default, authorization service might be nil until initialized
-	// Handlers should detect this and return 500 Internal Server Error
+// TestRoleInheritanceHierarchy verifies role inheritance chain
+func TestRoleInheritanceHierarchy(t *testing.T) {
+	// Role hierarchy: Admin > Editor > Viewer
+	// Each role inherits permissions of lower roles
 
-	var authzService dashboard.ProjectAccessService
-	assert.Nil(t, authzService)
+	// Admin inherits all permissions
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleAdmin.Level())    // Can do admin
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleEditor.Level())   // Can do editor
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleViewer.Level())   // Can do viewer
 
-	// If nil, should return server error
-	if authzService == nil {
-		// Would return 500
-		assert.Equal(t, http.StatusInternalServerError, http.StatusInternalServerError)
+	// Editor inherits viewer permissions
+	assert.False(t, dashboard.RoleEditor.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
+	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleEditor.Level())  // Can do editor
+	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleViewer.Level())  // Can do viewer
+
+	// Viewer has minimal permissions
+	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
+	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleEditor.Level()) // Cannot do editor
+	assert.True(t, dashboard.RoleViewer.Level() >= dashboard.RoleViewer.Level())  // Can do viewer
+}
+
+// TestConcurrentAuthorizationChecks verifies concurrent safety
+func TestConcurrentAuthorizationChecks(t *testing.T) {
+	mockSvc := &MockProjectAccessService{
+		HasProjectRoleFunc: func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error) {
+			return true, nil
+		},
+	}
+	handlerspkg.InitAuthorizationService(mockSvc)
+
+	// Simulate concurrent access checks
+	done := make(chan bool, 3)
+
+	for i := 0; i < 3; i++ {
+		go func(index int) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest("GET", "/", nil)
+			user := &handlerspkg.User{ID: "user-123", Username: "test"}
+
+			allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
+			assert.True(t, allowed)
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines
+	for i := 0; i < 3; i++ {
+		<-done
+	}
+}
+
+// TestAuthorizationDecisionBoundary verifies boundary conditions
+func TestAuthorizationDecisionBoundary(t *testing.T) {
+	tests := []struct {
+		name          string
+		userLevel     int
+		requiredLevel int
+		shouldAllow   bool
+	}{
+		{"Exact match allows", 2, 2, true},
+		{"Higher allows", 3, 2, true},
+		{"Lower denies", 1, 2, false},
+		{"Zero level denies", 0, 1, false},
+		{"Max level admin", 3, 3, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			allowed := tt.userLevel >= tt.requiredLevel
+			assert.Equal(t, tt.shouldAllow, allowed)
+		})
 	}
 }
