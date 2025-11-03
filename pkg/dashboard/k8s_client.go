@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -116,5 +117,54 @@ func (k *K8sClient) DeletePipelineConfig(ctx context.Context, namespace, name st
 	}
 
 	return nil
+}
+
+// ListRoleBindings retrieves RoleBindings for a namespace
+func (k *K8sClient) ListRoleBindings(ctx context.Context, namespace string) (*rbacv1.RoleBindingList, error) {
+	if k.Client == nil {
+		return nil, fmt.Errorf("kubernetes client not initialized")
+	}
+
+	var list rbacv1.RoleBindingList
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+	}
+
+	if err := k.Client.List(ctx, &list, listOpts...); err != nil {
+		return nil, fmt.Errorf("failed to list role bindings in namespace %s: %w", namespace, err)
+	}
+
+	return &list, nil
+}
+
+// ListClusterRoleBindings retrieves ClusterRoleBindings
+func (k *K8sClient) ListClusterRoleBindings(ctx context.Context) (*rbacv1.ClusterRoleBindingList, error) {
+	if k.Client == nil {
+		return nil, fmt.Errorf("kubernetes client not initialized")
+	}
+
+	var list rbacv1.ClusterRoleBindingList
+
+	if err := k.Client.List(ctx, &list); err != nil {
+		return nil, fmt.Errorf("failed to list cluster role bindings: %w", err)
+	}
+
+	return &list, nil
+}
+
+// GetClusterRole retrieves a ClusterRole by name
+func (k *K8sClient) GetClusterRole(ctx context.Context, name string) (*rbacv1.ClusterRole, error) {
+	if k.Client == nil {
+		return nil, fmt.Errorf("kubernetes client not initialized")
+	}
+
+	var cr rbacv1.ClusterRole
+	key := client.ObjectKey{Name: name}
+
+	if err := k.Client.Get(ctx, key, &cr); err != nil {
+		return nil, fmt.Errorf("failed to get cluster role %s: %w", name, err)
+	}
+
+	return &cr, nil
 }
 
