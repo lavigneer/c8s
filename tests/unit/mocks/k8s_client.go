@@ -40,73 +40,7 @@ type MockK8sClient struct {
 	OnDeletePipelineConfig   func(ctx context.Context, namespace, name string) error
 }
 
-// NewMockK8sClient creates a new mock K8s client with nil underlying client
-// (callbacks will be called instead)
+// NewMockK8sClient creates a new mock K8s client for testing
 func NewMockK8sClient() *dashboard.K8sClient {
-	return &dashboard.K8sClient{Client: &MockKubernetesClient{}}
-}
-
-// MockKubernetesClient is a mock controller-runtime client for use in tests
-type MockKubernetesClient struct {
-	// Add mock implementation details as needed
-}
-
-// List implements client.Client
-func (m *MockKubernetesClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	return nil
-}
-
-// Get implements client.Client
-func (m *MockKubernetesClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	return nil
-}
-
-// Create implements client.Client
-func (m *MockKubernetesClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	return nil
-}
-
-// Update implements client.Client
-func (m *MockKubernetesClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return nil
-}
-
-// Patch implements client.Client
-func (m *MockKubernetesClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return nil
-}
-
-// Delete implements client.Client
-func (m *MockKubernetesClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
-	return nil
-}
-
-// DeleteAllOf implements client.Client
-func (m *MockKubernetesClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
-	return nil
-}
-
-// RESTMapper returns nil (not needed for tests)
-func (m *MockKubernetesClient) RESTMapper() client.RESTMapper {
-	return nil
-}
-
-// Scheme returns nil (not needed for tests)
-func (m *MockKubernetesClient) Scheme() *runtime.Scheme {
-	return nil
-}
-
-// Status returns nil (not needed for tests)
-func (m *MockKubernetesClient) Status() client.StatusWriter {
-	return nil
-}
-
-// NewMockK8sClientWithCallbacks creates a mock client that uses the provided callbacks
-func NewMockK8sClientWithCallbacks(
-	onListRoleBindings func(ctx context.Context, namespace string) (*rbacv1.RoleBindingList, error),
-	onGetClusterRole func(ctx context.Context, name string) (*rbacv1.ClusterRole, error),
-) *dashboard.K8sClient {
-	return &dashboard.K8sClient{
-		Client: &MockKubernetesClient{},
-	}
+	return &dashboard.K8sClient{Client: nil}
 }
