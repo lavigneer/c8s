@@ -80,7 +80,10 @@ func exportAsJSON(w http.ResponseWriter, runs []*dashboard.PipelineRunDTO) {
 		"runs":        runs,
 	}
 
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("ERROR: Failed to encode JSON export data: %v", err)
+		return
+	}
 }
 
 // exportAsCSV exports pipeline runs as CSV

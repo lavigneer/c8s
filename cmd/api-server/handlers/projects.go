@@ -122,7 +122,10 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto)
+	if err := json.NewEncoder(w).Encode(dto); err != nil {
+		log.Printf("ERROR: Failed to encode project DTO response: %v", err)
+		return
+	}
 }
 
 // GetWebhookConfigHandler returns webhook configuration for project
