@@ -34,7 +34,8 @@ func PipelineUpdatesSSEHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// CORS headers should be handled by middleware, not set per-request
+	// Removed hardcoded "Access-Control-Allow-Origin: *" as it's insecure and violates CORS spec with credentials
 
 	// Write 200 status before checking for flusher
 	// This prevents issues with wrapped response writers

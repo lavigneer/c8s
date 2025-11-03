@@ -95,11 +95,23 @@ func CORSHeadersMiddleware(allowedOrigins []string) func(http.Handler) http.Hand
 			}
 
 			if allowed {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
+				// SECURITY: Don't send "*" with credentials=true - it's invalid per CORS spec
+				// Only send credentials header when origin is specific
+				if origin != "" {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				} else if len(allowedOrigins) > 0 && allowedOrigins[0] != "*" {
+					// If no origin header but specific origin configured, use it
+					w.Header().Set("Access-Control-Allow-Origin", allowedOrigins[0])
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				} else {
+					// Wildcard origin: don't send credentials header
+					w.Header().Set("Access-Control-Allow-Origin", "*")
+				}
+
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Max-Age", "86400") // 24 hours
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 
 			// Handle preflight requests
