@@ -49,7 +49,17 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if hasAccess {
-			dtos = append(dtos, mapPipelineConfigToProjectDTO(&config, user.Namespace))
+			// Get user's role for field-level filtering
+			role, err := authzService.GetUserRoleForProject(r.Context(), user.ID, config.Name)
+			if err != nil {
+				// Default to viewer role if role lookup fails
+				role = dashboard.RoleViewer
+			}
+
+			// Map and filter fields based on role
+			dto := mapPipelineConfigToProjectDTO(&config, user.Namespace)
+			dto = dashboard.FilterProjectDTOForRole(dto, role)
+			dtos = append(dtos, dto)
 		}
 	}
 
