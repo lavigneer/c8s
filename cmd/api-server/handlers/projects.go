@@ -34,7 +34,9 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	// Query Kubernetes for PipelineConfigs (projects)
 	configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
 	if err != nil {
-		dashboard.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", fmt.Sprintf("Failed to fetch projects: %v", err))
+		// Log error internally but don't expose details to client
+		fmt.Printf("ERROR: Failed to fetch projects for user %s: %v\n", user.ID, err)
+		dashboard.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
 		return
 	}
 
@@ -113,7 +115,9 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := k8sClient.CreatePipelineConfig(r.Context(), config); err != nil {
-		dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", fmt.Sprintf("Failed to create project: %v", err))
+		// Log error internally but don't expose details to client
+		fmt.Printf("ERROR: Failed to create project %s for user %s: %v\n", req.Name, user.ID, err)
+		dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
 		return
 	}
 
@@ -190,7 +194,9 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Delete from Kubernetes
 	if err := k8sClient.DeletePipelineConfig(r.Context(), user.Namespace, projectID); err != nil {
-		dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", fmt.Sprintf("Failed to delete project: %v", err))
+		// Log error internally but don't expose details to client
+		fmt.Printf("ERROR: Failed to delete project %s for user %s: %v\n", projectID, user.ID, err)
+		dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
 		return
 	}
 

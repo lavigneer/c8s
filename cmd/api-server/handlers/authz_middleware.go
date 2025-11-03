@@ -30,7 +30,9 @@ func ProjectAccessMiddleware(accessSvc dashboard.ProjectAccessService) func(http
 			// Check if user has access to this project
 			hasAccess, err := accessSvc.UserHasProjectAccess(r.Context(), user.ID, projectID)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Error checking access: %v", err), http.StatusInternalServerError)
+				// Log error internally but don't expose details to client
+				fmt.Printf("ERROR: Failed to check project access for user %s: %v\n", user.ID, err)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
 
