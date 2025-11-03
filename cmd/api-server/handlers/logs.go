@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -41,7 +42,11 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
 
 	// Send initial connection message
-	fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n")
+	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n"); err != nil {
+		log.Printf("ERROR: Failed to send SSE connection message: %v", err)
+		http.Error(w, "Failed to establish stream", http.StatusInternalServerError)
+		return
+	}
 	flusher.Flush()
 
 	// Create log channel
@@ -69,15 +74,25 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 				errorResp := map[string]interface{}{
 					"error": err.Error(),
 				}
-				data, _ := json.Marshal(errorResp)
-				fmt.Fprintf(w, "event: error\ndata: %s\n\n", data)
+				data, err := json.Marshal(errorResp)
+				if err != nil {
+					log.Printf("ERROR: Failed to marshal error response: %v", err)
+					return
+				}
+				if _, err := fmt.Fprintf(w, "event: error\ndata: %s\n\n", data); err != nil {
+					log.Printf("ERROR: Failed to send error event: %v", err)
+					return
+				}
 			}
 			return
 
 		case line, ok := <-logChan:
 			if !ok {
 				// All logs have been streamed
-				fmt.Fprintf(w, "event: complete\ndata: {\"message\":\"Log stream completed\"}\n\n")
+				if _, err := fmt.Fprintf(w, "event: complete\ndata: {\"message\":\"Log stream completed\"}\n\n"); err != nil {
+					log.Printf("ERROR: Failed to send log complete event: %v", err)
+					return
+				}
 				flusher.Flush()
 				return
 			}
@@ -87,10 +102,17 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 				"line":      line,
 				"timestamp": time.Now().Format(time.RFC3339),
 			}
-			data, _ := json.Marshal(logEntry)
+			data, err := json.Marshal(logEntry)
+			if err != nil {
+				log.Printf("ERROR: Failed to marshal log entry: %v", err)
+				return
+			}
 
 			// Send log event
-			fmt.Fprintf(w, "event: log\ndata: %s\n\n", data)
+			if _, err := fmt.Fprintf(w, "event: log\ndata: %s\n\n", data); err != nil {
+				log.Printf("ERROR: Failed to send log event: %v", err)
+				return
+			}
 			flusher.Flush()
 		}
 	}
@@ -124,10 +146,12 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Copy reader to response
 	if _, err := fmt.Fprint(w, "Logs for "+stepID+"\n"); err != nil {
+		log.Printf("ERROR: Failed to write log header: %v", err)
 		return
 	}
 
 	if _, err := io.Copy(w, reader); err != nil {
+		log.Printf("ERROR: Failed to copy logs to response: %v", err)
 		return
 	}
 }

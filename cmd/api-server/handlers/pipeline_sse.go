@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 
@@ -52,7 +53,10 @@ func PipelineUpdatesSSEHandler(w http.ResponseWriter, r *http.Request) {
 	defer broadcaster.Unsubscribe(updateChan)
 
 	// Send initial connection message
-	fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to pipeline updates\"}\n\n")
+	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to pipeline updates\"}\n\n"); err != nil {
+		log.Printf("ERROR: Failed to send SSE connection message: %v", err)
+		return
+	}
 	flusher.Flush()
 
 	// Stream updates
@@ -69,7 +73,10 @@ func PipelineUpdatesSSEHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Write SSE event
-			fmt.Fprintf(w, "%s", event.String())
+			if _, err := fmt.Fprintf(w, "%s", event.String()); err != nil {
+				log.Printf("ERROR: Failed to send SSE update event: %v", err)
+				return
+			}
 			flusher.Flush()
 		}
 	}
@@ -80,7 +87,11 @@ func BroadcastPipelineUpdate(projectID string, run *dashboard.PipelineRunDTO) {
 	broadcaster := getOrCreateBroadcaster(projectID)
 
 	// Create SSE event
-	data, _ := json.Marshal(run)
+	data, err := json.Marshal(run)
+	if err != nil {
+		log.Printf("ERROR: Failed to marshal pipeline run for broadcast: %v", err)
+		return
+	}
 	event := dashboard.NewEventBuilder().
 		WithID(run.ID).
 		WithEvent("run_status_changed").
