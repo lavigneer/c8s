@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
+
+	"github.com/org/c8s/cmd/api-server/auth"
 )
 
 type contextKey string
@@ -11,6 +14,7 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 // User represents an authenticated user
+// Extracted from JWT claims in the authorization middleware
 type User struct {
 	ID        string
 	Username  string
@@ -19,13 +23,43 @@ type User struct {
 	Roles     []string
 }
 
-// AuthMiddleware validates bearer token and attaches user to context
-// This is a basic implementation that can be extended with proper JWT/OAuth2 validation
-// For HTML page requests without auth, redirects to login
-// For API requests without auth, returns 401 Unauthorized
+// Global JWT validator - initialized at startup
+var jwtValidator *auth.Validator
+var jwtNoOpValidator *auth.NoOpValidator
+
+// InitAuthValidator initializes the JWT validator with configuration
+// Should be called once at application startup before serving requests
+func InitAuthValidator(config *auth.Config) error {
+	var err error
+	jwtValidator, err = auth.NewValidator(config)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UseNoOpValidator enables development-mode validator that accepts any token
+// WARNING: Should never be used in production!
+func UseNoOpValidator() {
+	jwtNoOpValidator = auth.NewNoOpValidator()
+}
+
+// AuthMiddleware validates JWT bearer token and attaches user to context
+// Supports token extraction from:
+// 1. Authorization header (Bearer <token>)
+// 2. auth_token cookie (for development/UI)
+//
+// For HTML page requests without auth, redirects to login.
+// For API requests without auth, returns 401 Unauthorized.
+//
+// Token validation includes:
+// - Signature verification
+// - Expiration checking
+// - Issuer and audience validation
+// - Required claims enforcement
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Try to get token from Authorization header first
+		// Extract token from Authorization header or cookie
 		token := extractBearerToken(r.Header.Get("Authorization"))
 
 		// For local dev, also check for auth cookie
@@ -35,8 +69,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
+		// If no token found, handle based on request type
 		if token == "" {
-			// If no token, check if this is an HTML page request or API request
+			// Check if this is an HTML page request or API request
 			acceptHeader := r.Header.Get("Accept")
 			isHTMLRequest := strings.Contains(acceptHeader, "text/html") || acceptHeader == ""
 
@@ -51,49 +86,110 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// TODO: Integrate with C8S auth system to validate token
-		// For now, we assume token is valid if present
-		// In production, validate against JWT or OAuth2 provider
+		// Validate token and extract user information
+		var user *User
+		var err error
 
-		user := &User{
-			ID:        "user-id", // Extract from token
-			Username:  "user",    // Extract from token
-			Email:     "",        // Extract from token
-			Namespace: "default", // TODO: Extract from token or config
-			Roles:     []string{},
+		// Use NoOp validator if enabled (development only)
+		if jwtNoOpValidator != nil {
+			authUser, validErr := jwtNoOpValidator.ValidateTokenAndGetUser(token)
+			if validErr != nil {
+				log.Printf("NoOp validator error: %v", validErr)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			user = &User{
+				ID:        authUser.ID,
+				Username:  authUser.Username,
+				Email:     authUser.Email,
+				Namespace: authUser.Namespace,
+				Roles:     authUser.Roles,
+			}
+		} else if jwtValidator != nil {
+			// Use real JWT validator
+			authUser, validErr := jwtValidator.ValidateTokenAndGetUser(token)
+			if validErr != nil {
+				log.Printf("Token validation failed: %v", validErr)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			user = &User{
+				ID:        authUser.ID,
+				Username:  authUser.Username,
+				Email:     authUser.Email,
+				Namespace: authUser.Namespace,
+				Roles:     authUser.Roles,
+			}
+		} else {
+			// No validator configured - should not happen if properly initialized
+			log.Printf("WARNING: JWT validator not initialized")
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
 		}
 
+		// Attach user to context
 		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // OptionalAuthMiddleware is like AuthMiddleware but doesn't require authentication
-// Useful for public endpoints that benefit from auth but work without it
+// Useful for public endpoints that benefit from auth but work without it.
+// If valid auth is provided, the user is attached to context.
+// If no auth or invalid auth, the request continues without user context.
 func OptionalAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			next.ServeHTTP(w, r)
-			return
+		// Try to extract token from Authorization header
+		token := extractBearerToken(r.Header.Get("Authorization"))
+
+		// Also check auth cookie if no header token
+		if token == "" {
+			if cookie, err := r.Cookie("auth_token"); err == nil {
+				token = cookie.Value
+			}
 		}
 
-		token := extractBearerToken(authHeader)
+		// If no token found, continue without auth
 		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// TODO: Validate token with C8S auth system
-		user := &User{
-			ID:        "user-id",
-			Username:  "user",
-			Email:     "",
-			Namespace: "default", // TODO: Extract from token or config
-			Roles:     []string{},
+		// Try to validate token, but continue if validation fails
+		var user *auth.User
+		if jwtNoOpValidator != nil {
+			// Development mode
+			authUser, err := jwtNoOpValidator.ValidateTokenAndGetUser(token)
+			if err != nil {
+				// Validation failed, continue without auth
+				next.ServeHTTP(w, r)
+				return
+			}
+			user = authUser
+		} else if jwtValidator != nil {
+			// Production mode
+			authUser, err := jwtValidator.ValidateTokenAndGetUser(token)
+			if err != nil {
+				// Validation failed, continue without auth
+				next.ServeHTTP(w, r)
+				return
+			}
+			user = authUser
+		} else {
+			// No validator configured, continue without auth
+			next.ServeHTTP(w, r)
+			return
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, user)
+		// Token validated successfully - attach user to context
+		handlerUser := &User{
+			ID:        user.ID,
+			Username:  user.Username,
+			Email:     user.Email,
+			Namespace: user.Namespace,
+			Roles:     user.Roles,
+		}
+		ctx := context.WithValue(r.Context(), userContextKey, handlerUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
