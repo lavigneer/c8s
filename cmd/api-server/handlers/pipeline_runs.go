@@ -43,21 +43,7 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	filters := ParseFilters(r)
 
 	// Fetch PipelineRuns from Kubernetes (user's namespace)
-	var runs []*v1alpha1.PipelineRun
-	if k8sClient != nil {
-		// Query user namespace
-		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
-			for i := range userRuns.Items {
-				runs = append(runs, &userRuns.Items[i])
-			}
-		}
-	}
-
-	// Transform to DTOs
-	dtos := make([]*dashboard.PipelineRunDTO, len(runs))
-	for i, run := range runs {
-		dtos[i] = dashboard.MapPipelineRunToDTO(run)
-	}
+	dtos := FetchPipelineRunsForUser(r.Context(), user.Namespace)
 
 	// Apply filters (client-side for now, should be K8s-side)
 	dtos = filterPipelineRuns(dtos, filters)
@@ -146,13 +132,7 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch PipelineRun from Kubernetes (user's namespace)
-	var run *v1alpha1.PipelineRun
-	if k8sClient != nil {
-		// Query user's namespace
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
-			run = fetchedRun
-		}
-	}
+	run := FetchPipelineRunByID(r.Context(), user.Namespace, runID)
 
 	if run == nil {
 		dashboard.RespondNotFound(w, "run")
@@ -213,22 +193,13 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch PipelineRuns from Kubernetes (user's namespace)
-	var runs []*v1alpha1.PipelineRun
-	if k8sClient != nil {
-		// Query user namespace
-		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
-			for i := range userRuns.Items {
-				runs = append(runs, &userRuns.Items[i])
-			}
-		}
-	}
+	dtos := FetchPipelineRunsForUser(r.Context(), user.Namespace)
 
 	// Extract unique branch names
 	branchMap := make(map[string]bool)
 	var branches []string
 
-	for _, run := range runs {
-		dto := dashboard.MapPipelineRunToDTO(run)
+	for _, dto := range dtos {
 		if !branchMap[dto.Branch] && dto.Branch != "" {
 			branches = append(branches, dto.Branch)
 			branchMap[dto.Branch] = true

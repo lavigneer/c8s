@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -27,23 +26,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch initial pipeline runs from Kubernetes
-	var runs []*dashboard.PipelineRunDTO
-	if k8sClient != nil {
-		// Query user's namespace for pipeline runs
-		var pipelineRuns []*v1alpha1.PipelineRun
-
-		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
-			for i := range userRuns.Items {
-				pipelineRuns = append(pipelineRuns, &userRuns.Items[i])
-			}
-		}
-
-		// Convert to DTOs
-		runs = make([]*dashboard.PipelineRunDTO, len(pipelineRuns))
-		for i, run := range pipelineRuns {
-			runs[i] = dashboard.MapPipelineRunToDTO(run)
-		}
-	}
+	runs := FetchPipelineRunsForUser(r.Context(), user.Namespace)
 
 	// Parse filter parameters and apply filters
 	filters := ParseFilters(r)
@@ -91,24 +74,7 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch user's projects from Kubernetes
-	var projects []*dashboard.ProjectDTO
-	if k8sClient != nil {
-		projectMap := make(map[string]*dashboard.ProjectDTO)
-
-		// Query user's namespace for pipeline configs
-		configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
-		if err == nil && configs != nil {
-			for _, config := range configs.Items {
-				projectMap[config.Name] = mapPipelineConfigToProjectDTO(&config, user.Namespace)
-			}
-		}
-
-		// Convert map to slice
-		projects = make([]*dashboard.ProjectDTO, 0, len(projectMap))
-		for _, p := range projectMap {
-			projects = append(projects, p)
-		}
-	}
+	projects := FetchPipelineConfigsForUser(r.Context(), user.Namespace)
 
 	data := map[string]interface{}{
 		"User":     user,
@@ -139,11 +105,8 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch PipelineRun details from Kubernetes
 	var run *dashboard.PipelineRunDTO
-	if k8sClient != nil {
-		// Try user's namespace
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
-			run = dashboard.MapPipelineRunToDTO(fetchedRun)
-		}
+	if fetchedRun := FetchPipelineRunByID(r.Context(), user.Namespace, runID); fetchedRun != nil {
+		run = dashboard.MapPipelineRunToDTO(fetchedRun)
 	}
 
 	if run == nil {

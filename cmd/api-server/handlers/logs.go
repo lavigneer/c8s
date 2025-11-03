@@ -214,11 +214,8 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch PipelineRun from Kubernetes (user's namespace)
 	var run *dashboard.PipelineRunDTO
-	if k8sClient != nil {
-		// Query user's namespace
-		if fetchedRun, err := k8sClient.GetPipelineRun(r.Context(), user.Namespace, runID); err == nil {
-			run = dashboard.MapPipelineRunToDTO(fetchedRun)
-		}
+	if fetchedRun := FetchPipelineRunByID(r.Context(), user.Namespace, runID); fetchedRun != nil {
+		run = dashboard.MapPipelineRunToDTO(fetchedRun)
 	}
 
 	if run == nil {

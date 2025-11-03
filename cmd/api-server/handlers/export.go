@@ -38,15 +38,7 @@ func ExportPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	filters := ParseFilters(r)
 
 	// Fetch PipelineRuns from Kubernetes (user's namespace)
-	var runs []*dashboard.PipelineRunDTO
-	if k8sClient != nil {
-		// Query user namespace
-		if userRuns, err := k8sClient.ListPipelineRuns(r.Context(), user.Namespace); err == nil && userRuns != nil {
-			for i := range userRuns.Items {
-				runs = append(runs, dashboard.MapPipelineRunToDTO(&userRuns.Items[i]))
-			}
-		}
-	}
+	runs := FetchPipelineRunsForUser(r.Context(), user.Namespace)
 
 	// Apply filters
 	runs = filterPipelineRuns(runs, filters)
