@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package handlers
+package handlers_test
 
 import (
 	"net/http"
@@ -69,7 +69,7 @@ func TestAuthMiddlewareWithValidToken(t *testing.T) {
 	}
 
 	// Initialize validator
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	// Create a valid token
@@ -77,7 +77,7 @@ func TestAuthMiddlewareWithValidToken(t *testing.T) {
 
 	// Create test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		require.True(t, ok, "user should be in context")
 		assert.Equal(t, "user-123", user.ID)
 		assert.Equal(t, "Test User", user.Username)
@@ -87,7 +87,7 @@ func TestAuthMiddlewareWithValidToken(t *testing.T) {
 	})
 
 	// Apply middleware
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// Test with Authorization header
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -114,19 +114,19 @@ func TestAuthMiddlewareWithAuthCookie(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	tokenString := createTestToken(secret, "c8s-auth", "c8s-api", "user-456")
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		require.True(t, ok)
 		assert.Equal(t, "user-456", user.ID)
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// Test with cookie
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -156,14 +156,14 @@ func TestAuthMiddlewareWithInvalidToken(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer invalid-token-string")
@@ -189,14 +189,14 @@ func TestAuthMiddlewareNoTokenAPIRequest(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// API request (Accept: application/json) without token
 	req := httptest.NewRequest("GET", "/api/test", nil)
@@ -223,14 +223,14 @@ func TestAuthMiddlewareNoTokenHTMLRequest(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// HTML request (Accept: text/html) without token
 	req := httptest.NewRequest("GET", "/dashboard", nil)
@@ -258,19 +258,19 @@ func TestOptionalAuthMiddlewareWithValidToken(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	tokenString := createTestToken(secret, "c8s-auth", "c8s-api", "user-789")
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		require.True(t, ok, "user should be in context")
 		assert.Equal(t, "user-789", user.ID)
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.OptionalAuthMiddleware(testHandler)
+	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
@@ -296,18 +296,18 @@ func TestOptionalAuthMiddlewareWithoutToken(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// User should NOT be in context
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		assert.False(t, ok, "user should not be in context")
 		assert.Nil(t, user)
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.OptionalAuthMiddleware(testHandler)
+	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	// No authorization header or cookie
@@ -333,18 +333,18 @@ func TestOptionalAuthMiddlewareWithInvalidToken(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// User should NOT be in context because token was invalid
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		assert.False(t, ok, "user should not be in context")
 		assert.Nil(t, user)
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.OptionalAuthMiddleware(testHandler)
+	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer invalid-token")
@@ -357,7 +357,7 @@ func TestOptionalAuthMiddlewareWithInvalidToken(t *testing.T) {
 // TestNoOpValidator tests development mode validator
 func TestNoOpValidator(t *testing.T) {
 	// Use NoOp validator for development
-	handlerskg.UseNoOpValidator()
+	handlerspkg.UseNoOpValidator()
 
 	// Note: Reset would require reinitializing in real test suite
 	// This is just to verify the function exists and doesn't panic
@@ -372,7 +372,7 @@ func TestNoOpValidator(t *testing.T) {
 	}
 
 	// This should work even though we called UseNoOpValidator
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 }
 
@@ -392,13 +392,13 @@ func TestGetUserFromContext(t *testing.T) {
 		DefaultRoles:     []string{"user"},
 	}
 
-	err := handlerskg.InitAuthValidator(config)
+	err := handlerspkg.InitAuthValidator(config)
 	require.NoError(t, err)
 
 	tokenString := createTestToken(secret, "c8s-auth", "c8s-api", "extract-test")
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := handlerskg.GetUserFromContext(r.Context())
+		user, ok := handlerspkg.GetUserFromContext(r.Context())
 		assert.True(t, ok)
 		assert.NotNil(t, user)
 		assert.Equal(t, "extract-test", user.ID)
@@ -406,7 +406,7 @@ func TestGetUserFromContext(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := handlerskg.AuthMiddleware(testHandler)
+	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
