@@ -80,6 +80,7 @@ func main() {
 	router.Use(handlers.RequestLoggerMiddleware)
 	router.Use(middleware.RequestID)
 	router.Use(SecurityHeadersMiddleware)
+	router.Use(RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
 
 	// Static files (no auth required)
 	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir + "/static"))
@@ -180,4 +181,18 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		next.ServeHTTP(w, r)
 	})
+}
+
+// RequestSizeLimitMiddleware enforces maximum request body size
+// This prevents DoS attacks via oversized payloads
+func RequestSizeLimitMiddleware(maxBytes int64) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Limit request body size
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+
+			// Call next handler
+			next.ServeHTTP(w, r)
+		})
+	}
 }
