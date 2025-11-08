@@ -147,17 +147,16 @@ func (v *Validator) validateClaims(claims *Claims) error {
 	}
 
 	// Validate audience - check if the expected audience is in the token's audience list
-	// Note: JWT library stores audience in RegisteredClaims.Audience, not our custom Audience field
-	if len(claims.RegisteredClaims.Audience) > 0 {
+	if len(claims.Audience) > 0 {
 		found := false
-		for _, aud := range claims.RegisteredClaims.Audience {
+		for _, aud := range claims.Audience {
 			if aud == v.config.Audience {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return fmt.Errorf("invalid audience: expected %s, got %v", v.config.Audience, claims.RegisteredClaims.Audience)
+			return fmt.Errorf("invalid audience: expected %s, got %v", v.config.Audience, claims.Audience)
 		}
 	}
 

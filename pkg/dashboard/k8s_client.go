@@ -31,7 +31,7 @@ func (k *K8sClient) ListPipelineRuns(ctx context.Context, namespace string, opts
 	}
 	listOpts = append(listOpts, opts...)
 
-	if err := k.Client.List(ctx, &list, listOpts...); err != nil {
+	if err := k.List(ctx, &list, listOpts...); err != nil {
 		return nil, fmt.Errorf("failed to list pipeline runs: %w", err)
 	}
 
@@ -47,7 +47,7 @@ func (k *K8sClient) GetPipelineRun(ctx context.Context, namespace, name string) 
 	var pr v1alpha1.PipelineRun
 	key := client.ObjectKey{Namespace: namespace, Name: name}
 
-	if err := k.Client.Get(ctx, key, &pr); err != nil {
+	if err := k.Get(ctx, key, &pr); err != nil {
 		return nil, fmt.Errorf("failed to get pipeline run: %w", err)
 	}
 
@@ -63,7 +63,7 @@ func (k *K8sClient) GetPipelineConfig(ctx context.Context, namespace, name strin
 	var pc v1alpha1.PipelineConfig
 	key := client.ObjectKey{Namespace: namespace, Name: name}
 
-	if err := k.Client.Get(ctx, key, &pc); err != nil {
+	if err := k.Get(ctx, key, &pc); err != nil {
 		return nil, fmt.Errorf("failed to get pipeline config: %w", err)
 	}
 
@@ -82,7 +82,7 @@ func (k *K8sClient) ListPipelineConfigs(ctx context.Context, namespace string, o
 	}
 	listOpts = append(listOpts, opts...)
 
-	if err := k.Client.List(ctx, &list, listOpts...); err != nil {
+	if err := k.List(ctx, &list, listOpts...); err != nil {
 		return nil, fmt.Errorf("failed to list pipeline configs: %w", err)
 	}
 
@@ -95,7 +95,7 @@ func (k *K8sClient) CreatePipelineConfig(ctx context.Context, config *v1alpha1.P
 		return fmt.Errorf("kubernetes client not initialized")
 	}
 
-	if err := k.Client.Create(ctx, config); err != nil {
+	if err := k.Create(ctx, config); err != nil {
 		return fmt.Errorf("failed to create pipeline config: %w", err)
 	}
 
@@ -112,7 +112,7 @@ func (k *K8sClient) DeletePipelineConfig(ctx context.Context, namespace, name st
 	config.SetName(name)
 	config.SetNamespace(namespace)
 
-	if err := k.Client.Delete(ctx, config); err != nil {
+	if err := k.Delete(ctx, config); err != nil {
 		return fmt.Errorf("failed to delete pipeline config: %w", err)
 	}
 
@@ -130,7 +130,7 @@ func (k *K8sClient) ListRoleBindings(ctx context.Context, namespace string) (*rb
 		client.InNamespace(namespace),
 	}
 
-	if err := k.Client.List(ctx, &list, listOpts...); err != nil {
+	if err := k.List(ctx, &list, listOpts...); err != nil {
 		return nil, fmt.Errorf("failed to list role bindings in namespace %s: %w", namespace, err)
 	}
 
@@ -145,7 +145,7 @@ func (k *K8sClient) ListClusterRoleBindings(ctx context.Context) (*rbacv1.Cluste
 
 	var list rbacv1.ClusterRoleBindingList
 
-	if err := k.Client.List(ctx, &list); err != nil {
+	if err := k.List(ctx, &list); err != nil {
 		return nil, fmt.Errorf("failed to list cluster role bindings: %w", err)
 	}
 
@@ -161,7 +161,7 @@ func (k *K8sClient) GetClusterRole(ctx context.Context, name string) (*rbacv1.Cl
 	var cr rbacv1.ClusterRole
 	key := client.ObjectKey{Name: name}
 
-	if err := k.Client.Get(ctx, key, &cr); err != nil {
+	if err := k.Get(ctx, key, &cr); err != nil {
 		return nil, fmt.Errorf("failed to get cluster role %s: %w", name, err)
 	}
 
