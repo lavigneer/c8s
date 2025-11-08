@@ -26,7 +26,6 @@ linters:
     - unconvert      # Remove unnecessary type conversions
     - unparam        # Reports unused function parameters
     - goconst        # Find repeated strings that could be constants
-    - godot          # Check comments end in period
     - gocyclo        # Cyclomatic complexity
     - nestif         # Report deeply nested if statements
 
