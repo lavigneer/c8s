@@ -20,7 +20,7 @@ jobs:
           enable-cache: true
 
       - name: Run golangci-lint
-        run: devbox run -- golangci-lint run --timeout=10m
+        run: devbox run -- lint
 
   test:
     name: Test
@@ -35,10 +35,10 @@ jobs:
           enable-cache: true
 
       - name: Run unit tests
-        run: devbox run -- make test-unit
+        run: devbox run -- test:unit
 
       - name: Run integration tests
-        run: devbox run -- make test-integration
+        run: devbox run -- test:integration
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
@@ -60,11 +60,11 @@ jobs:
           enable-cache: true
 
       - name: Build all binaries
-        run: devbox run -- make build
+        run: devbox run -- build
 
       - name: Verify manifests
         run: |
-          devbox run -- make manifests
+          devbox run -- manifests
           git diff --exit-code config/crd/bases
 
   docker:
