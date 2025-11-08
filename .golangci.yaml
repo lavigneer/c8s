@@ -106,12 +106,11 @@ issues:
       linters:
         - staticcheck
 
+  uniq-by-line: true
+
 output:
   formats:
     - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   sort-results: true
-
-issues:
-  uniq-by-line: true
