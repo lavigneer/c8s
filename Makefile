@@ -50,11 +50,11 @@ lint: ## Run golangci-lint
 
 .PHONY: test
 test: ## Run unit tests
-	$(GO) test -timeout $(TEST_TIMEOUT) -race -coverprofile=$(COVERAGE_FILE) ./...
+	CGO_ENABLED=1 $(GO) test -timeout $(TEST_TIMEOUT) -race -coverprofile=$(COVERAGE_FILE) ./...
 
 .PHONY: test-unit
 test-unit: ## Run unit tests only
-	$(GO) test -timeout $(TEST_TIMEOUT) -race ./tests/unit/...
+	CGO_ENABLED=1 $(GO) test -timeout $(TEST_TIMEOUT) -race ./tests/unit/...
 
 .PHONY: test-integration
 test-integration: envtest ## Run integration tests with envtest
