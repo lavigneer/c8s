@@ -1,401 +1,262 @@
-# C8S Local Development with Tilt
+# Tilt Local Development Setup for C8S
 
-This guide explains how to use Tilt for local Kubernetes development on the C8S project.
+Welcome to the C8S development environment! This guide helps you get started with Tilt for rapid local Kubernetes development.
 
-## Prerequisites
+## 🚀 Quick Start (5 minutes)
 
-Before setting up Tilt, ensure you have:
+### Prerequisites
+- Docker running (`docker ps` works)
+- Go 1.25+ installed
+- kubectl available
+- k3d 5.8.3+ installed
+- Tilt 0.33.0+ installed
 
-- **Go 1.25+**: `go version`
-- **Docker**: `docker version` (Docker daemon running)
-- **kubectl**: `kubectl version --client`
-- **k3d 5.8.3+**: `k3d version`
-- **Tilt 0.33.0+**: `tilt version`
-- **4+ GB RAM** available for the k3d cluster
-
-### Installation
-
-**macOS (Homebrew)**:
-```bash
-brew install tilt
-brew install k3d
-brew install kubectl
-```
-
-**Linux (apt/yum)**:
-```bash
-# Tilt
-curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
-
-# k3d
-wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-
-# kubectl
-# Use your package manager or download from kubernetes.io
-```
-
-**Verify Installation**:
-```bash
-tilt version
-k3d version
-kubectl version --client
-```
-
-## Quick Start
-
-### 1. Clone and Setup
+### One-Command Setup
 
 ```bash
-git clone https://github.com/org/c8s.git
-cd c8s
-```
-
-### 2. Start Development Environment
-
-```bash
-# From repository root, start Tilt
+# Start development environment
 tilt up
 
-# First time may take 2-5 minutes as it creates the cluster and builds images
+# That's it! Tilt will:
+# 1. Create a local k3d cluster
+# 2. Install CRDs and configuration
+# 3. Build Docker images for all components
+# 4. Deploy controller, api-server, and webhook
+# 5. Open dashboard at http://localhost:10350
 ```
 
-Tilt will:
-1. Create a local k3d cluster named `c8s-dev` (if not exists)
-2. Install CRDs and RBAC configuration
-3. Build Docker images for controller, api-server, and webhook
-4. Deploy components to the cluster
-5. Open Tilt dashboard at http://localhost:10350
-
-### 3. Access the Development Environment
-
-**Tilt Dashboard**: http://localhost:10350
-- Real-time logs for all components
-- Component status and build history
-- Manual triggers for validation and other tasks
-
-**Component Endpoints**:
-- Controller (debug): http://localhost:6060/debug/pprof
-- API Server: http://localhost:8080
-- Webhook: https://localhost:9443
-
-### 4. Edit and Iterate
+### First Iteration
 
 ```bash
-# In your editor, modify any Go file in cmd/ or pkg/
-# For example: cmd/controller/main.go
+# Edit any Go file
+vim cmd/controller/main.go
 
-# Tilt automatically detects changes and:
-# 1. Rebuilds the affected component
-# 2. Updates the container image
-# 3. Redeploys the pod
+# Save the file - Tilt automatically:
+# 1. Detects the change
+# 2. Rebuilds the component
+# 3. Updates the container image
+# 4. Restarts the pod
 
-# Watch Tilt dashboard for rebuild progress
+# Watch progress in Tilt dashboard (http://localhost:10350)
 ```
 
-### 5. Stop Development
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/tilt-setup.md)**: Comprehensive setup and workflow guide
+- **[Data Model](specs/003-implement-tilt-or/data-model.md)**: State management and entities
+- **[API Contract](specs/003-implement-tilt-or/contracts/tiltfile-spec.md)**: Tiltfile configuration options
+
+## 🔧 Component Endpoints
+
+| Component | Port | Purpose |
+|-----------|------|---------|
+| API Server | 8080 | REST API |
+| Webhook | 9443 | Git webhook endpoint |
+| Controller (Debug) | 6060 | pprof profiling |
+| Tilt Dashboard | 10350 | Web UI for Tilt |
+
+## 🎯 Common Workflows
+
+### Testing Pipeline Definitions
 
 ```bash
-# Stop Tilt and clean up resources
-tilt down
-
-# This removes the k3d cluster and all deployed resources
-```
-
-## Development Workflows
-
-### Hot Reload Development Cycle
-
-1. **Edit code**: Modify a Go file
-2. **Auto rebuild**: Tilt detects change and rebuilds (~10-30 seconds)
-3. **Auto deploy**: Component pod is restarted with new image
-4. **Verify**: Check logs in Tilt dashboard or via `kubectl logs`
-
-**Example**: Modify controller logging
-```bash
-# Edit pkg/controller/controller.go
-vim pkg/controller/controller.go
-
-# Save file
-# Watch Tilt dashboard - controller will rebuild and redeploy
-# Click controller resource in Tilt UI to view logs
-```
-
-### Pipeline Definition Testing
-
-1. **Create pipeline YAML**:
-```yaml
-# cat > test-pipeline.yaml <<EOF
+# Create a test pipeline
+cat > test.yaml <<EOF
 version: v1alpha1
-name: test-hello
+name: test-echo
 steps:
   - name: hello
     image: alpine:latest
     commands:
       - echo "Hello from C8S!"
-    resources:
-      cpu: 100m
-      memory: 128Mi
 EOF
+
+# Deploy it
+kubectl apply -f test.yaml -n c8s-system
+
+# Monitor execution
+kubectl logs -n c8s-system -l app=test-echo --all-containers=true -f
 ```
-
-2. **Apply to cluster**:
-```bash
-kubectl apply -f test-pipeline.yaml -n c8s-system
-```
-
-3. **Monitor execution**:
-```bash
-# View pipeline status
-kubectl get pipelinerun -n c8s-system
-
-# View pipeline logs
-kubectl logs -n c8s-system -l pipeline=test-hello --all-containers=true -f
-```
-
-4. **Validate and iterate**:
-- Modify pipeline YAML
-- Reapply with `kubectl apply -f`
-- Check logs and results
-- Repeat until pipeline works as expected
 
 ### Debugging Multi-Component Flows
 
-When testing interactions between components (webhook → api-server → controller → job):
+1. Open Tilt dashboard: http://localhost:10350
+2. Create a PipelineRun: `kubectl apply -f config/samples/simple-build.yaml`
+3. View unified logs for:
+   - Webhook (receives request)
+   - API Server (processes request)
+   - Controller (executes job)
 
-1. **Open Tilt Dashboard**: http://localhost:10350
+### Switching Between Branches
 
-2. **Trigger action** (e.g., create PipelineRun):
 ```bash
-kubectl apply -f config/samples/simple-pipeline.yaml -n c8s-system
+# Switch to different branch
+git checkout feature/new-feature
+
+# CRD definitions may have changed - just keep Tilt running
+# It automatically detects and re-applies manifests
 ```
 
-3. **View unified logs**:
-- Webhook logs: Shows incoming webhook request
-- API Server logs: Shows request processing
-- Controller logs: Shows job creation and status updates
+## 🛠️ Configuration
 
-4. **Filter and search**:
-- Use Tilt dashboard text search to find specific log entries
-- Filter by component to isolate issues
-- View error messages with full context
-
-### Sample Pipeline Management
-
-**Deploy samples**:
-```bash
-# Deploy sample pipelines from config/samples/
-kubectl apply -f config/samples/ -n c8s-system
-```
-
-**List samples**:
-```bash
-kubectl get pipelines -n c8s-system
-kubectl get pipelineruns -n c8s-system
-```
-
-**Delete samples**:
-```bash
-kubectl delete -f config/samples/ -n c8s-system
-```
-
-## Advanced Usage
-
-### Configuration
-
-The Tiltfile supports several configuration options via command-line flags:
+### Command-Line Options
 
 ```bash
-# Enable sample pipelines deployment
-tilt up -- --with_samples=true
+# Disable sample pipelines
+tilt up -- --with_samples=false
 
-# Use verbose logging
+# Enable verbose logging
 tilt up -- --verbose_logs=true
 
-# Change Kubernetes namespace
+# Use different namespace
 tilt up -- --k8s_namespace=my-c8s
 
-# Customize image registry prefix
-tilt up -- --image_registry=mycustom
+# Custom image registry
+tilt up -- --image_registry=localhost:5000
 ```
 
-### Accessing Cluster
-
-Use standard kubectl commands:
+### Accessing the Cluster
 
 ```bash
-# Set context if Tilt didn't do it automatically
+# Verify cluster context
+kubectl config current-context
+
+# If not set, configure it
 kubectl config use-context k3d-c8s-dev
 
-# View all resources
+# List all resources
 kubectl get all -n c8s-system
-
-# Get detailed resource info
-kubectl describe pod <pod-name> -n c8s-system
-
-# Execute commands in pod
-kubectl exec -it <pod-name> -n c8s-system -- /bin/sh
 ```
 
-### Viewing Logs
+## 📊 Monitoring
 
-**Via Tilt Dashboard**: Click resource name to view logs
+### View Logs
+
+**Via Tilt Dashboard**:
+- Go to http://localhost:10350
+- Click component name to view live logs
+- Use search/filter for specific messages
 
 **Via kubectl**:
 ```bash
-# Controller logs
+# Stream logs from specific component
 kubectl logs -f deployment/c8s-controller -n c8s-system
 
-# API Server logs
-kubectl logs -f deployment/c8s-api-server -n c8s-system
-
-# Webhook logs
-kubectl logs -f deployment/c8s-webhook -n c8s-system
-
-# Stream logs from all pods
+# View all logs at once
 kubectl logs -f -n c8s-system --all-containers=true
 ```
 
-### Manual Trigger Tasks
-
-Tilt dashboard provides manual trigger buttons for:
-
-- **Cluster Status**: Run `kubectl cluster-info` and list pods/services
-- **Pipeline Validator**: Test pipeline validation framework
-- **CRD Installation**: Re-apply CRDs from deploy/crds.yaml
-- **RBAC Installation**: Re-apply RBAC from deploy/rbac.yaml
-
-### Resource Constraints
-
-For machines with limited resources:
+### Check Component Status
 
 ```bash
-# Edit Tiltfile to reduce resource requests
-# Look for k8s_resource definitions and modify resource requests
-# Or use Tilt config:
-tilt up -- --resource_limits='{"controller": "100m/256Mi", "api-server": "200m/512Mi"}'
+# Tilt dashboard shows status in real-time
+
+# Or use kubectl
+kubectl get pods -n c8s-system
+kubectl describe pod <pod-name> -n c8s-system
 ```
 
-## Troubleshooting
+## 🧪 Testing
 
-### Issue: "k3d cluster not found"
+### Unit Tests
 
-**Solution**: Tilt should create the cluster automatically. If not:
 ```bash
-# Manually create cluster
-k3d cluster create c8s-dev --registry-create=registry:5000 -p "8080:80@loadbalancer"
+make test
+```
 
-# Then start Tilt
+### Integration Tests
+
+```bash
+make test-integration
+```
+
+### API Contract Tests
+
+```bash
+# Full contract test suite
+make test-contract
+
+# Quick contract tests
+make test-contract-short
+```
+
+## 🐛 Troubleshooting
+
+### Port Already in Use
+
+```bash
+# Find process using port
+lsof -i :8080
+
+# Kill it
+kill -9 <PID>
+
+# Or change port in Tiltfile
+```
+
+### Cluster Won't Start
+
+```bash
+# Check if cluster exists
+k3d cluster list
+
+# Delete and recreate
+k3d cluster delete c8s-dev
 tilt up
 ```
 
-### Issue: "Cannot connect to Docker daemon"
+### Pod Stuck in CrashLoopBackOff
 
-**Solution**: Ensure Docker is running:
 ```bash
-# macOS
-open -a Docker
-
-# Linux
-sudo systemctl start docker
-```
-
-### Issue: "Build fails with syntax error"
-
-**Solution**:
-- Fix the Go syntax error in the file shown in error message
-- Save the file
-- Tilt automatically rebuilds when syntax is fixed
-- View logs in Tilt dashboard to confirm success
-
-### Issue: "Pod stuck in CrashLoopBackOff"
-
-**Solution**: Check logs for the failure reason:
-```bash
+# Check logs for error
 kubectl logs <pod-name> -n c8s-system --previous
-# Or in Tilt dashboard, click the resource to view logs
+
+# Or in Tilt dashboard - click resource to see logs
 ```
 
-### Issue: "Port already in use (8080, 6060, 9443)"
-
-**Solution**: Change Tilt configuration or kill process using port:
-```bash
-# Find and kill process on port 8080
-lsof -i :8080 | grep -v COMMAND | awk '{print $2}' | xargs kill -9
-
-# Or change port forwarding in Tiltfile
-```
-
-### Issue: "Out of memory or CPU resources"
-
-**Solution**:
-- Increase Docker/k3d resource allocation
-- Reduce resource requests in Tiltfile
-- Close other applications using resources
-- Use smaller test pipelines
-
-## Performance Tips
-
-1. **Faster Rebuilds**:
-   - Only modify files in `cmd/` or `pkg/` - they trigger rebuilds
-   - Modifying `*.md` or specs files won't trigger builds
-
-2. **Quicker Iteration**:
-   - Keep Tilt running while making changes
-   - Use Tilt logs to verify changes
-   - Avoid stopping/starting Tilt between iterations
-
-3. **Better Debugging**:
-   - Use Tilt dashboard text search to find logs
-   - Monitor multiple component logs simultaneously
-   - Check error messages for specific failure details
-
-4. **Effective Testing**:
-   - Test one pipeline/feature at a time
-   - Keep sample pipelines simple
-   - Verify logs show expected behavior
-
-## Common Commands
+### Out of Memory
 
 ```bash
-# Start development
-tilt up
+# Increase Docker memory allocation
+# Mac: Docker Desktop → Settings → Resources → Memory
 
-# Stop development
-tilt down
-
-# Restart a component
-tilt trigger <resource-name>
-
-# View specific logs
-tilt logs controller
-tilt logs api-server
-tilt logs webhook
-
-# Enter Tilt UI
-tilt open
-
-# Check status
-tilt status
-
-# Get help
-tilt help
+# Or reduce component resource requests in deploy/install.yaml
 ```
 
-## Next Steps
+## 🎓 Learning More
 
-- **For C8S Contributors**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
-- **For Pipeline Writing**: See [Pipeline Configuration](../README.md#pipeline-configuration-schema)
-- **For API Details**: See API docs at http://localhost:8080/api/v1/docs (when running)
-- **For More Tilt Features**: Visit https://docs.tilt.dev
-
-## Additional Resources
-
-- **Tilt Documentation**: https://docs.tilt.dev
-- **k3d Documentation**: https://k3d.io
-- **Kubernetes Documentation**: https://kubernetes.io/docs
-- **Go Development**: https://golang.org/doc
+- **Tilt Docs**: https://docs.tilt.dev
+- **k3d Docs**: https://k3d.io
+- **Kubernetes Docs**: https://kubernetes.io/docs
 - **C8S Repository**: https://github.com/org/c8s
+
+## ✨ Tips for Faster Development
+
+1. **Keep Tilt running** - Don't stop/start between iterations
+2. **Edit and save** - Tilt watches files automatically
+3. **Check dashboard** - Verify builds succeed before testing
+4. **Use filter** - Search logs to find specific issues
+5. **Small changes** - Test one change at a time
+6. **Monitor metrics** - Watch CPU/memory in Tilt UI
+
+## 🤝 Contributing
+
+When submitting PRs:
+
+1. ✅ Test locally with Tilt
+2. ✅ Verify hot reload works for your changes
+3. ✅ Check logs for errors
+4. ✅ Run tests: `make test`
+5. ✅ Document any new configuration needed
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
+
+## 📞 Getting Help
+
+- **Documentation**: See docs/ and specs/ directories
+- **Issues**: https://github.com/org/c8s/issues
+- **Slack**: https://c8s.slack.com (if applicable)
 
 ---
 
-**Questions or Issues?** Open an issue at https://github.com/org/c8s/issues
+**Ready to develop?** Run `tilt up` and start editing! 🚀

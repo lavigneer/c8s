@@ -79,7 +79,7 @@ vim cmd/controller/main.go  # Save → auto-rebuild in ~30 seconds
 kubectl logs -f deployment/c8s-controller -n c8s-system
 ```
 
-See [TILT_README.md](TILT_README.md) for quick setup or [docs/tilt-setup.md](docs/tilt-setup.md) for comprehensive guide.
+See [docs/development/tilt-setup.md](docs/development/tilt-setup.md) for setup instructions.
 
 **Requirements for local development:**
 - Docker (27.3.1+)
@@ -320,7 +320,7 @@ steps:
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ## License
 
