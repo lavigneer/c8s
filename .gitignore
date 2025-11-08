@@ -73,12 +73,13 @@ node_modules/
 pnpm-lock.yaml
 yarn.lock
 
-# Playwright test artifacts
+# Playwright test artifacts (but DO commit docs/screenshots/ for documentation)
 test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
 tests/e2e/**/*.log
+!docs/screenshots/
 
 # Node.js build/dist
 npm-debug.log

@@ -132,3 +132,59 @@ type PipelineConfig struct {
 - Commit high-level overview and setup
 - Link to CLAUDE.md for detailed development info
 - Don't duplicate information between files
+
+## Documentation File Organization
+
+All user-facing and developer documentation should be organized under the `docs/` directory with consistent naming conventions.
+
+### File Naming Convention
+
+All documentation files use **lowercase, hyphenated naming**:
+- ✅ `docs/screenshot-setup.md` - Quick start guides
+- ✅ `docs/guides/dashboard-features.md` - Feature documentation
+- ✅ `docs/screenshot-workflow.md` - Detailed technical guides
+- ❌ NOT `SCREENSHOT_SETUP.md` - No uppercase in filenames
+- ❌ NOT root-level documentation files (keep repo root clean)
+- ❌ NOT `Screenshot_Workflow.md` - No mixed case
+
+### Organization Structure
+
+```
+docs/
+├── README.md                      # Documentation index
+├── guides/                        # User-facing guides
+│   ├── getting-started.md
+│   ├── dashboard-features.md
+│   └── pipeline-syntax.md
+├── development/                   # Developer documentation
+│   ├── development.md
+│   ├── tilt-setup.md
+│   └── local-testing.md
+├── operations/                    # Operations & deployment
+│   ├── operator-guide.md
+│   ├── authentication.md
+│   └── https-setup.md
+├── screenshots/                   # Generated screenshots by feature
+│   ├── authentication/
+│   ├── dashboard/
+│   ├── pipeline/
+│   └── ...
+└── screenshot-*.md               # Workflow documentation (grouped with generated assets)
+```
+
+### Best Practices
+
+**File Location:**
+- All markdown documentation goes in `docs/` or subdirectories
+- Organize by purpose: `guides/`, `development/`, `operations/`, etc.
+- Generated assets (screenshots) go in feature-specific subdirectories
+- Related workflow documentation stays with the assets
+
+**File Naming:**
+- Use lowercase, hyphenated names: `screenshot-setup.md` not `SCREENSHOT_SETUP.md`
+- Be descriptive: `dashboard-features.md` not `features.md`
+- Keep names concise but clear
+
+**Code Files:**
+- Implementation files (`*.ts`, `*.go`) can use conventions for their language (camelCase, PascalCase, UPPERCASE constants)
+- Only markdown documentation files require the lowercase-hyphenated convention
