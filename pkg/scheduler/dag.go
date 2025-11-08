@@ -56,19 +56,19 @@ func BuildDAG(steps []c8sv1alpha1.PipelineStep) (*DAG, error) {
 	}
 
 	// Second pass: build edges
-	for _, step := range steps {
-		for _, dep := range step.DependsOn {
+	for i := range steps {
+		for _, dep := range steps[i].DependsOn {
 			// Verify dependency exists
 			if _, exists := dag.nodes[dep]; !exists {
 				return nil, fmt.Errorf("%w: step %s depends on non-existent step %s",
-					types.ErrStepNotFound, step.Name, dep)
+					types.ErrStepNotFound, steps[i].Name, dep)
 			}
 
 			// Add edge: step depends on dep
-			dag.edges[step.Name] = append(dag.edges[step.Name], dep)
+			dag.edges[steps[i].Name] = append(dag.edges[steps[i].Name], dep)
 
 			// Add reverse edge: dep is depended on by step
-			dag.reverseEdges[dep] = append(dag.reverseEdges[dep], step.Name)
+			dag.reverseEdges[dep] = append(dag.reverseEdges[dep], steps[i].Name)
 		}
 	}
 

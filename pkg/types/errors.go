@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package types provides common C8S types and error definitions
+//nolint:revive // the package name 'types' is intentional for shared error types
 package types
 
 import (

@@ -68,15 +68,6 @@ func Paginate(items interface{}, total int, params PaginationParams) *Pagination
 		params.Page = totalPages
 	}
 
-	// Calculate start and end indices
-	start := (params.Page - 1) * params.PerPage
-	end := start + params.PerPage
-
-	// Ensure end doesn't exceed total
-	if end > total {
-		end = total
-	}
-
 	return &PaginationResult{
 		Items:      items,
 		Total:      total,

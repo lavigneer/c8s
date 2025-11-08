@@ -167,24 +167,24 @@ func convertConditional(cond *ConditionalYAML) *c8sv1alpha1.ConditionalExecution
 }
 
 // convertMatrix converts YAML matrix to CRD matrix
-func convertMatrix(yaml *MatrixYAML) *c8sv1alpha1.MatrixStrategy {
-	if yaml == nil {
+func convertMatrix(mx *MatrixYAML) *c8sv1alpha1.MatrixStrategy {
+	if mx == nil {
 		return nil
 	}
 	return &c8sv1alpha1.MatrixStrategy{
-		Dimensions: yaml.Dimensions,
-		Exclude:    yaml.Exclude,
+		Dimensions: mx.Dimensions,
+		Exclude:    mx.Exclude,
 	}
 }
 
 // convertRetryPolicy converts YAML retry policy to CRD retry policy
-func convertRetryPolicy(yaml *RetryPolicyYAML) *c8sv1alpha1.RetryPolicy {
-	if yaml == nil {
+func convertRetryPolicy(rp *RetryPolicyYAML) *c8sv1alpha1.RetryPolicy {
+	if rp == nil {
 		return nil
 	}
 	return &c8sv1alpha1.RetryPolicy{
-		MaxRetries:     yaml.MaxRetries,
-		BackoffSeconds: yaml.BackoffSeconds,
+		MaxRetries:     rp.MaxRetries,
+		BackoffSeconds: rp.BackoffSeconds,
 	}
 }
 
@@ -237,21 +237,21 @@ func validateVersion(version string) error {
 
 // validateStepNames validates step names and fields
 func validateStepNames(steps []PipelineStepYAML, stepNames map[string]bool) error {
-	for i, step := range steps {
-		if step.Name == "" {
+	for i := range steps {
+		if steps[i].Name == "" {
 			return fmt.Errorf("step %d: name is required", i)
 		}
-		if stepNames[step.Name] {
-			return fmt.Errorf("duplicate step name: %s", step.Name)
+		if stepNames[steps[i].Name] {
+			return fmt.Errorf("duplicate step name: %s", steps[i].Name)
 		}
-		stepNames[step.Name] = true
+		stepNames[steps[i].Name] = true
 
 		// Validate step fields
-		if step.Image == "" {
-			return fmt.Errorf("step %s: image is required", step.Name)
+		if steps[i].Image == "" {
+			return fmt.Errorf("step %s: image is required", steps[i].Name)
 		}
-		if len(step.Commands) == 0 {
-			return fmt.Errorf("step %s: at least one command is required", step.Name)
+		if len(steps[i].Commands) == 0 {
+			return fmt.Errorf("step %s: at least one command is required", steps[i].Name)
 		}
 	}
 	return nil
@@ -259,10 +259,10 @@ func validateStepNames(steps []PipelineStepYAML, stepNames map[string]bool) erro
 
 // validateDependencies validates that dependencies reference existing steps
 func validateDependencies(steps []PipelineStepYAML, stepNames map[string]bool) error {
-	for _, step := range steps {
-		for _, dep := range step.DependsOn {
+	for i := range steps {
+		for _, dep := range steps[i].DependsOn {
 			if !stepNames[dep] {
-				return fmt.Errorf("step %s: dependency %s not found", step.Name, dep)
+				return fmt.Errorf("step %s: dependency %s not found", steps[i].Name, dep)
 			}
 		}
 	}

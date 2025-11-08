@@ -29,8 +29,8 @@ import (
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 )
 
-// WebhookEvent represents a normalized webhook event from any provider
-type WebhookEvent struct {
+// Event represents a normalized webhook event from any provider
+type Event struct {
 	Repository    string
 	RepositoryURL string
 	Commit        string
@@ -50,7 +50,7 @@ type Handler interface {
 func createPipelineRun(
 	ctx context.Context,
 	k8sClient client.Client,
-	event *WebhookEvent,
+	event *Event,
 	repoConn *c8sv1alpha1.RepositoryConnection,
 ) error {
 	logger := log.FromContext(ctx)

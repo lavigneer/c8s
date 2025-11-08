@@ -91,7 +91,7 @@ func (h *GitLabHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, http.StatusBadRequest, "Failed to read request body")
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	// Parse push event
 	var pushEvent GitLabPushEvent
@@ -153,7 +153,7 @@ func (h *GitLabHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create normalized webhook event
-	event := &WebhookEvent{
+	event := &Event{
 		Repository:    pushEvent.Project.PathWithNamespace,
 		RepositoryURL: pushEvent.Project.GitHTTPURL,
 		Commit:        pushEvent.After,

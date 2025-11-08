@@ -151,7 +151,7 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	event := &WebhookEvent{
+	event := &Event{
 		Repository:    pushEvent.Repository.FullName,
 		RepositoryURL: cloneURL,
 		Commit:        commit,

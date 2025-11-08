@@ -158,7 +158,7 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create normalized webhook event
-	event := &WebhookEvent{
+	event := &Event{
 		Repository:    pushEvent.Repository.FullName,
 		RepositoryURL: pushEvent.Repository.CloneURL,
 		Commit:        pushEvent.After,

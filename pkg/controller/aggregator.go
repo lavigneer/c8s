@@ -113,7 +113,7 @@ func IsMatrixComplete(result *AggregatedResult) bool {
 }
 
 // aggregateRunMetrics counts run by phase and calculates duration
-func aggregateRunMetrics(run *c8sv1alpha1.PipelineRun, result *AggregatedResult) (time.Duration, int64) {
+func aggregateRunMetrics(run *c8sv1alpha1.PipelineRun, result *AggregatedResult) (duration time.Duration, durationSeconds int64) {
 	// Count by phase
 	switch run.Status.Phase {
 	case c8sv1alpha1.PipelineRunPhaseSucceeded:
@@ -129,13 +129,11 @@ func aggregateRunMetrics(run *c8sv1alpha1.PipelineRun, result *AggregatedResult)
 	}
 
 	// Calculate duration
-	var duration time.Duration
-	var durationSeconds int64
 	if run.Status.StartTime != nil && run.Status.CompletionTime != nil {
 		duration = run.Status.CompletionTime.Sub(run.Status.StartTime.Time)
 		durationSeconds = int64(duration.Seconds())
 	}
-	return duration, durationSeconds
+	return
 }
 
 // countFailedSteps counts failed steps in a pipeline run

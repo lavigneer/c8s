@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:revive // the package name 'types' is intentional for shared condition types
 package types
 
 // Condition types for PipelineRun status
