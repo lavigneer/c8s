@@ -28,6 +28,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logr "github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -89,45 +90,24 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	logger := log.FromContext(ctx).WithValues("provider", "bitbucket")
 
-	// Only accept POST requests
-	if r.Method != http.MethodPost {
-		writeErrorResponse(w, http.StatusMethodNotAllowed, "Only POST method is allowed")
+	// Validate request method and event type
+	if !h.validateRequest(w, r) {
 		return
 	}
 
-	// Check Bitbucket event type
-	eventType := r.Header.Get("X-Event-Key")
-	if eventType != "repo:push" {
-		logger.Info("Ignoring non-push event", "eventType", eventType)
-		writeSuccessResponse(w, fmt.Sprintf("Event type '%s' ignored", eventType))
-		return
-	}
-
-	// Read request body
-	body, err := io.ReadAll(r.Body)
+	// Read and parse webhook payload
+	body, pushEvent, err := h.readAndParseWebhook(w, r, logger)
 	if err != nil {
-		logger.Error(err, "Failed to read request body")
-		writeErrorResponse(w, http.StatusBadRequest, "Failed to read request body")
-		return
-	}
-	defer func() { _ = r.Body.Close() }()
-
-	// Parse push event
-	var pushEvent BitbucketPushEvent
-	if err := json.Unmarshal(body, &pushEvent); err != nil {
-		logger.Error(err, "Failed to parse push event JSON")
-		writeErrorResponse(w, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
 
-	// Bitbucket can have multiple changes in one push
+	// Extract branch and commit from push event
 	if len(pushEvent.Push.Changes) == 0 {
 		logger.Info("No changes in push event")
 		writeSuccessResponse(w, "No changes to process")
 		return
 	}
 
-	// Process the first change (most common case)
 	change := pushEvent.Push.Changes[0]
 	branch := change.New.Name
 	commit := change.New.Target.Hash
@@ -138,19 +118,8 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		"commit", commit[:8],
 	)
 
-	// Get clone URL (prefer HTTPS)
-	cloneURL := ""
-	for _, link := range pushEvent.Repository.Links.Clone {
-		if link.Name == "https" {
-			cloneURL = link.Href
-			break
-		}
-	}
-	if cloneURL == "" && len(pushEvent.Repository.Links.Clone) > 0 {
-		cloneURL = pushEvent.Repository.Links.Clone[0].Href
-	}
-
-	// Find RepositoryConnection for this repository
+	// Get clone URL and find repository connection
+	cloneURL := h.getCloneURL(pushEvent)
 	namespace := "default"
 	repoConn, err := findRepositoryConnection(ctx, h.client, cloneURL, namespace)
 	if err != nil {
@@ -163,7 +132,7 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify webhook signature
+	// Verify webhook signature if present
 	signature := r.Header.Get("X-Hub-Signature")
 	if signature != "" {
 		if err := h.verifySignature(ctx, signature, body, repoConn); err != nil {
@@ -174,7 +143,7 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Webhook signature verified successfully")
 	}
 
-	// Parse timestamp
+	// Parse timestamp and create event
 	timestamp := metav1.Now()
 	if change.New.Target.Date != "" {
 		if t, err := parseTimestamp(change.New.Target.Date); err == nil {
@@ -182,7 +151,6 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Create normalized webhook event
 	event := &WebhookEvent{
 		Repository:    pushEvent.Repository.FullName,
 		RepositoryURL: cloneURL,
@@ -203,6 +171,58 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	// Return success
 	writeSuccessResponse(w, "Pipeline run created successfully")
+}
+
+// validateRequest checks if the request method and event type are valid
+func (h *BitbucketHandler) validateRequest(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method != http.MethodPost {
+		writeErrorResponse(w, http.StatusMethodNotAllowed, "Only POST method is allowed")
+		return false
+	}
+
+	eventType := r.Header.Get("X-Event-Key")
+	if eventType != "repo:push" {
+		ctx := context.Background()
+		logger := log.FromContext(ctx)
+		logger.Info("Ignoring non-push event", "eventType", eventType)
+		writeSuccessResponse(w, fmt.Sprintf("Event type '%s' ignored", eventType))
+		return false
+	}
+
+	return true
+}
+
+// readAndParseWebhook reads the request body and parses it as a Bitbucket push event
+func (h *BitbucketHandler) readAndParseWebhook(w http.ResponseWriter, r *http.Request, logger logr.Logger) ([]byte, *BitbucketPushEvent, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(err, "Failed to read request body")
+		writeErrorResponse(w, http.StatusBadRequest, "Failed to read request body")
+		return nil, nil, err
+	}
+	defer func() { _ = r.Body.Close() }()
+
+	var pushEvent BitbucketPushEvent
+	if err := json.Unmarshal(body, &pushEvent); err != nil {
+		logger.Error(err, "Failed to parse push event JSON")
+		writeErrorResponse(w, http.StatusBadRequest, "Invalid JSON payload")
+		return nil, nil, err
+	}
+
+	return body, &pushEvent, nil
+}
+
+// getCloneURL extracts the clone URL from a Bitbucket push event, preferring HTTPS
+func (h *BitbucketHandler) getCloneURL(pushEvent *BitbucketPushEvent) string {
+	for _, link := range pushEvent.Repository.Links.Clone {
+		if link.Name == "https" {
+			return link.Href
+		}
+	}
+	if len(pushEvent.Repository.Links.Clone) > 0 {
+		return pushEvent.Repository.Links.Clone[0].Href
+	}
+	return ""
 }
 
 // VerifySignature verifies the Bitbucket webhook HMAC signature (public for testing)

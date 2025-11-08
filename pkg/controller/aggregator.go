@@ -59,41 +59,11 @@ func AggregateMatrixResults(ctx context.Context, c client.Client, namespace, par
 
 	for i := range matrixRuns {
 		run := &matrixRuns[i]
-		// Count by phase
-		switch run.Status.Phase {
-		case c8sv1alpha1.PipelineRunPhaseSucceeded:
-			result.SucceededRuns++
-		case c8sv1alpha1.PipelineRunPhaseFailed:
-			result.FailedRuns++
-		case c8sv1alpha1.PipelineRunPhasePending:
-			result.PendingRuns++
-		case c8sv1alpha1.PipelineRunPhaseRunning:
-			result.RunningRuns++
-		case c8sv1alpha1.PipelineRunPhaseCancelled:
-			result.CancelledRuns++
-		}
+		duration, durationSeconds := aggregateRunMetrics(run, result)
+		totalDurationSeconds += durationSeconds
 
-		// Calculate duration
-		var duration time.Duration
-		if run.Status.StartTime != nil && run.Status.CompletionTime != nil {
-			duration = run.Status.CompletionTime.Sub(run.Status.StartTime.Time)
-			totalDurationSeconds += int64(duration.Seconds())
-		}
-
-		// Count failed steps
-		failedSteps := 0
-		for j := range run.Status.Steps {
-			if run.Status.Steps[j].Phase == c8sv1alpha1.StepPhaseFailed {
-				failedSteps++
-			}
-		}
-
-		// Collect log URLs
-		for j := range run.Status.Steps {
-			if run.Status.Steps[j].LogURL != "" {
-				result.LogURLs = append(result.LogURLs, run.Status.Steps[j].LogURL)
-			}
-		}
+		failedSteps := countFailedSteps(run)
+		collectLogURLs(run, result)
 
 		// Create summary
 		summary := &MatrixRunSummary{
@@ -140,6 +110,52 @@ func FormatAggregatedResult(result *AggregatedResult) string {
 // IsMatrixComplete checks if all matrix runs have completed
 func IsMatrixComplete(result *AggregatedResult) bool {
 	return result.PendingRuns == 0 && result.RunningRuns == 0
+}
+
+// aggregateRunMetrics counts run by phase and calculates duration
+func aggregateRunMetrics(run *c8sv1alpha1.PipelineRun, result *AggregatedResult) (time.Duration, int64) {
+	// Count by phase
+	switch run.Status.Phase {
+	case c8sv1alpha1.PipelineRunPhaseSucceeded:
+		result.SucceededRuns++
+	case c8sv1alpha1.PipelineRunPhaseFailed:
+		result.FailedRuns++
+	case c8sv1alpha1.PipelineRunPhasePending:
+		result.PendingRuns++
+	case c8sv1alpha1.PipelineRunPhaseRunning:
+		result.RunningRuns++
+	case c8sv1alpha1.PipelineRunPhaseCancelled:
+		result.CancelledRuns++
+	}
+
+	// Calculate duration
+	var duration time.Duration
+	var durationSeconds int64
+	if run.Status.StartTime != nil && run.Status.CompletionTime != nil {
+		duration = run.Status.CompletionTime.Sub(run.Status.StartTime.Time)
+		durationSeconds = int64(duration.Seconds())
+	}
+	return duration, durationSeconds
+}
+
+// countFailedSteps counts failed steps in a pipeline run
+func countFailedSteps(run *c8sv1alpha1.PipelineRun) int {
+	failedSteps := 0
+	for j := range run.Status.Steps {
+		if run.Status.Steps[j].Phase == c8sv1alpha1.StepPhaseFailed {
+			failedSteps++
+		}
+	}
+	return failedSteps
+}
+
+// collectLogURLs collects log URLs from a pipeline run
+func collectLogURLs(run *c8sv1alpha1.PipelineRun, result *AggregatedResult) {
+	for j := range run.Status.Steps {
+		if run.Status.Steps[j].LogURL != "" {
+			result.LogURLs = append(result.LogURLs, run.Status.Steps[j].LogURL)
+		}
+	}
 }
 
 // GetMatrixSuccessRate calculates the success rate of matrix runs

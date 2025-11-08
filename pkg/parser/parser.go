@@ -191,21 +191,53 @@ func convertRetryPolicy(yaml *RetryPolicyYAML) *c8sv1alpha1.RetryPolicy {
 // validate validates the pipeline structure
 func validate(pipeline *PipelineYAML) error {
 	// Check version
-	if pipeline.Version == "" {
-		return fmt.Errorf("version field is required")
-	}
-	if pipeline.Version != "v1alpha1" {
-		return fmt.Errorf("unsupported version: %s (expected v1alpha1)", pipeline.Version)
+	if err := validateVersion(pipeline.Version); err != nil {
+		return err
 	}
 
-	// Check steps
+	// Check steps exist
 	if len(pipeline.Steps) == 0 {
 		return fmt.Errorf("at least one step is required")
 	}
 
-	// First pass: collect all step names
+	// Validate all step names and fields
 	stepNames := make(map[string]bool)
-	for i, step := range pipeline.Steps {
+	if err := validateStepNames(pipeline.Steps, stepNames); err != nil {
+		return err
+	}
+
+	// Validate dependencies
+	if err := validateDependencies(pipeline.Steps, stepNames); err != nil {
+		return err
+	}
+
+	// Check for circular dependencies
+	if err := checkCircularDependencies(pipeline.Steps); err != nil {
+		return err
+	}
+
+	// Validate matrix if present
+	if err := validateMatrixYAML(pipeline.Matrix); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateVersion checks pipeline version
+func validateVersion(version string) error {
+	if version == "" {
+		return fmt.Errorf("version field is required")
+	}
+	if version != "v1alpha1" {
+		return fmt.Errorf("unsupported version: %s (expected v1alpha1)", version)
+	}
+	return nil
+}
+
+// validateStepNames validates step names and fields
+func validateStepNames(steps []PipelineStepYAML, stepNames map[string]bool) error {
+	for i, step := range steps {
 		if step.Name == "" {
 			return fmt.Errorf("step %d: name is required", i)
 		}
@@ -222,33 +254,34 @@ func validate(pipeline *PipelineYAML) error {
 			return fmt.Errorf("step %s: at least one command is required", step.Name)
 		}
 	}
+	return nil
+}
 
-	// Second pass: validate dependencies reference existing steps
-	for _, step := range pipeline.Steps {
+// validateDependencies validates that dependencies reference existing steps
+func validateDependencies(steps []PipelineStepYAML, stepNames map[string]bool) error {
+	for _, step := range steps {
 		for _, dep := range step.DependsOn {
 			if !stepNames[dep] {
 				return fmt.Errorf("step %s: dependency %s not found", step.Name, dep)
 			}
 		}
 	}
+	return nil
+}
 
-	// Check for circular dependencies
-	if err := checkCircularDependencies(pipeline.Steps); err != nil {
-		return err
+// validateMatrixYAML validates matrix configuration if present
+func validateMatrixYAML(matrix *MatrixYAML) error {
+	if matrix == nil {
+		return nil
 	}
-
-	// Validate matrix if present
-	if pipeline.Matrix != nil {
-		if len(pipeline.Matrix.Dimensions) == 0 {
-			return fmt.Errorf("matrix must have at least one dimension")
-		}
-		for dim, values := range pipeline.Matrix.Dimensions {
-			if len(values) == 0 {
-				return fmt.Errorf("matrix dimension %s must have at least one value", dim)
-			}
+	if len(matrix.Dimensions) == 0 {
+		return fmt.Errorf("matrix must have at least one dimension")
+	}
+	for dim, values := range matrix.Dimensions {
+		if len(values) == 0 {
+			return fmt.Errorf("matrix dimension %s must have at least one value", dim)
 		}
 	}
-
 	return nil
 }
 
