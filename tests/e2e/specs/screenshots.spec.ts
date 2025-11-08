@@ -15,113 +15,127 @@ import {
 /**
  * Screenshot generation tests for documentation
  *
- * These tests capture screenshots of the C8S dashboard for documentation.
- * They are designed to gracefully handle both populated and empty states.
+ * These tests capture desktop-sized (1920x1080) screenshots of the C8S dashboard
+ * for use in user-facing documentation.
  *
  * Run with: npm run test:e2e -- --grep @screenshots
  * OR use: npm run screenshots
  *
- * Note: Tests will capture the UI as it is. If you want full screenshots with data,
- * ensure your test database has pipeline data, or modify tests to create test data.
+ * Note: Tests capture the UI as it is. If you want full screenshots with data,
+ * ensure your test database has pipeline data.
  */
 
 test.describe('@screenshots Documentation Screenshots', () => {
-  let loginPage: LoginPage;
-  let dashboardPage: DashboardPage;
-
   test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-
-    // Setup test authentication
+    // Setup test authentication for authenticated pages
     await setupTestAuth(page);
+    // Set viewport to standard desktop size
+    await page.setViewportSize({ width: 1920, height: 1080 });
   });
 
   // ===== AUTHENTICATION SCREENSHOTS =====
 
-  test('capture login page screenshots @screenshots', async ({ page }) => {
-    // Don't use setupTestAuth for login page - we want to test the login form itself
+  test('capture login page @screenshots', async ({ page }) => {
+    // Don't use auth for login page - we want to capture the login form itself
     await page.goto('/login');
     await waitForUIReady(page, ['form']);
 
-    // Desktop/default
     await captureScreenshot(page, 'authentication', 'login-page', {
       outputDir: 'docs/screenshots',
       waitTime: 500,
-    });
-
-    // Responsive variants
-    await captureResponsiveScreenshots(page, 'authentication', 'login-page', {}, {
-      outputDir: 'docs/screenshots',
     });
   });
 
   // ===== DASHBOARD SCREENSHOTS =====
 
-  test('capture dashboard pipeline list @screenshots', async ({ page }) => {
-    // Navigate directly to dashboard with auth already set up
+  test('capture pipeline history dashboard @screenshots', async ({ page }) => {
     await page.goto('/dashboard');
     await waitForUIReady(page);
 
-    await captureScreenshot(page, 'dashboard', 'pipeline-list', {
+    await captureScreenshot(page, 'dashboard', 'pipeline-history', {
       outputDir: 'docs/screenshots',
       waitTime: 1000,
       fullPage: false,
     });
   });
 
-  test('capture dashboard quick stats @screenshots', async ({ page }) => {
-    // Navigate directly to dashboard with auth already set up
+  // ===== PIPELINE DETAIL SCREENSHOTS =====
+
+  test('capture pipeline detail page @screenshots', async ({ page }) => {
+    // Try to navigate to a pipeline detail page
     await page.goto('/dashboard');
     await waitForUIReady(page);
 
-    // Try to capture stats panel if it exists, otherwise capture what we can
-    const statsPanel = page.locator('[data-testid="quick-stats"]');
-    if (await statsPanel.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await captureScreenshot(page, 'dashboard', 'quick-stats-panel', {
+    // Look for a pipeline run to click on
+    const pipelineLink = page.locator('[data-testid="pipeline-run-item"]').first();
+    if (await pipelineLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await pipelineLink.click();
+      await page.waitForTimeout(1000);
+
+      await captureScreenshot(page, 'pipeline', 'pipeline-detail', {
         outputDir: 'docs/screenshots',
-        element: '[data-testid="quick-stats"]',
         waitTime: 500,
       });
     }
   });
 
-  test('capture dashboard filters @screenshots', async ({ page }) => {
-    // Navigate directly to dashboard with auth already set up
+  test('capture pipeline logs view @screenshots', async ({ page }) => {
     await page.goto('/dashboard');
     await waitForUIReady(page);
 
-    // Try to open filter panel if it exists
-    const filterButton = page.locator('[data-testid="filter-toggle"]');
-    if (await filterButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await filterButton.click();
-      await page.waitForTimeout(300);
+    // Try to navigate to logs for a pipeline
+    const pipelineLink = page.locator('[data-testid="pipeline-run-item"]').first();
+    if (await pipelineLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await pipelineLink.click();
+      await page.waitForTimeout(1000);
 
-      await captureScreenshot(page, 'dashboard', 'filter-panel', {
-        outputDir: 'docs/screenshots',
-        element: '[data-testid="filter-panel"]',
-      });
+      // Try to find and click logs tab
+      const logsTab = page.locator('[data-testid="logs-tab"]');
+      if (await logsTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await logsTab.click();
+        await page.waitForTimeout(500);
+
+        await captureScreenshot(page, 'logs', 'log-viewer', {
+          outputDir: 'docs/screenshots',
+          waitTime: 500,
+        });
+      }
     }
   });
 
-  // ===== RESPONSIVE DESIGN SCREENSHOTS =====
-
-  test('capture responsive dashboard @screenshots', async ({ page }) => {
-    // Navigate directly to dashboard with auth already set up
+  test('capture pipeline artifacts view @screenshots', async ({ page }) => {
     await page.goto('/dashboard');
     await waitForUIReady(page);
 
-    await captureResponsiveScreenshots(page, 'responsive', 'dashboard', {}, {
-      outputDir: 'docs/screenshots',
-    });
+    // Try to navigate to artifacts for a pipeline
+    const pipelineLink = page.locator('[data-testid="pipeline-run-item"]').first();
+    if (await pipelineLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await pipelineLink.click();
+      await page.waitForTimeout(1000);
+
+      // Try to find and click artifacts tab
+      const artifactsTab = page.locator('[data-testid="artifacts-tab"]');
+      if (await artifactsTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await artifactsTab.click();
+        await page.waitForTimeout(500);
+
+        await captureScreenshot(page, 'artifacts', 'artifact-list', {
+          outputDir: 'docs/screenshots',
+          waitTime: 500,
+        });
+      }
+    }
   });
 
-  test('capture responsive login page @screenshots', async ({ page }) => {
-    await page.goto('/login');
-    await waitForUIReady(page, ['form']);
+  // ===== PROJECTS SCREENSHOTS =====
 
-    await captureResponsiveScreenshots(page, 'responsive', 'login', {}, {
+  test('capture projects page @screenshots', async ({ page }) => {
+    await page.goto('/projects');
+    await waitForUIReady(page);
+
+    await captureScreenshot(page, 'projects', 'projects-list', {
       outputDir: 'docs/screenshots',
+      waitTime: 500,
     });
   });
 

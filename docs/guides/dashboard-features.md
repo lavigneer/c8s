@@ -30,6 +30,8 @@ The C8S Dashboard provides a web interface for:
 - **Project Management**: Create and manage CI/CD projects
 - **Status Tracking**: Monitor pipeline success rates and performance
 
+![Dashboard Overview](../screenshots/dashboard/pipeline-history.png)
+
 ### Key Components
 
 ```
@@ -66,6 +68,8 @@ Dashboard Layout
    - Click "Login" button
    - Enter credentials (OAuth/OIDC or API token)
    - Accept if prompted for permissions
+
+![C8S Dashboard Login](../screenshots/authentication/login-page.png)
 
 3. **First Steps**
    - Browse "Projects" in sidebar

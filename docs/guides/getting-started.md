@@ -180,6 +180,10 @@ kubectl port-forward -n c8s-system svc/c8s-api-server 8080:8080
 # http://localhost:8080/dashboard
 ```
 
+You'll be presented with a login screen where you can authenticate:
+
+![C8S Login Page](../screenshots/authentication/login-page.png)
+
 ### Main Pages
 
 #### **Dashboard Home**
@@ -189,6 +193,8 @@ kubectl port-forward -n c8s-system svc/c8s-api-server 8080:8080
   - Failed runs count
   - Currently running pipelines
 - **Action**: Click on any stat to filter and view details
+
+![Pipeline History Dashboard](../screenshots/dashboard/pipeline-history.png)
 
 #### **Projects Page** (`/dashboard/projects`)
 - **View**: All pipeline configurations (projects)
