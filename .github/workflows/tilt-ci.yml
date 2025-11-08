@@ -42,29 +42,6 @@ jobs:
               hostPort: 8443
               listenAddress: "127.0.0.1"
 
-    - name: Install Tilt
-      run: |
-        TILT_VERSION="v0.33.14"
-        TILT_ARCH="x86_64"
-        TILT_OS="linux"
-        TILT_URL="https://github.com/tilt-dev/tilt/releases/download/${TILT_VERSION}/tilt.${TILT_VERSION}.${TILT_OS}.${TILT_ARCH}.tar.gz"
-        curl -fsSL -o tilt.tar.gz "$TILT_URL"
-        tar xzf tilt.tar.gz
-        sudo mv tilt /usr/local/bin/
-        rm tilt.tar.gz
-
-    - name: Install ctlptl (optional but helpful)
-      run: |
-        CTLPTL_VERSION="v0.8.35"
-        CTLPTL_ARCH="x86_64"
-        CTLPTL_OS="linux"
-        CTLPTL_URL="https://github.com/tilt-dev/ctlptl/releases/download/${CTLPTL_VERSION}/ctlptl.${CTLPTL_VERSION}.${CTLPTL_OS}.${CTLPTL_ARCH}.tar.gz"
-        curl -fsSL -o ctlptl.tar.gz "$CTLPTL_URL"
-        tar xzf ctlptl.tar.gz
-        sudo mv ctlptl /usr/local/bin/
-        rm ctlptl.tar.gz
-      continue-on-error: true
-
     - name: Run Tilt CI
       run: |
         devbox run -- tilt:ci

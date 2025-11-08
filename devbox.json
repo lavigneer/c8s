@@ -6,7 +6,9 @@
     "kind@latest",
     "docker@latest",
     "git@latest",
-    "gnumake@latest"
+    "gnumake@latest",
+    "tilt@latest",
+    "ctlptl@latest"
   ],
   "shell": {
     "init_hook": [
