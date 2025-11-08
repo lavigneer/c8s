@@ -12,17 +12,17 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 	}
 
 	dto := &PipelineRunDTO{
-		ID:          run.Name,
-		ProjectID:   run.Labels["project"],
-		Name:        run.Name,
-		Status:      string(run.Status.Phase),
-		CommitSHA:   run.Spec.Commit,
-		Branch:      run.Spec.Branch,
-		Author:      run.Spec.TriggeredBy,
-		AuthorEmail: "",
+		ID:            run.Name,
+		ProjectID:     run.Labels["project"],
+		Name:          run.Name,
+		Status:        string(run.Status.Phase),
+		CommitSHA:     run.Spec.Commit,
+		Branch:        run.Spec.Branch,
+		Author:        run.Spec.TriggeredBy,
+		AuthorEmail:   "",
 		TriggerSource: "webhook",
-		TriggeredAt: run.CreationTimestamp.Time,
-		StepCount:   len(run.Status.Steps),
+		TriggeredAt:   run.CreationTimestamp.Time,
+		StepCount:     len(run.Status.Steps),
 	}
 
 	// Count step statuses

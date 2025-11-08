@@ -83,7 +83,7 @@ func main() {
 	router.Use(RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
 
 	// Static files (no auth required)
-	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir + "/static"))
+	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir+"/static"))
 	router.HandleFunc("/health", healthHandler)
 
 	// Login route (no auth required)

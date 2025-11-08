@@ -73,7 +73,7 @@ func TestCheckProjectAccessWithAdminRole(t *testing.T) {
 
 	// Create request and user
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
 
 	// Check access with admin role required
@@ -96,7 +96,7 @@ func TestCheckProjectAccessWithViewerDeniedAdmin(t *testing.T) {
 
 	// Create request and user
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
 
 	// Check access with admin role required
@@ -118,7 +118,7 @@ func TestCheckProjectAccessServiceError(t *testing.T) {
 
 	// Create request and user
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
 	// Check access
@@ -135,7 +135,7 @@ func TestCheckProjectAccessServiceNotInitialized(t *testing.T) {
 
 	// Create request and user
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
 	// Check access
@@ -157,7 +157,7 @@ func TestCheckProjectAccessActionReadMapsToViewer(t *testing.T) {
 	handlerspkg.InitAuthorizationService(mockSvc)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
 
 	// ActionRead should map to RoleViewer
@@ -178,7 +178,7 @@ func TestCheckProjectAccessActionWriteMapsToEditor(t *testing.T) {
 	handlerspkg.InitAuthorizationService(mockSvc)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("POST", "/", nil)
+	r := httptest.NewRequest("POST", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "editor"}
 
 	// ActionWrite should map to RoleEditor
@@ -199,7 +199,7 @@ func TestCheckProjectAccessActionDeleteMapsToAdmin(t *testing.T) {
 	handlerspkg.InitAuthorizationService(mockSvc)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("DELETE", "/", nil)
+	r := httptest.NewRequest("DELETE", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
 
 	// ActionDelete should map to RoleAdmin
@@ -220,7 +220,7 @@ func TestCheckProjectAccessActionAdminMapsToAdmin(t *testing.T) {
 	handlerspkg.InitAuthorizationService(mockSvc)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("POST", "/", nil)
+	r := httptest.NewRequest("POST", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
 
 	// ActionAdmin should map to RoleAdmin
@@ -234,7 +234,7 @@ func TestCheckProjectAccessActionInvalidAction(t *testing.T) {
 	handlerspkg.InitAuthorizationService(&MockProjectAccessService{})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
 	// Invalid action should return error
@@ -259,7 +259,7 @@ func TestCheckUserExistsWithValidUser(t *testing.T) {
 // TestCheckUserExistsWithMissingUser verifies missing user is detected
 func TestCheckUserExistsWithMissingUser(t *testing.T) {
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil) // No user in context
+	r := httptest.NewRequest("GET", "/", http.NoBody) // No user in context
 
 	// Check user exists
 	extractedUser, ok := handlerspkg.CheckUserExists(w, r)
@@ -372,19 +372,19 @@ func TestMultipleProjectAccessControl(t *testing.T) {
 
 	// Test alpha project (admin access)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("DELETE", "/", nil)
+	r := httptest.NewRequest("DELETE", "/", http.NoBody)
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-alpha", dashboard.RoleAdmin)
 	assert.True(t, allowed)
 
 	// Test beta project (editor access, not admin)
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest("DELETE", "/", nil)
+	r = httptest.NewRequest("DELETE", "/", http.NoBody)
 	allowed = handlerspkg.CheckProjectAccess(w, r, user, "proj-beta", dashboard.RoleAdmin)
 	assert.False(t, allowed)
 
 	// Test gamma project (no access)
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest("GET", "/", nil)
+	r = httptest.NewRequest("GET", "/", http.NoBody)
 	allowed = handlerspkg.CheckProjectAccess(w, r, user, "proj-gamma", dashboard.RoleViewer)
 	assert.False(t, allowed)
 }
@@ -400,7 +400,7 @@ func TestAuthorizationErrorResponseFormat(t *testing.T) {
 	handlerspkg.InitAuthorizationService(mockSvc)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest("GET", "/", http.NoBody)
 	user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
 	// Check access
@@ -417,7 +417,7 @@ func TestAuthenticationRequiredBeforeAuthorization(t *testing.T) {
 	handlerspkg.InitAuthorizationService(&MockProjectAccessService{})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil) // No user in context
+	r := httptest.NewRequest("GET", "/", http.NoBody) // No user in context
 
 	// Should return 401 Unauthorized, not 403 Forbidden
 	_, ok := handlerspkg.CheckUserExists(w, r)
@@ -431,14 +431,14 @@ func TestRoleInheritanceHierarchy(t *testing.T) {
 	// Each role inherits permissions of lower roles
 
 	// Admin inherits all permissions
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleAdmin.Level())    // Can do admin
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleEditor.Level())   // Can do editor
-	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleViewer.Level())   // Can do viewer
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleAdmin.Level())  // Can do admin
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleEditor.Level()) // Can do editor
+	assert.True(t, dashboard.RoleAdmin.Level() >= dashboard.RoleViewer.Level()) // Can do viewer
 
 	// Editor inherits viewer permissions
-	assert.False(t, dashboard.RoleEditor.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleEditor.Level())  // Can do editor
-	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleViewer.Level())  // Can do viewer
+	assert.False(t, dashboard.RoleEditor.Level() >= dashboard.RoleAdmin.Level()) // Cannot do admin
+	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleEditor.Level()) // Can do editor
+	assert.True(t, dashboard.RoleEditor.Level() >= dashboard.RoleViewer.Level()) // Can do viewer
 
 	// Viewer has minimal permissions
 	assert.False(t, dashboard.RoleViewer.Level() >= dashboard.RoleAdmin.Level())  // Cannot do admin
@@ -461,7 +461,7 @@ func TestConcurrentAuthorizationChecks(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		go func(index int) {
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest("GET", "/", http.NoBody)
 			user := &handlerspkg.User{ID: "user-123", Username: "test"}
 
 			allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)

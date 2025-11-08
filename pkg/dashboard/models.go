@@ -7,7 +7,7 @@ type PipelineRunDTO struct {
 	ID              string     `json:"id"`
 	ProjectID       string     `json:"project_id"`
 	Name            string     `json:"name"`
-	Status          string     `json:"status"` // Pending, Running, Succeeded, Failed, Cancelled
+	Status          string     `json:"status"` // Pending, Running, Succeeded, Failed, Canceled
 	CommitSHA       string     `json:"commit_sha"`
 	Branch          string     `json:"branch"`
 	Author          string     `json:"author"`
@@ -74,11 +74,11 @@ type LogStreamDTO struct {
 
 // PipelineConfigDTO represents a pipeline configuration
 type PipelineConfigDTO struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	RepoURL     string   `json:"repository_url"`
-	Branches    []string `json:"branches"`
-	Timeout     int      `json:"timeout"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	RepoURL     string    `json:"repository_url"`
+	Branches    []string  `json:"branches"`
+	Timeout     int       `json:"timeout"`
 	CreatedAt   time.Time `json:"created_at"`
 }

@@ -44,8 +44,8 @@ func RequestLoggerMiddleware(next http.Handler) http.Handler {
 // responseWriter wraps http.ResponseWriter to capture status code
 type responseWriter struct {
 	http.ResponseWriter
-	statusCode      int
-	headerWritten   bool
+	statusCode    int
+	headerWritten bool
 }
 
 // WriteHeader captures the status code

@@ -31,7 +31,7 @@ import (
 func TestListArtifactsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListArtifactsHandler(w, req)
@@ -45,7 +45,7 @@ func TestListArtifactsHandlerMissingRunID(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
 	// Request without runId path param
-	req := httptest.NewRequest("GET", "/api/runs//artifacts", nil)
+	req := httptest.NewRequest("GET", "/api/runs//artifacts", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListArtifactsHandler(w, req)
@@ -59,7 +59,7 @@ func TestListArtifactsHandlerWithFilter(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
 	// Request with filters
-	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts?step_id=step-1&type=log", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts?step_id=step-1&type=log", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListArtifactsHandler(w, req)
@@ -72,7 +72,7 @@ func TestListArtifactsHandlerWithFilter(t *testing.T) {
 func TestGetArtifactHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts/artifact-id/download", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts/artifact-id/download", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetArtifactHandler(w, req)
@@ -85,7 +85,7 @@ func TestGetArtifactHandlerNoAuth(t *testing.T) {
 func TestGetArtifactHandlerMissingID(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts//download", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts//download", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetArtifactHandler(w, req)

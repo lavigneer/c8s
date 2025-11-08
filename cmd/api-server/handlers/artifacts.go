@@ -170,8 +170,8 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	// Return JSON preview metadata
 	dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"artifact_id": artifactID,
-		"filename":   filename,
-		"preview":    "Use HTMX request to get HTML preview",
+		"filename":    filename,
+		"preview":     "Use HTMX request to get HTML preview",
 	})
 }
 

@@ -25,9 +25,9 @@ import (
 // Claims represents JWT claims for C8S authentication
 type Claims struct {
 	// Standard JWT claims (RFC 7519)
-	Subject string   `json:"sub"`      // User ID (required)
-	Name    string   `json:"name"`     // Username (required)
-	Email   string   `json:"email"`    // Email address (optional)
+	Subject string `json:"sub"`   // User ID (required)
+	Name    string `json:"name"`  // Username (required)
+	Email   string `json:"email"` // Email address (optional)
 	// Note: Audience is handled by embedded RegisteredClaims.Audience
 
 	// C8S-specific claims

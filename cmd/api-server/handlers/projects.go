@@ -105,8 +105,8 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	// Create PipelineConfig in Kubernetes
 	config := &v1alpha1.PipelineConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name,
-			Namespace: namespace,
+			Name:              req.Name,
+			Namespace:         namespace,
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.PipelineConfigSpec{

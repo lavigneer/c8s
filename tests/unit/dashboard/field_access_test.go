@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestFilterProjectDTOViewerRole verifies viewers get limited project fields
@@ -110,13 +110,13 @@ func TestFilterProjectDTOAdminRole(t *testing.T) {
 func TestFilterProjectDTOsForRole(t *testing.T) {
 	projects := []*dashboard.ProjectDTO{
 		{
-			ID:        "proj-1",
-			Name:      "Project 1",
+			ID:         "proj-1",
+			Name:       "Project 1",
 			WebhookURL: "https://example.com/1",
 		},
 		{
-			ID:        "proj-2",
-			Name:      "Project 2",
+			ID:         "proj-2",
+			Name:       "Project 2",
 			WebhookURL: "https://example.com/2",
 		},
 	}
@@ -215,12 +215,12 @@ func TestFilterArtifactDTOEditorRole(t *testing.T) {
 func TestFilterArtifactDTOsForRole(t *testing.T) {
 	artifacts := []*dashboard.ArtifactDTO{
 		{
-			ID:  "art-1",
+			ID:   "art-1",
 			Name: "report1.html",
 			URL:  "https://storage.example.com/art-1",
 		},
 		{
-			ID:  "art-2",
+			ID:   "art-2",
 			Name: "report2.html",
 			URL:  "https://storage.example.com/art-2",
 		},
@@ -266,14 +266,14 @@ func TestFilterEmptyProjectDTOs(t *testing.T) {
 func TestFilterStepDTOAllRoles(t *testing.T) {
 	now := time.Now()
 	step := &dashboard.StepDTO{
-		ID:              "step-1",
-		Name:            "Build",
-		Status:          "Succeeded",
-		Image:           "golang:1.21",
-		Commands:        []string{"go build"},
-		StartedAt:       &now,
-		CPURequest:      "500m",
-		MemoryRequest:   "512Mi",
+		ID:            "step-1",
+		Name:          "Build",
+		Status:        "Succeeded",
+		Image:         "golang:1.21",
+		Commands:      []string{"go build"},
+		StartedAt:     &now,
+		CPURequest:    "500m",
+		MemoryRequest: "512Mi",
 	}
 
 	// All roles should see step details equally

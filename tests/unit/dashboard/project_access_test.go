@@ -19,8 +19,8 @@ package dashboard
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestRoleLevel verifies role hierarchy levels

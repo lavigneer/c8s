@@ -167,4 +167,3 @@ func (k *K8sClient) GetClusterRole(ctx context.Context, name string) (*rbacv1.Cl
 
 	return &cr, nil
 }
-

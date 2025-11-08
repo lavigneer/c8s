@@ -95,7 +95,7 @@ func (m *MockFlusherWithError) Flush() {
 // TestLogStreamHandlerSSEConnectionError verifies error handling when SSE connection fails
 func TestLogStreamHandlerSSEConnectionError(t *testing.T) {
 	// Create a request
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", http.NoBody)
 	w := NewMockResponseWriterWithWriteError()
 
 	// Call the handler
@@ -108,7 +108,7 @@ func TestLogStreamHandlerSSEConnectionError(t *testing.T) {
 // TestLogStreamHandlerNoFlusher verifies error handling when flusher is unavailable
 func TestLogStreamHandlerNoFlusher(t *testing.T) {
 	// Use chi router to properly extract URL parameters
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", http.NoBody)
 	w := NewMockResponseWriterNoFlusher()
 
 	// Call the handler - will return early with parameter validation error
@@ -121,7 +121,7 @@ func TestLogStreamHandlerNoFlusher(t *testing.T) {
 
 // TestLogStreamHandlerMissingRunID verifies validation of required parameters
 func TestLogStreamHandlerMissingRunID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs//steps/step-1/logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs//steps/step-1/logs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.LogStreamHandler(w, req)
@@ -133,7 +133,7 @@ func TestLogStreamHandlerMissingRunID(t *testing.T) {
 
 // TestLogStreamHandlerMissingStepID verifies validation of required parameters
 func TestLogStreamHandlerMissingStepID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps//logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps//logs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.LogStreamHandler(w, req)
@@ -176,7 +176,7 @@ func TestProjectCreationJSONEncodingError(t *testing.T) {
 // TestExportHandlerJSONMarshalError verifies error handling in export
 func TestExportHandlerJSONMarshalError(t *testing.T) {
 	// Create a request
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// Add user to context
@@ -191,7 +191,7 @@ func TestExportHandlerJSONMarshalError(t *testing.T) {
 // TestGetLogsHandlerIOCopyError verifies error handling during log copying
 func TestGetLogsHandlerIOCopyError(t *testing.T) {
 	// Create a request
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/text", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/text", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// Call the handler
@@ -209,7 +209,7 @@ func TestSSEErrorLogging(t *testing.T) {
 	// they are logged rather than causing silent failures
 	// We verify this by checking that the handler completes without crashing
 
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", http.NoBody)
 	w := NewMockResponseWriterWithWriteError()
 
 	// Call handler - should not panic
@@ -222,7 +222,7 @@ func TestSSEErrorLogging(t *testing.T) {
 
 // TestExportHandlerDefaultFormat verifies correct status code
 func TestExportHandlerDefaultFormat(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/exports/runs", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -237,7 +237,7 @@ func TestExportHandlerDefaultFormat(t *testing.T) {
 
 // TestExportHandlerCSVFormat verifies CSV export
 func TestExportHandlerCSVFormat(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -256,7 +256,7 @@ func TestExportHandlerCSVFormat(t *testing.T) {
 func TestConcurrentSSEHandlerErrors(t *testing.T) {
 	// Create multiple concurrent requests
 	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", nil)
+		req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handlerspkg.LogStreamHandler(w, req)
@@ -268,7 +268,7 @@ func TestConcurrentSSEHandlerErrors(t *testing.T) {
 
 // TestPipelineUpdatesSSEHandlerNoFlusher verifies flusher check
 func TestPipelineUpdatesSSEHandlerNoFlusher(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs/updates", nil)
+	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs/updates", http.NoBody)
 	w := NewMockResponseWriterNoFlusher()
 
 	handlerspkg.PipelineUpdatesSSEHandler(w, req)
@@ -278,7 +278,7 @@ func TestPipelineUpdatesSSEHandlerNoFlusher(t *testing.T) {
 
 // TestPipelineUpdatesSSEHandlerMissingProjectID verifies parameter validation
 func TestPipelineUpdatesSSEHandlerMissingProjectID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/projects//runs/updates", nil)
+	req := httptest.NewRequest("GET", "/api/projects//runs/updates", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.PipelineUpdatesSSEHandler(w, req)
@@ -329,7 +329,7 @@ func TestResponseWriterErrorHandling(t *testing.T) {
 
 // TestGetLogsSnapshotHandlerInvalidLinesParam verifies parameter validation
 func TestGetLogsSnapshotHandlerInvalidLinesParam(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/snapshot?lines=invalid", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/snapshot?lines=invalid", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogSnapshotHandler(w, req)
@@ -341,7 +341,7 @@ func TestGetLogsSnapshotHandlerInvalidLinesParam(t *testing.T) {
 
 // TestGetLogsSnapshotHandlerMissingRunID verifies parameter validation
 func TestGetLogsSnapshotHandlerMissingRunID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs//steps/step-1/logs/snapshot", nil)
+	req := httptest.NewRequest("GET", "/api/runs//steps/step-1/logs/snapshot", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogSnapshotHandler(w, req)
@@ -353,7 +353,7 @@ func TestGetLogsSnapshotHandlerMissingRunID(t *testing.T) {
 
 // TestListStepsHandlerMissingRunID verifies parameter validation
 func TestListStepsHandlerMissingRunID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs//steps", nil)
+	req := httptest.NewRequest("GET", "/api/runs//steps", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListStepsHandler(w, req)
@@ -367,7 +367,7 @@ func TestListStepsHandlerMissingRunID(t *testing.T) {
 
 // TestExportHandlerWithInvalidFormat verifies format parameter handling
 func TestExportHandlerWithInvalidFormat(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=invalid", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=invalid", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -380,7 +380,7 @@ func TestExportHandlerWithInvalidFormat(t *testing.T) {
 func TestExportHandlerCSVOutput(t *testing.T) {
 	// This test verifies the CSV export format
 	// Since we need user context, we expect 401 without auth
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -395,7 +395,7 @@ func TestExportHandlerCSVOutput(t *testing.T) {
 // TestErrorResponseFormat verifies consistent error response format
 func TestErrorResponseFormat(t *testing.T) {
 	// Test that error responses are properly formatted
-	req := httptest.NewRequest("GET", "/api/runs/invalid/steps/step-1/logs/snapshot?lines=invalid", nil)
+	req := httptest.NewRequest("GET", "/api/runs/invalid/steps/step-1/logs/snapshot?lines=invalid", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogSnapshotHandler(w, req)
@@ -470,7 +470,7 @@ func TestCreateProjectHandlerMissingRepoURL(t *testing.T) {
 
 // TestGetLogsHandlerValidRequest verifies successful log retrieval
 func TestGetLogsHandlerValidRequest(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/text", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps/step-1/logs/text", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogsHandler(w, req)
@@ -483,7 +483,7 @@ func TestGetLogsHandlerValidRequest(t *testing.T) {
 
 // TestGetLogsHandlerMissingStepID verifies parameter validation
 func TestGetLogsHandlerMissingStepID(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/runs/run-1/steps//logs/text", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-1/steps//logs/text", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogsHandler(w, req)

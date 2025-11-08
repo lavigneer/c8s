@@ -86,21 +86,21 @@ func FilterPipelineRunDTOForRole(run *PipelineRunDTO, role Role) *PipelineRunDTO
 
 	// Create a filtered copy
 	filtered := &PipelineRunDTO{
-		ID:            run.ID,
-		ProjectID:     run.ProjectID,
-		Name:          run.Name,
-		Status:        run.Status,
-		CommitSHA:     run.CommitSHA,
-		Branch:        run.Branch,
-		Author:        run.Author,
-		TriggeredAt:   run.TriggeredAt,
-		StartedAt:     run.StartedAt,
-		CompletedAt:   run.CompletedAt,
+		ID:              run.ID,
+		ProjectID:       run.ProjectID,
+		Name:            run.Name,
+		Status:          run.Status,
+		CommitSHA:       run.CommitSHA,
+		Branch:          run.Branch,
+		Author:          run.Author,
+		TriggeredAt:     run.TriggeredAt,
+		StartedAt:       run.StartedAt,
+		CompletedAt:     run.CompletedAt,
 		DurationSeconds: run.DurationSeconds,
-		StepCount:     run.StepCount,
-		SuccessCount:  run.SuccessCount,
-		FailureCount:  run.FailureCount,
-		ArtifactCount: run.ArtifactCount,
+		StepCount:       run.StepCount,
+		SuccessCount:    run.SuccessCount,
+		FailureCount:    run.FailureCount,
+		ArtifactCount:   run.ArtifactCount,
 	}
 
 	// Role-based field visibility

@@ -32,7 +32,7 @@ import (
 func TestListProjectsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects", nil)
+	req := httptest.NewRequest("GET", "/api/projects", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListProjectsHandler(w, req)
@@ -45,7 +45,7 @@ func TestListProjectsHandlerNoAuth(t *testing.T) {
 func TestListProjectsHandlerBadRequest(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects", nil)
+	req := httptest.NewRequest("GET", "/api/projects", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListProjectsHandler(w, req)
@@ -56,10 +56,10 @@ func TestListProjectsHandlerBadRequest(t *testing.T) {
 
 // MockProjectAccessService for testing authorization
 type MockProjectAccessService struct {
-	UserHasProjectAccessFunc func(ctx context.Context, userID, projectID string) (bool, error)
+	UserHasProjectAccessFunc  func(ctx context.Context, userID, projectID string) (bool, error)
 	GetUserRoleForProjectFunc func(ctx context.Context, userID, projectID string) (dashboard.Role, error)
-	ListUserProjectsFunc func(ctx context.Context, userID string) ([]dashboard.ProjectDTO, error)
-	HasProjectRoleFunc func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error)
+	ListUserProjectsFunc      func(ctx context.Context, userID string) ([]dashboard.ProjectDTO, error)
+	HasProjectRoleFunc        func(ctx context.Context, userID, projectID string, role dashboard.Role) (bool, error)
 }
 
 func (m *MockProjectAccessService) UserHasProjectAccess(ctx context.Context, userID, projectID string) (bool, error) {

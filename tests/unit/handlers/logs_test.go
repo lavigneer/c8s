@@ -31,7 +31,7 @@ import (
 func TestGetLogsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/logs", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/logs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogsHandler(w, req)
@@ -44,7 +44,7 @@ func TestGetLogsHandlerNoAuth(t *testing.T) {
 func TestGetLogSnapshotHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/logs/snapshot", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/logs/snapshot", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetLogSnapshotHandler(w, req)
@@ -57,7 +57,7 @@ func TestGetLogSnapshotHandlerNoAuth(t *testing.T) {
 func TestPreviewArtifactHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts/art-1/preview", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/artifacts/art-1/preview", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.PreviewArtifactHandler(w, req)

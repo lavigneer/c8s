@@ -63,7 +63,7 @@ func TestCORSAllowedOrigin(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -87,7 +87,7 @@ func TestCORSDisallowedOrigin(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://evil.com")
 	w := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func TestCORSWildcardAllowed(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	// When no origin or "*" in allowed, wildcard is used
 	w := httptest.NewRecorder()
 
@@ -132,7 +132,7 @@ func TestCORSPreflight(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("OPTIONS", "/api/test", nil)
+	req := httptest.NewRequest("OPTIONS", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -156,7 +156,7 @@ func TestCORSAllowedMethods(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("OPTIONS", "/api/test", nil)
+	req := httptest.NewRequest("OPTIONS", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -177,7 +177,7 @@ func TestCORSAllowedHeaders(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("OPTIONS", "/api/test", nil)
+	req := httptest.NewRequest("OPTIONS", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -198,7 +198,7 @@ func TestCORSMaxAge(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("OPTIONS", "/api/test", nil)
+	req := httptest.NewRequest("OPTIONS", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -231,7 +231,7 @@ func TestCORSMultipleAllowedOrigins(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}))
 
-			req := httptest.NewRequest("GET", "/api/test", nil)
+			req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 			req.Header.Set("Origin", tt.origin)
 			w := httptest.NewRecorder()
 
@@ -254,7 +254,7 @@ func TestCORSNoOriginHeader(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	// No Origin header set
 	w := httptest.NewRecorder()
 
@@ -280,7 +280,7 @@ func TestCORSCredentialsWithWildcard(t *testing.T) {
 	}))
 
 	// Test with origin header
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -304,7 +304,7 @@ func TestCORSSpecificOriginWithCredentials(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://example.com")
 	w := httptest.NewRecorder()
 
@@ -332,7 +332,7 @@ func TestCORSCaseSensitivity(t *testing.T) {
 	}))
 
 	// Test with different case (should not match)
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Origin", "https://Example.com")
 	w := httptest.NewRecorder()
 
@@ -357,7 +357,7 @@ func TestCORSWithDifferentMethods(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}))
 
-			req := httptest.NewRequest(method, "/api/test", nil)
+			req := httptest.NewRequest(method, "/api/test", http.NoBody)
 			req.Header.Set("Origin", "https://example.com")
 			w := httptest.NewRecorder()
 

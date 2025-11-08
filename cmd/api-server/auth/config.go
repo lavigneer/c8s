@@ -44,7 +44,7 @@ type Config struct {
 	JWKSUrl       string // JWKS endpoint URL (alternative to file)
 
 	// Token validation
-	VerifyExpiry   bool
+	VerifyExpiry    bool
 	VerifySignature bool
 	ExpiryTolerance time.Duration
 
@@ -61,18 +61,18 @@ func NewConfigFromEnv() *Config {
 	}
 
 	return &Config{
-		Mode:              getEnv("AUTH_MODE", "jwt"),
-		Algorithm:         getEnv("JWT_ALGORITHM", "HS256"),
-		Issuer:            getEnv("JWT_ISSUER", "c8s-auth"),
-		Audience:          getEnv("JWT_AUDIENCE", "c8s-api"),
-		Secret:            os.Getenv("JWT_SECRET"),
-		PublicKeyPath:     getEnv("JWT_PUBLIC_KEY_PATH", ""),
-		JWKSUrl:           getEnv("JWT_JWKS_URL", ""),
-		VerifyExpiry:      getEnvBool("JWT_VERIFY_EXPIRY", true),
-		VerifySignature:   getEnvBool("JWT_VERIFY_SIGNATURE", true),
-		ExpiryTolerance:   getEnvDuration("JWT_EXPIRY_TOLERANCE", 60*time.Second),
-		DefaultNamespace:  getEnv("JWT_DEFAULT_NAMESPACE", "default"),
-		DefaultRoles:      roles,
+		Mode:             getEnv("AUTH_MODE", "jwt"),
+		Algorithm:        getEnv("JWT_ALGORITHM", "HS256"),
+		Issuer:           getEnv("JWT_ISSUER", "c8s-auth"),
+		Audience:         getEnv("JWT_AUDIENCE", "c8s-api"),
+		Secret:           os.Getenv("JWT_SECRET"),
+		PublicKeyPath:    getEnv("JWT_PUBLIC_KEY_PATH", ""),
+		JWKSUrl:          getEnv("JWT_JWKS_URL", ""),
+		VerifyExpiry:     getEnvBool("JWT_VERIFY_EXPIRY", true),
+		VerifySignature:  getEnvBool("JWT_VERIFY_SIGNATURE", true),
+		ExpiryTolerance:  getEnvDuration("JWT_EXPIRY_TOLERANCE", 60*time.Second),
+		DefaultNamespace: getEnv("JWT_DEFAULT_NAMESPACE", "default"),
+		DefaultRoles:     roles,
 	}
 }
 

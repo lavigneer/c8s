@@ -24,7 +24,7 @@ func RequestSizeLimitMiddleware(maxBytes int64) func(next http.Handler) http.Han
 
 // TestRequestWithinSizeLimit verifies request within limit is accepted
 func TestRequestWithinSizeLimit(t *testing.T) {
-	const maxSize = 1024 * 1024 // 1MB
+	const maxSize = 1024 * 1024                                       // 1MB
 	payload := bytes.NewReader([]byte(strings.Repeat("x", 500*1024))) // 500KB
 
 	// Create middleware
@@ -238,10 +238,10 @@ func TestOversizeJSONPayload(t *testing.T) {
 // TestMultipleLimits verifies different size limits work independently
 func TestMultipleLimits(t *testing.T) {
 	tests := []struct {
-		name      string
-		maxSize   int64
+		name        string
+		maxSize     int64
 		payloadSize int
-		shouldPass bool
+		shouldPass  bool
 	}{
 		{"1KB limit, 500B payload", 1024, 500, true},
 		{"1KB limit, 1KB payload", 1024, 1024, true},

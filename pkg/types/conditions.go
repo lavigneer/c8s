@@ -66,8 +66,8 @@ const (
 	// ReasonTimeout indicates the pipeline timed out
 	ReasonTimeout = "Timeout"
 
-	// ReasonCancelled indicates the pipeline was cancelled by user
-	ReasonCancelled = "Cancelled"
+	// ReasonCancelled indicates the pipeline was canceled by user
+	ReasonCancelled = "Canceled"
 
 	// ReasonStorageError indicates an error uploading to object storage
 	ReasonStorageError = "StorageError"

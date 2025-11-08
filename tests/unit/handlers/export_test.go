@@ -31,7 +31,7 @@ import (
 func TestExportPipelineRunsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -43,7 +43,7 @@ func TestExportPipelineRunsHandlerNoAuth(t *testing.T) {
 func TestExportPipelineRunsHandlerJSON(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=json", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -56,7 +56,7 @@ func TestExportPipelineRunsHandlerJSON(t *testing.T) {
 func TestExportPipelineRunsHandlerCSV(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=csv", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -69,7 +69,7 @@ func TestExportPipelineRunsHandlerCSV(t *testing.T) {
 func TestExportPipelineRunsHandlerInvalidFormat(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=invalid", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=invalid", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -82,7 +82,7 @@ func TestExportPipelineRunsHandlerInvalidFormat(t *testing.T) {
 func TestExportPipelineRunsHandlerWithFilter(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/exports/runs?format=json&status=success&branch=main", nil)
+	req := httptest.NewRequest("GET", "/api/exports/runs?format=json&status=success&branch=main", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ExportPipelineRunsHandler(w, req)
@@ -95,7 +95,7 @@ func TestExportPipelineRunsHandlerWithFilter(t *testing.T) {
 func TestDeleteProjectHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("DELETE", "/api/projects/proj-123", nil)
+	req := httptest.NewRequest("DELETE", "/api/projects/proj-123", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.DeleteProjectHandler(w, req)
@@ -107,7 +107,7 @@ func TestDeleteProjectHandlerNoAuth(t *testing.T) {
 func TestCreateProjectHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("POST", "/api/projects", nil)
+	req := httptest.NewRequest("POST", "/api/projects", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.CreateProjectHandler(w, req)

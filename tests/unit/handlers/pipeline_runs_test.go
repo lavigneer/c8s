@@ -31,7 +31,7 @@ import (
 func TestListPipelineRunsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs", nil)
+	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListPipelineRunsHandler(w, req)
@@ -45,7 +45,7 @@ func TestListPipelineRunsHandlerNoAuth(t *testing.T) {
 func TestListPipelineRunsHandlerMissingProjectID(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects//runs", nil)
+	req := httptest.NewRequest("GET", "/api/projects//runs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListPipelineRunsHandler(w, req)
@@ -58,7 +58,7 @@ func TestListPipelineRunsHandlerMissingProjectID(t *testing.T) {
 func TestListPipelineRunsHandlerWithFilter(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs?status=success&branch=main", nil)
+	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs?status=success&branch=main", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListPipelineRunsHandler(w, req)
@@ -71,7 +71,7 @@ func TestListPipelineRunsHandlerWithFilter(t *testing.T) {
 func TestGetPipelineRunHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetPipelineRunHandler(w, req)
@@ -84,7 +84,7 @@ func TestGetPipelineRunHandlerNoAuth(t *testing.T) {
 func TestGetPipelineRunHandlerMissingRunID(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/", nil)
+	req := httptest.NewRequest("GET", "/api/runs/", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.GetPipelineRunHandler(w, req)
@@ -97,7 +97,7 @@ func TestGetPipelineRunHandlerMissingRunID(t *testing.T) {
 func TestPipelineRunDetailsHandlerNoAuth(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/runs/run-123/details", nil)
+	req := httptest.NewRequest("GET", "/api/runs/run-123/details", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.PipelineRunDetailsHandler(w, req)
@@ -110,7 +110,7 @@ func TestPipelineRunDetailsHandlerNoAuth(t *testing.T) {
 func TestListPipelineRunsHandlerWithPagination(t *testing.T) {
 	handlerspkg.InitK8sClient(&dashboard.K8sClient{})
 
-	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs?page=2&limit=10", nil)
+	req := httptest.NewRequest("GET", "/api/projects/proj-1/runs?page=2&limit=10", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handlerspkg.ListPipelineRunsHandler(w, req)

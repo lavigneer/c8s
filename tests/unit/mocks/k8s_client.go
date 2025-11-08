@@ -29,15 +29,15 @@ import (
 type MockK8sClient struct {
 	*dashboard.K8sClient
 	// Callbacks for K8s operations (set these in tests)
-	OnListRoleBindings       func(ctx context.Context, namespace string) (*rbacv1.RoleBindingList, error)
+	OnListRoleBindings        func(ctx context.Context, namespace string) (*rbacv1.RoleBindingList, error)
 	OnListClusterRoleBindings func(ctx context.Context) (*rbacv1.ClusterRoleBindingList, error)
-	OnGetClusterRole         func(ctx context.Context, name string) (*rbacv1.ClusterRole, error)
-	OnListPipelineRuns       func(ctx context.Context, namespace string, opts ...client.ListOption) (*v1alpha1.PipelineRunList, error)
-	OnGetPipelineRun         func(ctx context.Context, namespace, name string) (*v1alpha1.PipelineRun, error)
-	OnGetPipelineConfig      func(ctx context.Context, namespace, name string) (*v1alpha1.PipelineConfig, error)
-	OnListPipelineConfigs    func(ctx context.Context, namespace string, opts ...client.ListOption) (*v1alpha1.PipelineConfigList, error)
-	OnCreatePipelineConfig   func(ctx context.Context, config *v1alpha1.PipelineConfig) error
-	OnDeletePipelineConfig   func(ctx context.Context, namespace, name string) error
+	OnGetClusterRole          func(ctx context.Context, name string) (*rbacv1.ClusterRole, error)
+	OnListPipelineRuns        func(ctx context.Context, namespace string, opts ...client.ListOption) (*v1alpha1.PipelineRunList, error)
+	OnGetPipelineRun          func(ctx context.Context, namespace, name string) (*v1alpha1.PipelineRun, error)
+	OnGetPipelineConfig       func(ctx context.Context, namespace, name string) (*v1alpha1.PipelineConfig, error)
+	OnListPipelineConfigs     func(ctx context.Context, namespace string, opts ...client.ListOption) (*v1alpha1.PipelineConfigList, error)
+	OnCreatePipelineConfig    func(ctx context.Context, config *v1alpha1.PipelineConfig) error
+	OnDeletePipelineConfig    func(ctx context.Context, namespace, name string) error
 }
 
 // NewMockK8sClient creates a new mock K8s client for testing

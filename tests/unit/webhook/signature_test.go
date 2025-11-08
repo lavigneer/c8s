@@ -802,7 +802,7 @@ func TestWebhookSecretWithBinaryData(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"webhook-secret": []byte{0xFF, 0xFE, 0xFD, 0xFC, 0xFB},
+			"webhook-secret": {0xFF, 0xFE, 0xFD, 0xFC, 0xFB},
 		},
 	}
 

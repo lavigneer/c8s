@@ -26,8 +26,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	handlerspkg "github.com/org/c8s/cmd/api-server/handlers"
 	authpkg "github.com/org/c8s/cmd/api-server/auth"
+	handlerspkg "github.com/org/c8s/cmd/api-server/handlers"
 )
 
 // testSetup resets validator state before each test to prevent cross-test contamination
@@ -99,7 +99,7 @@ func TestAuthMiddlewareWithValidToken(t *testing.T) {
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// Test with Authorization header
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
 	w := httptest.NewRecorder()
 
@@ -139,7 +139,7 @@ func TestAuthMiddlewareWithAuthCookie(t *testing.T) {
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// Test with cookie
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  "auth_token",
 		Value: tokenString,
@@ -176,7 +176,7 @@ func TestAuthMiddlewareWithInvalidToken(t *testing.T) {
 
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer invalid-token-string")
 	w := httptest.NewRecorder()
 
@@ -211,7 +211,7 @@ func TestAuthMiddlewareNoTokenAPIRequest(t *testing.T) {
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// API request (Accept: application/json) without token
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("Accept", "application/json")
 	w := httptest.NewRecorder()
 
@@ -246,7 +246,7 @@ func TestAuthMiddlewareNoTokenHTMLRequest(t *testing.T) {
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
 	// HTML request (Accept: text/html) without token
-	req := httptest.NewRequest("GET", "/dashboard", nil)
+	req := httptest.NewRequest("GET", "/dashboard", http.NoBody)
 	req.Header.Set("Accept", "text/html")
 	w := httptest.NewRecorder()
 
@@ -286,7 +286,7 @@ func TestOptionalAuthMiddlewareWithValidToken(t *testing.T) {
 
 	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
 	w := httptest.NewRecorder()
 
@@ -324,7 +324,7 @@ func TestOptionalAuthMiddlewareWithoutToken(t *testing.T) {
 
 	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	// No authorization header or cookie
 	w := httptest.NewRecorder()
 
@@ -362,7 +362,7 @@ func TestOptionalAuthMiddlewareWithInvalidToken(t *testing.T) {
 
 	handler := handlerspkg.OptionalAuthMiddleware(testHandler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer invalid-token")
 	w := httptest.NewRecorder()
 
@@ -426,7 +426,7 @@ func TestGetUserFromContext(t *testing.T) {
 
 	handler := handlerspkg.AuthMiddleware(testHandler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
 	w := httptest.NewRecorder()
 

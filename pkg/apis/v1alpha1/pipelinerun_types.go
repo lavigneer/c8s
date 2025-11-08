@@ -21,7 +21,7 @@ import (
 )
 
 // PipelineRunPhase represents the current phase of a PipelineRun
-// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Cancelled
+// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Canceled
 type PipelineRunPhase string
 
 const (
@@ -33,8 +33,8 @@ const (
 	PipelineRunPhaseSucceeded PipelineRunPhase = "Succeeded"
 	// PipelineRunPhaseFailed means at least one step failed
 	PipelineRunPhaseFailed PipelineRunPhase = "Failed"
-	// PipelineRunPhaseCancelled means the run was cancelled
-	PipelineRunPhaseCancelled PipelineRunPhase = "Cancelled"
+	// PipelineRunPhaseCancelled means the run was canceled
+	PipelineRunPhaseCancelled PipelineRunPhase = "Canceled"
 )
 
 // StepPhase represents the current phase of a pipeline step
@@ -102,7 +102,7 @@ type PipelineRunStatus struct {
 	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`
 
-	// CompletionTime is when the run completed (succeeded, failed, or cancelled)
+	// CompletionTime is when the run completed (succeeded, failed, or canceled)
 	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
