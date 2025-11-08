@@ -85,7 +85,7 @@ func (s *InMemoryLogStorage) SetLog(runID, stepID string, content string) {
 }
 
 // GetStepLogs returns a reader for step logs
-func (s *InMemoryLogStorage) GetStepLogs(ctx context.Context, runID, stepID string) (io.ReadCloser, error) {
+func (s *InMemoryLogStorage) GetStepLogs(_ context.Context, runID, stepID string) (io.ReadCloser, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
 	if !ok {
@@ -118,7 +118,7 @@ func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID s
 }
 
 // GetLogSnapshot returns last N lines of logs
-func (s *InMemoryLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID string, lines int) ([]string, error) {
+func (s *InMemoryLogStorage) GetLogSnapshot(_ context.Context, runID, stepID string, lines int) ([]string, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
 	if !ok {
@@ -140,7 +140,7 @@ func (s *InMemoryLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID s
 }
 
 // GetLogSize returns size of log content in bytes
-func (s *InMemoryLogStorage) GetLogSize(ctx context.Context, runID, stepID string) (int64, error) {
+func (s *InMemoryLogStorage) GetLogSize(_ context.Context, runID, stepID string) (int64, error) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
 	if !ok {
@@ -186,22 +186,22 @@ func (s *InMemoryLogStorage) PopulateDemoLogsForRun(runID string) {
 type NoOpLogStorage struct{}
 
 // GetStepLogs returns empty log
-func (s *NoOpLogStorage) GetStepLogs(ctx context.Context, runID, stepID string) (io.ReadCloser, error) {
+func (s *NoOpLogStorage) GetStepLogs(_ context.Context, _, _ string) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader("")), nil
 }
 
 // StreamStepLogs closes channel immediately
-func (s *NoOpLogStorage) StreamStepLogs(ctx context.Context, runID, stepID string, linesChan chan<- string) error {
+func (s *NoOpLogStorage) StreamStepLogs(_ context.Context, _, _ string, linesChan chan<- string) error {
 	close(linesChan)
 	return nil
 }
 
 // GetLogSnapshot returns empty snapshot
-func (s *NoOpLogStorage) GetLogSnapshot(ctx context.Context, runID, stepID string, lines int) ([]string, error) {
+func (s *NoOpLogStorage) GetLogSnapshot(_ context.Context, _, _ string, _ int) ([]string, error) {
 	return []string{}, nil
 }
 
 // GetLogSize returns 0
-func (s *NoOpLogStorage) GetLogSize(ctx context.Context, runID, stepID string) (int64, error) {
+func (s *NoOpLogStorage) GetLogSize(_ context.Context, _, _ string) (int64, error) {
 	return 0, nil
 }

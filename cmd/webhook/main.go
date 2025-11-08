@@ -143,13 +143,13 @@ func main() {
 }
 
 // handleHealth handles health check requests
-func handleHealth(w http.ResponseWriter, r *http.Request) {
+func handleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }
 
 // handleReady handles readiness check requests
-func handleReady(w http.ResponseWriter, r *http.Request) {
+func handleReady(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("Ready"))
 }

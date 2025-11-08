@@ -130,7 +130,7 @@ func CloseBroadcaster(projectID string) {
 }
 
 // GetBroadcasterStats returns statistics about connected clients
-func GetBroadcasterStats(projectID string) map[string]int {
+func GetBroadcasterStats(_ string) map[string]int {
 	broadcasterMutex.RLock()
 	defer broadcasterMutex.RUnlock()
 

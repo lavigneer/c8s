@@ -296,7 +296,7 @@ func GetCompletedSteps(pipelineRun *c8sv1alpha1.PipelineRun) map[string]bool {
 }
 
 // IsStepReady returns true if a step is ready to execute (dependencies satisfied)
-func IsStepReady(stepName string, dependencies []string, completedSteps map[string]bool) bool {
+func IsStepReady(_ string, dependencies []string, completedSteps map[string]bool) bool {
 	for _, dep := range dependencies {
 		if !completedSteps[dep] {
 			return false

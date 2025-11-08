@@ -139,7 +139,7 @@ func validateRepositoryURL(repoURL string) error {
 }
 
 // validateStep validates a single pipeline step
-func validateStep(step *c8sv1alpha1.PipelineStep, existingSteps map[string]bool, prefix string) *ValidationErrors {
+func validateStep(step *c8sv1alpha1.PipelineStep, _ map[string]bool, prefix string) *ValidationErrors {
 	errors := &ValidationErrors{}
 
 	// Validate image format

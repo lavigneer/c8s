@@ -148,7 +148,7 @@ func (c *Client) ListObjects(ctx context.Context, prefix string) ([]string, erro
 			Bucket: aws.String(c.bucket),
 			Prefix: aws.String(prefix),
 		},
-		func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+		func(page *s3.ListObjectsV2Output, _ bool) bool {
 			for _, obj := range page.Contents {
 				keys = append(keys, *obj.Key)
 			}

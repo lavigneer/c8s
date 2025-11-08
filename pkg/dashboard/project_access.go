@@ -175,7 +175,7 @@ func (s *ProjectAccessServiceImpl) mapClusterRoleToRole(clusterRole *rbacv1.Clus
 }
 
 // ListUserProjects returns all projects where user has any access (read-only MVP)
-func (s *ProjectAccessServiceImpl) ListUserProjects(ctx context.Context, userID string) ([]ProjectDTO, error) {
+func (s *ProjectAccessServiceImpl) ListUserProjects(_ context.Context, _ string) ([]ProjectDTO, error) {
 	// TODO: Query K8s ClusterRoleBindings across all namespaces
 	// For MVP, return empty list - applications use project listing from API instead
 	return []ProjectDTO{}, nil

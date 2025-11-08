@@ -156,7 +156,7 @@ func (aw *AdmissionWebhook) validatePipelineConfig(ctx context.Context, req *adm
 }
 
 // HandleHealth handles health check requests
-func (aw *AdmissionWebhook) HandleHealth(w http.ResponseWriter, r *http.Request) {
+func (aw *AdmissionWebhook) HandleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 }

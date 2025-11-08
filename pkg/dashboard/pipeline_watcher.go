@@ -28,48 +28,10 @@ func NewPipelineWatcher(k8sClient *K8sClient) *PipelineWatcher {
 
 // Start begins watching PipelineRuns in a namespace
 // TODO: Implement using a polling mechanism since controller-runtime client.Watch() is not available
-func (w *PipelineWatcher) Start(ctx context.Context, namespace string) error {
+func (w *PipelineWatcher) Start(_ context.Context, _ string) error {
 	// For now, this is a placeholder
 	// The watcher functionality will be implemented using polling in a future iteration
 	return nil
-}
-
-// processWatchEvents processes Kubernetes watch events
-func (w *PipelineWatcher) processWatchEvents(ctx context.Context, namespace string, watchInterface watch.Interface) {
-	defer func() {
-		w.watcherMutex.Lock()
-		delete(w.watchers, namespace)
-		w.watcherMutex.Unlock()
-	}()
-
-	eventChan := watchInterface.ResultChan()
-
-	for {
-		select {
-		case <-ctx.Done():
-			watchInterface.Stop()
-			return
-
-		case <-w.stopCh:
-			watchInterface.Stop()
-			return
-
-		case event, ok := <-eventChan:
-			if !ok {
-				// Channel closed
-				return
-			}
-
-			w.handleWatchEvent(event)
-		}
-	}
-}
-
-// handleWatchEvent processes a Kubernetes watch event
-// TODO: Implement event broadcasting when watch is available
-func (w *PipelineWatcher) handleWatchEvent(event watch.Event) {
-	// Placeholder for event handling
-	// Will be implemented in a future iteration
 }
 
 // Stop stops the watcher

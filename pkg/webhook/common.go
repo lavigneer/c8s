@@ -121,11 +121,11 @@ func findRepositoryConnection(
 	ctx context.Context,
 	k8sClient client.Client,
 	repositoryURL string,
-	namespace string,
+	_ string,
 ) (*c8sv1alpha1.RepositoryConnection, error) {
 	// List all RepositoryConnections in namespace
 	repoConnList := &c8sv1alpha1.RepositoryConnectionList{}
-	if err := k8sClient.List(ctx, repoConnList, client.InNamespace(namespace)); err != nil {
+	if err := k8sClient.List(ctx, repoConnList); err != nil {
 		return nil, fmt.Errorf("failed to list RepositoryConnections: %w", err)
 	}
 

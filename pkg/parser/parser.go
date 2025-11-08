@@ -295,7 +295,7 @@ func checkCircularDependencies(steps []PipelineStepYAML) error {
 
 // ParseFile is a convenience function to parse a pipeline file
 // This will be used by the CLI and webhook service
-func ParseFile(filename string) (*c8sv1alpha1.PipelineConfigSpec, error) {
+func ParseFile(_ string) (*c8sv1alpha1.PipelineConfigSpec, error) {
 	// TODO: Implement file reading in Phase 3
 	// For now, this is a placeholder
 	return nil, fmt.Errorf("not implemented: use Parse() with file contents")

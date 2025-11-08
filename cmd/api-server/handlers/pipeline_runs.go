@@ -146,9 +146,13 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 
 // FetchPipelineRuns queries Kubernetes for pipeline runs with optional filters
 // This is a placeholder - actual implementation would use the K8s client
-func FetchPipelineRuns(ctx context.Context, projectID, status, branch, search string) ([]*v1alpha1.PipelineRun, error) {
+func FetchPipelineRuns(_ context.Context, projectID, status, branch, search string) ([]*v1alpha1.PipelineRun, error) {
 	// TODO: Implement actual K8s query using client-go
 	// This would query PipelineRun resources from the cluster
+	_ = projectID
+	_ = status
+	_ = branch
+	_ = search
 	return []*v1alpha1.PipelineRun{}, nil
 }
 

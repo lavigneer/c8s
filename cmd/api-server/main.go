@@ -160,7 +160,7 @@ func main() {
 }
 
 // healthHandler returns a simple health check response
-func healthHandler(w http.ResponseWriter, r *http.Request) {
+func healthHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"status":"healthy","service":"api-server"}`)

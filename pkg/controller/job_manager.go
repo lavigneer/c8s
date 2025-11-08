@@ -47,7 +47,7 @@ func NewJobManager(repository string) *JobManager {
 func (jm *JobManager) CreateJobForStep(
 	step *c8sv1alpha1.PipelineStep,
 	pipelineRun *c8sv1alpha1.PipelineRun,
-	pipelineConfig *c8sv1alpha1.PipelineConfig,
+	_ *c8sv1alpha1.PipelineConfig,
 ) (*batchv1.Job, error) {
 	jobName := fmt.Sprintf("%s-%s", pipelineRun.Name, step.Name)
 
