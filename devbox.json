@@ -9,7 +9,7 @@
     "gnumake@latest",
     "tilt@latest",
     "ctlptl@latest",
-    "nodejs_18@latest"
+    "nodejs_24@latest"
   ],
   "shell": {
     "init_hook": [
