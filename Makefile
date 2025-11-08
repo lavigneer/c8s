@@ -24,7 +24,7 @@ GOFLAGS := -v
 LDFLAGS := -ldflags "-X $(MODULE)/pkg/version.Version=$(VERSION)"
 
 # CRD and code generation
-CONTROLLER_GEN := $(shell which controller-gen)
+CONTROLLER_GEN := go tool controller-gen
 CRD_OPTIONS ?= crd:allowDangerousTypes=true
 
 # Test configuration
@@ -58,7 +58,7 @@ test-unit: ## Run unit tests only
 
 .PHONY: test-integration
 test-integration: envtest ## Run integration tests with envtest
-	KUBEBUILDER_ASSETS="$(shell setup-envtest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
+	KUBEBUILDER_ASSETS="$(shell go tool setup-envtest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
 
 .PHONY: coverage
 coverage: test ## Generate coverage report
@@ -150,20 +150,11 @@ undeploy: ## Remove controller and webhook from cluster
 
 ##@ Tools
 
-.PHONY: controller-gen
-controller-gen: ## Ensure controller-gen is installed
-	@which controller-gen > /dev/null || $(GO) install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
-
-.PHONY: envtest
-envtest: ## Ensure setup-envtest is installed
-	@which setup-envtest > /dev/null || $(GO) install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
-.PHONY: golangci-lint
-golangci-lint: ## Ensure golangci-lint is installed
-	@which golangci-lint > /dev/null || $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
 .PHONY: tools
-tools: controller-gen envtest golangci-lint ## Install all development tools
+tools: ## Note: Tools are now managed via go.mod tool directive
+	@echo "Tools are now managed via go.mod tool directive"
+	@echo "Available tools: controller-gen, setup-envtest, golangci-lint"
+	@echo "They will be installed automatically via 'go tool <name>' when needed"
 
 .PHONY: check-deps
 check-deps: ## Check if required dependencies are installed
