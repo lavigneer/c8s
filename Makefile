@@ -46,7 +46,7 @@ vet: ## Run go vet against code
 
 .PHONY: lint
 lint: ## Run golangci-lint
-	go tool golangci-lint run
+	golangci-lint run
 
 .PHONY: test
 test: ## Run unit tests

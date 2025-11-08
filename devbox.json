@@ -2,6 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": [
     "go_1_25@latest",
+    "golangci-lint@latest",
     "kubectl@latest",
     "kind@latest",
     "docker@latest",
