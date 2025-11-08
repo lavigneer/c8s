@@ -289,8 +289,8 @@ func validateMatrixYAML(matrix *MatrixYAML) error {
 func checkCircularDependencies(steps []PipelineStepYAML) error {
 	// Build adjacency list
 	graph := make(map[string][]string)
-	for _, step := range steps {
-		graph[step.Name] = step.DependsOn
+	for i := range steps {
+		graph[steps[i].Name] = steps[i].DependsOn
 	}
 
 	// Check each step for cycles using DFS
@@ -316,10 +316,10 @@ func checkCircularDependencies(steps []PipelineStepYAML) error {
 		return false
 	}
 
-	for _, step := range steps {
-		if !visited[step.Name] {
-			if hasCycle(step.Name) {
-				return fmt.Errorf("circular dependency detected involving step: %s", step.Name)
+	for i := range steps {
+		if !visited[steps[i].Name] {
+			if hasCycle(steps[i].Name) {
+				return fmt.Errorf("circular dependency detected involving step: %s", steps[i].Name)
 			}
 		}
 	}

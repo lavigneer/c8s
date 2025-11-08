@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // Package types contains common types, constants, and utilities for C8S
+//nolint:revive // the package name is intentional for grouping C8S shared types
 package types
 
 const (

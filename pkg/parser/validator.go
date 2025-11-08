@@ -57,24 +57,24 @@ func Validate(config *c8sv1alpha1.PipelineConfig) error {
 
 	// Validate step names are unique and valid
 	stepNames := make(map[string]bool)
-	for i, step := range config.Spec.Steps {
+	for i := range config.Spec.Steps {
 		stepPrefix := fmt.Sprintf("spec.steps[%d]", i)
 
 		// Validate step name format
-		if !stepNamePattern.MatchString(step.Name) {
+		if !stepNamePattern.MatchString(config.Spec.Steps[i].Name) {
 			errors.Add(fmt.Sprintf("%s.name", stepPrefix),
 				"must contain only alphanumeric characters, dashes, and underscores")
 		}
 
 		// Check for duplicate names
-		if stepNames[step.Name] {
+		if stepNames[config.Spec.Steps[i].Name] {
 			errors.Add(fmt.Sprintf("%s.name", stepPrefix),
-				fmt.Sprintf("duplicate step name: %s", step.Name))
+				fmt.Sprintf("duplicate step name: %s", config.Spec.Steps[i].Name))
 		}
-		stepNames[step.Name] = true
+		stepNames[config.Spec.Steps[i].Name] = true
 
 		// Validate step-specific fields
-		if err := validateStep(&step, stepNames, stepPrefix); err != nil {
+		if err := validateStep(&config.Spec.Steps[i], stepNames, stepPrefix); err != nil {
 			errors.Merge(err)
 		}
 	}
@@ -203,16 +203,16 @@ func validateNoCycles(steps []c8sv1alpha1.PipelineStep) error {
 	graph := make(map[string][]string)
 	allSteps := make(map[string]bool)
 
-	for _, step := range steps {
-		graph[step.Name] = step.DependsOn
-		allSteps[step.Name] = true
+	for i := range steps {
+		graph[steps[i].Name] = steps[i].DependsOn
+		allSteps[steps[i].Name] = true
 	}
 
 	// Validate all dependencies exist
-	for _, step := range steps {
-		for _, dep := range step.DependsOn {
+	for i := range steps {
+		for _, dep := range steps[i].DependsOn {
 			if !allSteps[dep] {
-				return fmt.Errorf("step %s depends on non-existent step: %s", step.Name, dep)
+				return fmt.Errorf("step %s depends on non-existent step: %s", steps[i].Name, dep)
 			}
 		}
 	}
@@ -252,9 +252,9 @@ func validateNoCycles(steps []c8sv1alpha1.PipelineStep) error {
 		return nil
 	}
 
-	for _, step := range steps {
-		if !visited[step.Name] {
-			if err := dfs(step.Name, []string{}); err != nil {
+	for i := range steps {
+		if !visited[steps[i].Name] {
+			if err := dfs(steps[i].Name, []string{}); err != nil {
 				return err
 			}
 		}

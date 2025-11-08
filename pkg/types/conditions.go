@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:revive // the package name 'types' is intentional for shared condition types
+// Package types provides common C8S types and constants
 package types
 
 // Condition types for PipelineRun status
