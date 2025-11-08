@@ -77,8 +77,6 @@ tilt_modules/
 
 # Node/npm (for Tailwind CSS build and Playwright tests)
 node_modules/
-# Keep package-lock.json for reproducible builds in CI/CD
-# package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
