@@ -74,15 +74,10 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return r.handleDeletion(ctx, pipelineRun)
 	}
 
-	// Add finalizer if not present
-	if !containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
-		logger.Info("Adding finalizer to PipelineRun")
-		pipelineRun.Finalizers = append(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
-		if err := r.Update(ctx, pipelineRun); err != nil {
-			logger.Error(err, "Failed to add finalizer")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+	// Add finalizer if not present and check if in terminal phase
+	result, needsRequeue := r.ensureFinalizer(ctx, pipelineRun)
+	if needsRequeue {
+		return result, nil
 	}
 
 	// Skip reconciliation if pipeline is in terminal state
@@ -93,25 +88,14 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	// Step 1: Fetch referenced PipelineConfig
-	pipelineConfig := &c8sv1alpha1.PipelineConfig{}
-	configKey := types.NamespacedName{
-		Name:      pipelineRun.Spec.PipelineConfigRef,
-		Namespace: pipelineRun.Namespace,
-	}
-	if err := r.Get(ctx, configKey, pipelineConfig); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Error(err, "PipelineConfig not found",
-				"config", pipelineRun.Spec.PipelineConfigRef,
-			)
-			// Update status to Failed
-			pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
-			if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
-				logger.Error(updateErr, "Failed to update PipelineRun status")
-			}
-			return ctrl.Result{}, nil
-		}
+	// Step 1: Fetch and validate PipelineConfig
+	pipelineConfig, err := r.fetchPipelineConfig(ctx, pipelineRun)
+	if err != nil {
 		return ctrl.Result{}, err
+	}
+	if pipelineConfig == nil {
+		// PipelineConfig not found, status already updated
+		return ctrl.Result{}, nil
 	}
 
 	// Step 2: Initialize status if needed
@@ -126,106 +110,15 @@ func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Step 3: Build execution schedule using DAG scheduler
-	schedule, err := scheduler.BuildSchedule(pipelineConfig)
-	if err != nil {
-		logger.Error(err, "Failed to build execution schedule")
-		pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
-		if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
-			logger.Error(updateErr, "Failed to update PipelineRun status")
-		}
+	schedule, hasFailed := r.buildAndLogSchedule(ctx, pipelineRun, pipelineConfig)
+	if hasFailed {
 		return ctrl.Result{}, nil
 	}
 
-	logger.Info("Built execution schedule",
-		"totalSteps", schedule.TotalSteps(),
-		"layers", schedule.LayerCount(),
-	)
-
-	// Step 4: Get completed steps to determine which steps are ready
-	completedSteps := GetCompletedSteps(pipelineRun)
-	logger.Info("Completed steps", "count", len(completedSteps))
-
-	// Step 5: Create Jobs for steps that are ready to execute
-	jobManager := NewJobManager(pipelineConfig.Spec.Repository)
-	readySteps := schedule.GetReadySteps(completedSteps)
-
-	for _, step := range readySteps {
-		// Check if Job already exists
-		jobName := GetJobForStep(pipelineRun.Name, step.Name)
-		existingJob := &batchv1.Job{}
-		jobKey := types.NamespacedName{
-			Name:      jobName,
-			Namespace: pipelineRun.Namespace,
-		}
-
-		err := r.Get(ctx, jobKey, existingJob)
-		if err == nil {
-			// Job already exists, skip creation
-			logger.Info("Job already exists", "step", step.Name, "job", jobName)
-			continue
-		}
-
-		if !apierrors.IsNotFound(err) {
-			// Real error occurred
-			logger.Error(err, "Failed to check if Job exists", "step", step.Name)
-			continue
-		}
-
-		// Job doesn't exist, create it
-		logger.Info("Creating Job for step", "step", step.Name)
-		job, err := jobManager.CreateJobForStep(step, pipelineRun, pipelineConfig)
-		if err != nil {
-			logger.Error(err, "Failed to create Job spec", "step", step.Name)
-			continue
-		}
-
-		if err := r.Create(ctx, job); err != nil {
-			logger.Error(err, "Failed to create Job", "step", step.Name, "job", job.Name)
-			continue
-		}
-
-		logger.Info("Successfully created Job", "step", step.Name, "job", job.Name)
-	}
-
-	// Step 6: List all Jobs owned by this PipelineRun
-	jobList := &batchv1.JobList{}
-	if err := r.List(ctx, jobList,
-		client.InNamespace(pipelineRun.Namespace),
-		client.MatchingLabels{
-			ctypes.LabelPipelineRun: pipelineRun.Name,
-		},
-	); err != nil {
-		logger.Error(err, "Failed to list Jobs")
-		return ctrl.Result{}, err
-	}
-
-	// Build map of jobs by step name
-	jobsByStep := make(map[string]*batchv1.Job)
-	for i := range jobList.Items {
-		job := &jobList.Items[i]
-		if stepName, ok := job.Labels[ctypes.LabelStepName]; ok {
-			jobsByStep[stepName] = job
-		}
-	}
-
-	logger.Info("Found Jobs for PipelineRun",
-		"totalJobs", len(jobsByStep),
-		"expectedSteps", schedule.TotalSteps(),
-	)
-
-	// Step 7: Update PipelineRun status based on Job statuses
-	statusUpdater := NewStatusUpdater(r.Client)
-	if err := statusUpdater.UpdatePipelineRunStatus(ctx, pipelineRun, jobsByStep, schedule.TotalSteps()); err != nil {
-		logger.Error(err, "Failed to update PipelineRun status")
-		return ctrl.Result{}, err
-	}
-
-	// Step 7.5: Collect and upload logs for completed Jobs
-	if r.LogCollector != nil {
-		if err := r.collectLogsForCompletedJobs(ctx, pipelineRun, pipelineConfig, jobsByStep); err != nil {
-			logger.Error(err, "Failed to collect logs for completed jobs")
-			// Continue even if log collection fails - don't block pipeline progress
-		}
+	// Step 4-7: Create jobs and update status
+	if err := r.processStepsAndJobs(ctx, pipelineRun, pipelineConfig, schedule); err != nil {
+		logger.Error(err, "Failed to process steps and jobs")
+		// Continue - log collection errors shouldn't block reconciliation
 	}
 
 	// Step 8: Requeue if not in terminal state
@@ -332,49 +225,94 @@ func (r *PipelineRunReconciler) isTerminalPhase(phase c8sv1alpha1.PipelineRunPha
 func (r *PipelineRunReconciler) handleDeletion(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	if containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
-		logger.Info("Cleaning up resources for PipelineRun")
-
-		// Delete all Jobs owned by this PipelineRun
-		jobList := &batchv1.JobList{}
-		if err := r.List(ctx, jobList,
-			client.InNamespace(pipelineRun.Namespace),
-			client.MatchingLabels{
-				ctypes.LabelPipelineRun: pipelineRun.Name,
-			},
-		); err != nil {
-			logger.Error(err, "Failed to list Jobs for cleanup")
-			return ctrl.Result{}, err
-		}
-
-		// Delete each Job
-		for i := range jobList.Items {
-			job := &jobList.Items[i]
-			logger.Info("Deleting Job", "job", job.Name)
-			if err := r.Delete(ctx, job, client.PropagationPolicy("Background")); err != nil {
-				if !apierrors.IsNotFound(err) {
-					logger.Error(err, "Failed to delete Job", "job", job.Name)
-					return ctrl.Result{}, err
-				}
-			}
-		}
-
-		// Wait a moment for Jobs to be deleted (they may have finalizers too)
-		// In a real implementation, you might want to check if all Jobs are gone
-		// before removing the finalizer
-		logger.Info("Jobs cleanup initiated", "count", len(jobList.Items))
-
-		// Remove finalizer
-		pipelineRun.Finalizers = removeString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
-		if err := r.Update(ctx, pipelineRun); err != nil {
-			logger.Error(err, "Failed to remove finalizer")
-			return ctrl.Result{}, err
-		}
-
-		logger.Info("Finalizer removed, PipelineRun will be deleted")
+	if !containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
+		return ctrl.Result{}, nil
 	}
 
+	logger.Info("Cleaning up resources for PipelineRun")
+
+	// Delete all Jobs owned by this PipelineRun
+	jobList := &batchv1.JobList{}
+	if err := r.List(ctx, jobList,
+		client.InNamespace(pipelineRun.Namespace),
+		client.MatchingLabels{
+			ctypes.LabelPipelineRun: pipelineRun.Name,
+		},
+	); err != nil {
+		logger.Error(err, "Failed to list Jobs for cleanup")
+		return ctrl.Result{}, err
+	}
+
+	// Delete each Job
+	for i := range jobList.Items {
+		job := &jobList.Items[i]
+		logger.Info("Deleting Job", "job", job.Name)
+		if err := r.Delete(ctx, job, client.PropagationPolicy("Background")); err != nil && !apierrors.IsNotFound(err) {
+			logger.Error(err, "Failed to delete Job", "job", job.Name)
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Wait a moment for Jobs to be deleted (they may have finalizers too)
+	// In a real implementation, you might want to check if all Jobs are gone
+	// before removing the finalizer
+	logger.Info("Jobs cleanup initiated", "count", len(jobList.Items))
+
+	// Remove finalizer
+	pipelineRun.Finalizers = removeString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
+	if err := r.Update(ctx, pipelineRun); err != nil {
+		logger.Error(err, "Failed to remove finalizer")
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Finalizer removed, PipelineRun will be deleted")
+
 	return ctrl.Result{}, nil
+}
+
+// ensureFinalizer ensures the finalizer is present on the PipelineRun
+func (r *PipelineRunReconciler) ensureFinalizer(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun) (ctrl.Result, bool) {
+	logger := log.FromContext(ctx)
+
+	if !containsString(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun) {
+		logger.Info("Adding finalizer to PipelineRun")
+		pipelineRun.Finalizers = append(pipelineRun.Finalizers, ctypes.FinalizerPipelineRun)
+		if err := r.Update(ctx, pipelineRun); err != nil {
+			logger.Error(err, "Failed to add finalizer")
+			return ctrl.Result{}, false
+		}
+		return ctrl.Result{Requeue: true}, true
+	}
+	return ctrl.Result{}, false
+}
+
+// fetchPipelineConfig fetches the PipelineConfig referenced by the PipelineRun
+// Returns nil if the config is not found but status has been updated
+func (r *PipelineRunReconciler) fetchPipelineConfig(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun) (*c8sv1alpha1.PipelineConfig, error) {
+	logger := log.FromContext(ctx)
+
+	pipelineConfig := &c8sv1alpha1.PipelineConfig{}
+	configKey := types.NamespacedName{
+		Name:      pipelineRun.Spec.PipelineConfigRef,
+		Namespace: pipelineRun.Namespace,
+	}
+
+	if err := r.Get(ctx, configKey, pipelineConfig); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Error(err, "PipelineConfig not found",
+				"config", pipelineRun.Spec.PipelineConfigRef,
+			)
+			// Update status to Failed
+			pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
+			if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
+				logger.Error(updateErr, "Failed to update PipelineRun status")
+			}
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return pipelineConfig, nil
 }
 
 // containsString checks if a slice contains a string
@@ -396,6 +334,146 @@ func removeString(slice []string, s string) []string {
 		}
 	}
 	return result
+}
+
+// buildAndLogSchedule builds the execution schedule and logs the result
+// Returns (nil, true) if an error occurred (status already updated), (schedule, false) on success
+func (r *PipelineRunReconciler) buildAndLogSchedule(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, pipelineConfig *c8sv1alpha1.PipelineConfig) (*scheduler.Schedule, bool) {
+	logger := log.FromContext(ctx)
+
+	schedule, err := scheduler.BuildSchedule(pipelineConfig)
+	if err != nil {
+		logger.Error(err, "Failed to build execution schedule")
+		pipelineRun.Status.Phase = c8sv1alpha1.PipelineRunPhaseFailed
+		if updateErr := r.Status().Update(ctx, pipelineRun); updateErr != nil {
+			logger.Error(updateErr, "Failed to update PipelineRun status")
+		}
+		return nil, true
+	}
+
+	logger.Info("Built execution schedule",
+		"totalSteps", schedule.TotalSteps(),
+		"layers", schedule.LayerCount(),
+	)
+	return schedule, false
+}
+
+// processStepsAndJobs handles job creation and status updates
+func (r *PipelineRunReconciler) processStepsAndJobs(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, pipelineConfig *c8sv1alpha1.PipelineConfig, schedule *scheduler.Schedule) error {
+	logger := log.FromContext(ctx)
+
+	// Get completed steps and create jobs
+	completedSteps := GetCompletedSteps(pipelineRun)
+	logger.Info("Completed steps", "count", len(completedSteps))
+
+	jobManager := NewJobManager(pipelineConfig.Spec.Repository)
+	readySteps := schedule.GetReadySteps(completedSteps)
+	r.createJobsForReadySteps(ctx, pipelineRun, pipelineConfig, jobManager, readySteps)
+
+	// List all Jobs and build map
+	jobsByStep, err := r.getJobsByStep(ctx, pipelineRun, schedule)
+	if err != nil {
+		return err
+	}
+
+	// Update PipelineRun status
+	statusUpdater := NewStatusUpdater(r.Client)
+	if err := statusUpdater.UpdatePipelineRunStatus(ctx, pipelineRun, jobsByStep, schedule.TotalSteps()); err != nil {
+		logger.Error(err, "Failed to update PipelineRun status")
+		return err
+	}
+
+	// Collect logs if available
+	if r.LogCollector != nil {
+		if err := r.collectLogsForCompletedJobs(ctx, pipelineRun, pipelineConfig, jobsByStep); err != nil {
+			logger.Error(err, "Failed to collect logs for completed jobs")
+			// Continue even if log collection fails
+		}
+	}
+
+	return nil
+}
+
+// getJobsByStep lists all Jobs owned by the PipelineRun and builds a map by step name
+func (r *PipelineRunReconciler) getJobsByStep(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, schedule *scheduler.Schedule) (map[string]*batchv1.Job, error) {
+	logger := log.FromContext(ctx)
+
+	jobList := &batchv1.JobList{}
+	if err := r.List(ctx, jobList,
+		client.InNamespace(pipelineRun.Namespace),
+		client.MatchingLabels{
+			ctypes.LabelPipelineRun: pipelineRun.Name,
+		},
+	); err != nil {
+		logger.Error(err, "Failed to list Jobs")
+		return nil, err
+	}
+
+	// Build map of jobs by step name
+	jobsByStep := make(map[string]*batchv1.Job)
+	for i := range jobList.Items {
+		job := &jobList.Items[i]
+		if stepName, ok := job.Labels[ctypes.LabelStepName]; ok {
+			jobsByStep[stepName] = job
+		}
+	}
+
+	logger.Info("Found Jobs for PipelineRun",
+		"totalJobs", len(jobsByStep),
+		"expectedSteps", schedule.TotalSteps(),
+	)
+	return jobsByStep, nil
+}
+
+// createJobsForReadySteps creates Kubernetes Jobs for steps that are ready to execute
+func (r *PipelineRunReconciler) createJobsForReadySteps(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, pipelineConfig *c8sv1alpha1.PipelineConfig, jobManager *JobManager, readySteps []*c8sv1alpha1.PipelineStep) {
+	logger := log.FromContext(ctx)
+
+	for _, step := range readySteps {
+		if err := r.createJobForStep(ctx, pipelineRun, pipelineConfig, jobManager, step); err != nil {
+			logger.Error(err, "Failed to create job for step", "step", step.Name)
+			// Continue to next step even on error
+		}
+	}
+}
+
+// createJobForStep creates a Job for a single step
+func (r *PipelineRunReconciler) createJobForStep(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun, pipelineConfig *c8sv1alpha1.PipelineConfig, jobManager *JobManager, step *c8sv1alpha1.PipelineStep) error {
+	logger := log.FromContext(ctx)
+	jobName := GetJobForStep(pipelineRun.Name, step.Name)
+
+	// Check if Job already exists
+	existingJob := &batchv1.Job{}
+	jobKey := types.NamespacedName{
+		Name:      jobName,
+		Namespace: pipelineRun.Namespace,
+	}
+
+	err := r.Get(ctx, jobKey, existingJob)
+	if err == nil {
+		logger.Info("Job already exists", "step", step.Name, "job", jobName)
+		return nil
+	}
+
+	if !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	// Job doesn't exist, create it
+	logger.Info("Creating Job for step", "step", step.Name)
+	job, err := jobManager.CreateJobForStep(step, pipelineRun, pipelineConfig)
+	if err != nil {
+		logger.Error(err, "Failed to create Job spec", "step", step.Name)
+		return err
+	}
+
+	if err := r.Create(ctx, job); err != nil {
+		logger.Error(err, "Failed to create Job", "step", step.Name, "job", job.Name)
+		return err
+	}
+
+	logger.Info("Successfully created Job", "step", step.Name, "job", job.Name)
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

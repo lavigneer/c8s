@@ -223,24 +223,7 @@ func (jm *JobManager) buildStepContainer(
 
 	// Add resource requirements if specified
 	if step.Resources != nil {
-		container.Resources = corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{},
-			Limits:   corev1.ResourceList{},
-		}
-
-		if step.Resources.CPU != "" {
-			if qty, err := resource.ParseQuantity(step.Resources.CPU); err == nil {
-				container.Resources.Requests[corev1.ResourceCPU] = qty
-				container.Resources.Limits[corev1.ResourceCPU] = qty
-			}
-		}
-
-		if step.Resources.Memory != "" {
-			if qty, err := resource.ParseQuantity(step.Resources.Memory); err == nil {
-				container.Resources.Requests[corev1.ResourceMemory] = qty
-				container.Resources.Limits[corev1.ResourceMemory] = qty
-			}
-		}
+		container.Resources = buildResourceRequirements(step.Resources)
 	}
 
 	// Add secret injection (User Story 3)
@@ -338,4 +321,28 @@ func GetJobExitCode(job *batchv1.Job) *int32 {
 		return &exitCode
 	}
 	return nil
+}
+
+// buildResourceRequirements builds Kubernetes resource requirements from step resources
+func buildResourceRequirements(res *c8sv1alpha1.ResourceRequirements) corev1.ResourceRequirements {
+	resReq := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{},
+		Limits:   corev1.ResourceList{},
+	}
+
+	if res.CPU != "" {
+		if qty, err := resource.ParseQuantity(res.CPU); err == nil {
+			resReq.Requests[corev1.ResourceCPU] = qty
+			resReq.Limits[corev1.ResourceCPU] = qty
+		}
+	}
+
+	if res.Memory != "" {
+		if qty, err := resource.ParseQuantity(res.Memory); err == nil {
+			resReq.Requests[corev1.ResourceMemory] = qty
+			resReq.Limits[corev1.ResourceMemory] = qty
+		}
+	}
+
+	return resReq
 }

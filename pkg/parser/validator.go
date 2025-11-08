@@ -172,18 +172,8 @@ func validateStep(step *c8sv1alpha1.PipelineStep, _ map[string]bool, prefix stri
 
 	// Validate resource values are valid Kubernetes quantities
 	if step.Resources != nil {
-		if step.Resources.CPU != "" {
-			if _, err := resource.ParseQuantity(step.Resources.CPU); err != nil {
-				errors.Add(fmt.Sprintf("%s.resources.cpu", prefix),
-					fmt.Sprintf("invalid CPU quantity: %v", err))
-			}
-		}
-		if step.Resources.Memory != "" {
-			if _, err := resource.ParseQuantity(step.Resources.Memory); err != nil {
-				errors.Add(fmt.Sprintf("%s.resources.memory", prefix),
-					fmt.Sprintf("invalid memory quantity: %v", err))
-			}
-		}
+		validateResourceQuantity(step.Resources.CPU, fmt.Sprintf("%s.resources.cpu", prefix), errors)
+		validateResourceQuantity(step.Resources.Memory, fmt.Sprintf("%s.resources.memory", prefix), errors)
 	}
 
 	// Validate conditional execution branch pattern if present
@@ -347,4 +337,14 @@ func (ve *ValidationErrors) Error() string {
 	}
 
 	return fmt.Sprintf("validation failed:\n  - %s", strings.Join(messages, "\n  - "))
+}
+
+// validateResourceQuantity checks if a resource quantity string is valid
+func validateResourceQuantity(quantity, fieldPath string, errors *ValidationErrors) {
+	if quantity == "" {
+		return
+	}
+	if _, err := resource.ParseQuantity(quantity); err != nil {
+		errors.Add(fieldPath, fmt.Sprintf("invalid quantity: %v", err))
+	}
 }
