@@ -12,10 +12,6 @@ bin/
 .devbox/
 .direnv/
 
-# Go workspace files
-go.work
-go.work.sum
-
 # Test binary, built with `go test -c`
 *.test
 
@@ -26,9 +22,6 @@ coverage.html
 
 # Dependency directories
 vendor/
-
-# Go module cache
-go.sum
 
 # IDE and editor files
 .vscode/
@@ -90,4 +83,3 @@ tests/e2e/**/*.log
 # Node.js build/dist
 npm-debug.log
 npm-debug.log.*
-lerna-debug.log*
