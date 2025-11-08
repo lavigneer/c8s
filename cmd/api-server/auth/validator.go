@@ -76,6 +76,11 @@ func (v *Validator) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid claims type")
 	}
 
+	// Validate required claims
+	if err := claims.Valid(); err != nil {
+		return nil, err
+	}
+
 	// Perform additional validation
 	if err := v.validateClaims(claims); err != nil {
 		return nil, err
@@ -144,16 +149,17 @@ func (v *Validator) validateClaims(claims *Claims) error {
 	}
 
 	// Validate audience - check if the expected audience is in the token's audience list
-	if len(claims.Audience) > 0 {
+	// Note: JWT library stores audience in RegisteredClaims.Audience, not our custom Audience field
+	if len(claims.RegisteredClaims.Audience) > 0 {
 		found := false
-		for _, aud := range claims.Audience {
+		for _, aud := range claims.RegisteredClaims.Audience {
 			if aud == v.config.Audience {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return fmt.Errorf("invalid audience: expected %s, got %v", v.config.Audience, claims.Audience)
+			return fmt.Errorf("invalid audience: expected %s, got %v", v.config.Audience, claims.RegisteredClaims.Audience)
 		}
 	}
 

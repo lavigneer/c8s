@@ -28,7 +28,7 @@ type Claims struct {
 	Subject string   `json:"sub"`      // User ID (required)
 	Name    string   `json:"name"`     // Username (required)
 	Email   string   `json:"email"`    // Email address (optional)
-	Audience []string `json:"aud"`     // Audience (optional but recommended)
+	// Note: Audience is handled by embedded RegisteredClaims.Audience
 
 	// C8S-specific claims
 	Namespace string   `json:"namespace"` // Kubernetes namespace

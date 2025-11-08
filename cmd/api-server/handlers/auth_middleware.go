@@ -44,6 +44,13 @@ func UseNoOpValidator() {
 	jwtNoOpValidator = auth.NewNoOpValidator()
 }
 
+// ResetAuthValidators resets both validators to nil (for testing purposes)
+// This is useful for tests that use global validator state and need cleanup
+func ResetAuthValidators() {
+	jwtValidator = nil
+	jwtNoOpValidator = nil
+}
+
 // AuthMiddleware validates JWT bearer token and attaches user to context
 // Supports token extraction from:
 // 1. Authorization header (Bearer <token>)

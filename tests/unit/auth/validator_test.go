@@ -318,9 +318,15 @@ func TestValidateTokenAndGetUser(t *testing.T) {
 // TestEmptyToken tests that empty tokens are rejected
 func TestEmptyToken(t *testing.T) {
 	config := &authpkg.Config{
-		Mode:      "jwt",
-		Algorithm: "HS256",
-		Secret:    "test-secret",
+		Mode:             "jwt",
+		Algorithm:        "HS256",
+		Issuer:           "c8s-auth",
+		Audience:         "c8s-api",
+		Secret:           "test-secret-key-should-be-longer-32-bytes",
+		VerifyExpiry:     true,
+		VerifySignature:  true,
+		DefaultNamespace: "default",
+		DefaultRoles:     []string{"user"},
 	}
 
 	validator, err := authpkg.NewValidator(config)

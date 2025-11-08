@@ -30,6 +30,14 @@ import (
 	authpkg "github.com/org/c8s/cmd/api-server/auth"
 )
 
+// testSetup resets validator state before each test to prevent cross-test contamination
+func testSetup(t *testing.T) {
+	handlerspkg.ResetAuthValidators()
+	t.Cleanup(func() {
+		handlerspkg.ResetAuthValidators()
+	})
+}
+
 // createTestToken creates a valid JWT token for testing
 func createTestToken(secret string, issuer string, audience string, subject string) string {
 	now := time.Now()
@@ -54,6 +62,7 @@ func createTestToken(secret string, issuer string, audience string, subject stri
 
 // TestAuthMiddlewareWithValidToken tests successful authentication with valid JWT
 func TestAuthMiddlewareWithValidToken(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -100,6 +109,7 @@ func TestAuthMiddlewareWithValidToken(t *testing.T) {
 
 // TestAuthMiddlewareWithAuthCookie tests authentication via auth_token cookie
 func TestAuthMiddlewareWithAuthCookie(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -142,6 +152,7 @@ func TestAuthMiddlewareWithAuthCookie(t *testing.T) {
 
 // TestAuthMiddlewareWithInvalidToken tests rejection of invalid tokens
 func TestAuthMiddlewareWithInvalidToken(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -175,6 +186,7 @@ func TestAuthMiddlewareWithInvalidToken(t *testing.T) {
 
 // TestAuthMiddlewareNoTokenAPIRequest tests API request without token
 func TestAuthMiddlewareNoTokenAPIRequest(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -209,6 +221,7 @@ func TestAuthMiddlewareNoTokenAPIRequest(t *testing.T) {
 
 // TestAuthMiddlewareNoTokenHTMLRequest tests HTML request without token redirects to login
 func TestAuthMiddlewareNoTokenHTMLRequest(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -244,6 +257,7 @@ func TestAuthMiddlewareNoTokenHTMLRequest(t *testing.T) {
 
 // TestOptionalAuthMiddlewareWithValidToken tests optional auth with valid token
 func TestOptionalAuthMiddlewareWithValidToken(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -282,6 +296,7 @@ func TestOptionalAuthMiddlewareWithValidToken(t *testing.T) {
 
 // TestOptionalAuthMiddlewareWithoutToken tests optional auth works without token
 func TestOptionalAuthMiddlewareWithoutToken(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -319,6 +334,7 @@ func TestOptionalAuthMiddlewareWithoutToken(t *testing.T) {
 
 // TestOptionalAuthMiddlewareWithInvalidToken continues without auth on invalid token
 func TestOptionalAuthMiddlewareWithInvalidToken(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
@@ -356,6 +372,7 @@ func TestOptionalAuthMiddlewareWithInvalidToken(t *testing.T) {
 
 // TestNoOpValidator tests development mode validator
 func TestNoOpValidator(t *testing.T) {
+	testSetup(t)
 	// Use NoOp validator for development
 	handlerspkg.UseNoOpValidator()
 
@@ -378,6 +395,7 @@ func TestNoOpValidator(t *testing.T) {
 
 // TestGetUserFromContext tests user extraction from context
 func TestGetUserFromContext(t *testing.T) {
+	testSetup(t)
 	secret := "test-secret-key-should-be-longer-32-bytes"
 	config := &authpkg.Config{
 		Mode:             "jwt",
