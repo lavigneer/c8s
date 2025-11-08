@@ -19,22 +19,7 @@
       "echo '  make test       - Run tests'",
       "echo '  make build      - Build all binaries'",
       "echo '  make manifests  - Generate CRD manifests'",
-      "echo ''",
-      "export GOPATH=$HOME/go",
-      "export PATH=$GOPATH/bin:$PATH",
-      "# Install Go tools if not present",
-      "if ! command -v controller-gen &> /dev/null; then",
-      "  echo 'Installing controller-gen...'",
-      "  go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest",
-      "fi",
-      "if ! command -v setup-envtest &> /dev/null; then",
-      "  echo 'Installing setup-envtest...'",
-      "  go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest",
-      "fi",
-      "if ! command -v golangci-lint &> /dev/null; then",
-      "  echo 'Installing golangci-lint...'",
-      "  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
-      "fi"
+      "echo ''"
     ],
     "scripts": {
       "help": "make help",
