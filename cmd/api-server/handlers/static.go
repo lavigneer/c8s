@@ -62,12 +62,12 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	// For API requests, return JSON error
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"success":false,"error":{"code":"NOT_FOUND","message":"Resource not found"}}`))
+		_, _ = w.Write([]byte(`{"success":false,"error":{"code":"NOT_FOUND","message":"Resource not found"}}`))
 		return
 	}
 	// For HTML requests, render error page
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(`<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404</h1><p>Page not found</p></body></html>`))
+	_, _ = w.Write([]byte(`<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404</h1><p>Page not found</p></body></html>`))
 }
 
 // RespondSuccess is a convenience wrapper for dashboard response helper

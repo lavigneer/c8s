@@ -145,13 +145,13 @@ func main() {
 // handleHealth handles health check requests
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // handleReady handles readiness check requests
 func handleReady(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Ready"))
+	_, _ = w.Write([]byte("Ready"))
 }
 
 // handleRoot handles root path requests
@@ -163,7 +163,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{
+	_, _ = w.Write([]byte(`{
   "service": "c8s-webhook",
   "version": "v1alpha1",
   "endpoints": {

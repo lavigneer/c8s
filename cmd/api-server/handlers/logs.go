@@ -24,13 +24,6 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set SSE headers
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	// CORS headers should be handled by middleware, not set per-request
-	// Removed hardcoded "Access-Control-Allow-Origin: *" as it's insecure and violates CORS spec with credentials
-
 	// Check if response writer supports flushing
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -38,23 +31,19 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set up SSE connection
+	if !setupSSEConnection(w, flusher) {
+		return
+	}
+
 	// TODO: Get actual log storage implementation
 	// For now, use in-memory storage for testing - include demo logs for this run
 	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
 
-	// Send initial connection message
-	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n"); err != nil {
-		log.Printf("ERROR: Failed to send SSE connection message: %v", err)
-		http.Error(w, "Failed to establish stream", http.StatusInternalServerError)
-		return
-	}
-	flusher.Flush()
-
-	// Create log channel
+	// Create channels and start streaming
 	logChan := make(chan string, 100)
 	errChan := make(chan error, 1)
 
-	// Start streaming logs in a goroutine
 	go func() {
 		if err := logStorage.StreamStepLogs(r.Context(), runID, stepID, logChan); err != nil {
 			errChan <- err
@@ -63,6 +52,30 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Stream logs to client
+	streamLogsToClient(w, r, flusher, logChan, errChan)
+}
+
+// setupSSEConnection initializes SSE headers and sends connection message
+func setupSSEConnection(w http.ResponseWriter, flusher http.Flusher) bool {
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	// CORS headers should be handled by middleware, not set per-request
+	// Removed hardcoded "Access-Control-Allow-Origin: *" as it's insecure and violates CORS spec with credentials
+
+	// Send initial connection message
+	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n"); err != nil {
+		log.Printf("ERROR: Failed to send SSE connection message: %v", err)
+		http.Error(w, "Failed to establish stream", http.StatusInternalServerError)
+		return false
+	}
+	flusher.Flush()
+	return true
+}
+
+// streamLogsToClient handles the main log streaming loop
+func streamLogsToClient(w http.ResponseWriter, r *http.Request, flusher http.Flusher, logChan chan string, errChan chan error) {
 	for {
 		select {
 		case <-r.Context().Done():
@@ -70,53 +83,67 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case err := <-errChan:
-			// Error occurred while streaming
-			if err != nil {
-				errorResp := map[string]interface{}{
-					"error": err.Error(),
-				}
-				data, err := json.Marshal(errorResp)
-				if err != nil {
-					log.Printf("ERROR: Failed to marshal error response: %v", err)
-					return
-				}
-				if _, err := fmt.Fprintf(w, "event: error\ndata: %s\n\n", data); err != nil {
-					log.Printf("ERROR: Failed to send error event: %v", err)
-					return
-				}
-			}
+			handleStreamError(w, err)
 			return
 
 		case line, ok := <-logChan:
 			if !ok {
-				// All logs have been streamed
-				if _, err := fmt.Fprintf(w, "event: complete\ndata: {\"message\":\"Log stream completed\"}\n\n"); err != nil {
-					log.Printf("ERROR: Failed to send log complete event: %v", err)
-					return
-				}
-				flusher.Flush()
+				sendCompleteEvent(w, flusher)
 				return
 			}
-
-			// Format log entry
-			logEntry := map[string]interface{}{
-				"line":      line,
-				"timestamp": time.Now().Format(time.RFC3339),
-			}
-			data, err := json.Marshal(logEntry)
-			if err != nil {
-				log.Printf("ERROR: Failed to marshal log entry: %v", err)
+			if !sendLogEvent(w, flusher, line) {
 				return
 			}
-
-			// Send log event
-			if _, err := fmt.Fprintf(w, "event: log\ndata: %s\n\n", data); err != nil {
-				log.Printf("ERROR: Failed to send log event: %v", err)
-				return
-			}
-			flusher.Flush()
 		}
 	}
+}
+
+// handleStreamError sends an error event to the client
+func handleStreamError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+
+	errorResp := map[string]interface{}{
+		"error": err.Error(),
+	}
+	data, marshalErr := json.Marshal(errorResp)
+	if marshalErr != nil {
+		log.Printf("ERROR: Failed to marshal error response: %v", marshalErr)
+		return
+	}
+	if _, writeErr := fmt.Fprintf(w, "event: error\ndata: %s\n\n", data); writeErr != nil {
+		log.Printf("ERROR: Failed to send error event: %v", writeErr)
+	}
+}
+
+// sendCompleteEvent sends a completion event to the client
+func sendCompleteEvent(w http.ResponseWriter, flusher http.Flusher) {
+	if _, err := fmt.Fprintf(w, "event: complete\ndata: {\"message\":\"Log stream completed\"}\n\n"); err != nil {
+		log.Printf("ERROR: Failed to send log complete event: %v", err)
+		return
+	}
+	flusher.Flush()
+}
+
+// sendLogEvent sends a single log line to the client
+func sendLogEvent(w http.ResponseWriter, flusher http.Flusher, line string) bool {
+	logEntry := map[string]interface{}{
+		"line":      line,
+		"timestamp": time.Now().Format(time.RFC3339),
+	}
+	data, err := json.Marshal(logEntry)
+	if err != nil {
+		log.Printf("ERROR: Failed to marshal log entry: %v", err)
+		return false
+	}
+
+	if _, err := fmt.Fprintf(w, "event: log\ndata: %s\n\n", data); err != nil {
+		log.Printf("ERROR: Failed to send log event: %v", err)
+		return false
+	}
+	flusher.Flush()
+	return true
 }
 
 // GetLogsHandler returns logs as plain text
@@ -136,7 +163,7 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get logs
 	reader, err := logStorage.GetStepLogs(r.Context(), runID, stepID)
 	if err != nil {
-		dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
+		_ = dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
 		return
 	}
 	defer reader.Close()
