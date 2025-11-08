@@ -8,6 +8,11 @@ import (
 	"github.com/org/c8s/pkg/dashboard"
 )
 
+// Context key constants
+const (
+	userRoleKey contextKey = "userRole"
+)
+
 // ProjectAccessMiddleware enforces per-project authorization
 // Checks if user has access to the project specified in route parameters
 func ProjectAccessMiddleware(accessSvc dashboard.ProjectAccessService) func(http.Handler) http.Handler {
@@ -72,7 +77,7 @@ func RoleBasedContextMiddleware(accessSvc dashboard.ProjectAccessService) func(h
 			}
 
 			// Attach role to context for downstream handlers
-			ctx := context.WithValue(r.Context(), "userRole", role)
+			ctx := context.WithValue(r.Context(), userRoleKey, role)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -80,6 +85,6 @@ func RoleBasedContextMiddleware(accessSvc dashboard.ProjectAccessService) func(h
 
 // GetUserRoleFromContext extracts user role from request context
 func GetUserRoleFromContext(ctx context.Context) (dashboard.Role, bool) {
-	role, ok := ctx.Value("userRole").(dashboard.Role)
+	role, ok := ctx.Value(userRoleKey).(dashboard.Role)
 	return role, ok
 }
