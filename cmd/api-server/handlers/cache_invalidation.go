@@ -87,7 +87,7 @@ func InvalidateUserPermissionsCache(userID string) {
 
 // BroadcastCacheInvalidation broadcasts cache invalidation event via SSE
 // This is called when cache needs to be cleared on all connected clients
-func BroadcastCacheInvalidation(projectID string, cachePattern string) {
+func BroadcastCacheInvalidation(projectID, cachePattern string) {
 	broadcaster := getOrCreateBroadcaster(projectID)
 
 	// Create SSE event for cache invalidation

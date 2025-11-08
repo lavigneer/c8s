@@ -30,7 +30,7 @@ func FetchPipelineRunsForUser(ctx context.Context, namespace string) []*dashboar
 
 	if k8sClient != nil {
 		if userRuns, err := k8sClient.ListPipelineRuns(ctx, namespace); err == nil && userRuns != nil {
-			for i := range userRuns.Items {
+			for i := 0; i < len(userRuns.Items); i++ {
 				runs = append(runs, &userRuns.Items[i])
 			}
 		}
@@ -64,7 +64,7 @@ func FetchPipelineConfigsForUser(ctx context.Context, namespace string) []*dashb
 
 // FetchPipelineRunByID retrieves a specific pipeline run from a user's namespace
 // Returns nil if not found or error occurs
-func FetchPipelineRunByID(ctx context.Context, namespace string, runID string) *v1alpha1.PipelineRun {
+func FetchPipelineRunByID(ctx context.Context, namespace, runID string) *v1alpha1.PipelineRun {
 	if k8sClient == nil {
 		return nil
 	}

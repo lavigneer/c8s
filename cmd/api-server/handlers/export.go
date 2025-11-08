@@ -24,7 +24,7 @@ const (
 func ExportPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -47,9 +47,7 @@ func ExportPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	switch format {
 	case ExportFormatCSV:
 		exportAsCSV(w, runs)
-	case ExportFormatJSON:
-		fallthrough
-	default:
+	default: // ExportFormatJSON or any other format defaults to JSON
 		exportAsJSON(w, runs)
 	}
 }
@@ -87,7 +85,10 @@ func exportAsCSV(w http.ResponseWriter, runs []*dashboard.PipelineRunDTO) {
 		"Triggered At", "Started At", "Completed At", "Duration (seconds)",
 		"Step Count", "Success Count", "Failure Count", "Artifact Count",
 	}
-	writer.Write(headers)
+	if err := writer.Write(headers); err != nil {
+		log.Printf("ERROR: Failed to write CSV headers: %v", err)
+		return
+	}
 
 	// Write data rows
 	for _, run := range runs {
@@ -122,6 +123,9 @@ func exportAsCSV(w http.ResponseWriter, runs []*dashboard.PipelineRunDTO) {
 			fmt.Sprintf("%d", run.FailureCount),
 			fmt.Sprintf("%d", run.ArtifactCount),
 		}
-		writer.Write(row)
+		if err := writer.Write(row); err != nil {
+			log.Printf("ERROR: Failed to write CSV row: %v", err)
+			return
+		}
 	}
 }

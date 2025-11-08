@@ -26,6 +26,13 @@ import (
 	"time"
 )
 
+const (
+	// AlgorithmHS256 represents the HMAC-SHA256 signing algorithm
+	AlgorithmHS256 = "HS256"
+	// AlgorithmRS256 represents the RSA-SHA256 signing algorithm
+	AlgorithmRS256 = "RS256"
+)
+
 // Config holds authentication configuration
 type Config struct {
 	// Authentication mode: "jwt", "none" (dev only)
@@ -62,7 +69,7 @@ func NewConfigFromEnv() *Config {
 
 	return &Config{
 		Mode:             getEnv("AUTH_MODE", "jwt"),
-		Algorithm:        getEnv("JWT_ALGORITHM", "HS256"),
+		Algorithm:        getEnv("JWT_ALGORITHM", AlgorithmHS256),
 		Issuer:           getEnv("JWT_ISSUER", "c8s-auth"),
 		Audience:         getEnv("JWT_AUDIENCE", "c8s-api"),
 		Secret:           os.Getenv("JWT_SECRET"),
@@ -86,15 +93,15 @@ func (c *Config) Validate() error {
 		return nil // Skip validation for dev-only mode
 	}
 
-	if c.Algorithm != "HS256" && c.Algorithm != "RS256" {
+	if c.Algorithm != AlgorithmHS256 && c.Algorithm != AlgorithmRS256 {
 		return fmt.Errorf("invalid JWT_ALGORITHM: %s (must be 'HS256' or 'RS256')", c.Algorithm)
 	}
 
-	if c.Algorithm == "HS256" && c.Secret == "" {
+	if c.Algorithm == AlgorithmHS256 && c.Secret == "" {
 		return fmt.Errorf("JWT_SECRET required for HS256 algorithm")
 	}
 
-	if c.Algorithm == "RS256" && c.PublicKeyPath == "" && c.JWKSUrl == "" {
+	if c.Algorithm == AlgorithmRS256 && c.PublicKeyPath == "" && c.JWKSUrl == "" {
 		return fmt.Errorf("either JWT_PUBLIC_KEY_PATH or JWT_JWKS_URL required for RS256 algorithm")
 	}
 
@@ -111,7 +118,7 @@ func (c *Config) Validate() error {
 
 // LoadPublicKey loads and parses RSA public key from PEM file
 func (c *Config) LoadPublicKey() (*rsa.PublicKey, error) {
-	if c.Algorithm != "RS256" {
+	if c.Algorithm != AlgorithmRS256 {
 		return nil, fmt.Errorf("LoadPublicKey called for non-RS256 algorithm")
 	}
 

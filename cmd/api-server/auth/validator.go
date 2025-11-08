@@ -43,7 +43,7 @@ func NewValidator(config *Config) (*Validator, error) {
 	}
 
 	// For RS256, load the public key upfront
-	if config.Algorithm == "RS256" && config.PublicKeyPath != "" {
+	if config.Algorithm == AlgorithmRS256 && config.PublicKeyPath != "" {
 		key, err := config.LoadPublicKey()
 		if err != nil {
 			return nil, fmt.Errorf("failed to load public key: %w", err)
@@ -101,7 +101,7 @@ func (v *Validator) ValidateTokenAndGetUser(tokenString string) (*User, error) {
 	if user.Namespace == "" {
 		user.Namespace = v.config.DefaultNamespace
 	}
-	if user.Roles == nil || len(user.Roles) == 0 {
+	if len(user.Roles) == 0 {
 		user.Roles = v.config.DefaultRoles
 	}
 
@@ -116,9 +116,9 @@ func (v *Validator) keyFunc(token *jwt.Token) (interface{}, error) {
 	}
 
 	switch v.config.Algorithm {
-	case "HS256":
+	case AlgorithmHS256:
 		return []byte(v.config.Secret), nil
-	case "RS256":
+	case AlgorithmRS256:
 		if v.publicKey == nil {
 			return nil, fmt.Errorf("public key not loaded")
 		}
@@ -130,10 +130,8 @@ func (v *Validator) keyFunc(token *jwt.Token) (interface{}, error) {
 
 // validateClaims performs additional validation on the claims
 func (v *Validator) validateClaims(claims *Claims) error {
-	if !v.config.VerifySignature {
-		// Note: Signature was already verified by jwt.ParseWithClaims
-		// This flag is more for documentation/config purposes
-	}
+	// Note: Signature is always verified by jwt.ParseWithClaims
+	// The VerifySignature config flag is for documentation/config purposes
 
 	// Check expiration if enabled
 	if v.config.VerifyExpiry {

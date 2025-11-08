@@ -21,7 +21,7 @@ func ListArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 
 	runID := chi.URLParam(r, "runId")
 	if runID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
@@ -37,15 +37,13 @@ func ListArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 	artifactType := r.URL.Query().Get("type")
 
 	// TODO: Fetch PipelineRun and extract artifacts from step statuses
+	// TODO: Apply filters for stepID and artifactType when implementing fetch logic
 	// For now, return empty list
+	_ = stepID       // Will be used when filtering is implemented
+	_ = artifactType // Will be used when filtering is implemented
 	artifacts := []*dashboard.ArtifactDTO{}
 
-	// Apply filters if provided
-	if stepID != "" || artifactType != "" {
-		// Filter logic would go here
-	}
-
-	dashboard.RespondSuccess(w, http.StatusOK, artifacts)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, artifacts)
 }
 
 // DownloadArtifactHandler downloads an artifact from object storage
@@ -77,7 +75,7 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename, ok := demoArtifacts[artifactID]
 	if !ok {
-		dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 		return
 	}
 
@@ -105,7 +103,7 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
 	w.WriteHeader(http.StatusOK)
-	w.Write(content)
+	_, _ = w.Write(content)
 }
 
 // PreviewArtifactHandler returns a preview of an artifact (for reports, etc.)
@@ -137,7 +135,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename, ok := demoArtifacts[artifactID]
 	if !ok {
-		dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 		return
 	}
 
@@ -150,25 +148,25 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 		switch filename {
 		case "test-report.html":
 			// Return HTML test report directly
-			w.Write(generateTestReportHTML())
+			_, _ = w.Write(generateTestReportHTML())
 		case "coverage-report.json":
 			// Return JSON coverage report in HTML format
-			io.WriteString(w, `<pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
-			w.Write(generateCoverageReportJSON())
-			io.WriteString(w, `</pre>`)
+			_, _ = io.WriteString(w, `<pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
+			_, _ = w.Write(generateCoverageReportJSON())
+			_, _ = io.WriteString(w, `</pre>`)
 		case "build-log.txt":
 			// Return build log in HTML format
-			io.WriteString(w, `<pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
-			w.Write(generateBuildLog())
-			io.WriteString(w, `</pre>`)
+			_, _ = io.WriteString(w, `<pre class="bg-gray-900 text-gray-100 p-4 rounded overflow-auto max-h-96 text-sm font-mono">`)
+			_, _ = w.Write(generateBuildLog())
+			_, _ = io.WriteString(w, `</pre>`)
 		default:
-			io.WriteString(w, `<div class="text-gray-600 p-4">Preview not available for this artifact type</div>`)
+			_, _ = io.WriteString(w, `<div class="text-gray-600 p-4">Preview not available for this artifact type</div>`)
 		}
 		return
 	}
 
 	// Return JSON preview metadata
-	dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
+	_ = dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"artifact_id": artifactID,
 		"filename":    filename,
 		"preview":     "Use HTMX request to get HTML preview",
@@ -180,7 +178,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 func GetArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -188,7 +186,7 @@ func GetArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Fetch artifact metadata
 	// Placeholder: return 404 for now
-	dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+	_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 }
 
 // DeleteArtifactHandler deletes an artifact
@@ -202,7 +200,7 @@ func DeleteArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -224,21 +222,6 @@ func ValidateArtifactContent(content []byte) ([]byte, error) {
 	// - Scan for malicious patterns
 	// - Sanitize HTML/JavaScript if needed
 	return content, nil
-}
-
-// Helper function to parse artifact size from response headers
-func parseArtifactSize(header http.Header) int64 {
-	contentLength := header.Get("Content-Length")
-	if contentLength == "" {
-		return 0
-	}
-
-	size, err := strconv.ParseInt(contentLength, 10, 64)
-	if err != nil {
-		return 0
-	}
-
-	return size
 }
 
 // generateTestReportHTML generates a demo HTML test report
