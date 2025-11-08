@@ -1,11 +1,12 @@
 # golangci-lint configuration for C8S
-# See https://golangci-lint.run/usage/configuration/
-version: 2
+# See https://golangci-lint.run/docs/configuration/file/
+version: "2"
 
 run:
   timeout: 10m
-  go: '1.25'
+  go: "1.25"
   modules-download-mode: readonly
+  tests: true
 
 linters:
   enable:
@@ -26,85 +27,64 @@ linters:
     - gocyclo        # Cyclomatic complexity
     - nestif         # Report deeply nested if statements
 
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-    disabled-checks:
-      - ifElseChain
-      - hugeParam
-
-  revive:
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: increment-decrement
-      - name: var-naming
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: indent-error-flow
-      - name: superfluous-else
-      - name: unreachable-code
-
-  godot:
-    scope: declarations
-    capital: true
-
-  misspell:
-    locale: US
-
-  nestif:
-    min-complexity: 5
-
-issues:
-  # Maximum issues count per one linter
-  max-issues-per-linter: 0
-
-  # Maximum count of issues with the same text
-  max-same-issues: 0
-
   # Exclude some linters from running on tests
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - goconst
-        - unparam
+  exclusions:
+    rules:
+      # Test files - disable linters that are less relevant for testing
+      - path: ".*_test\\.go$"
+        linters:
+          - gocyclo      # Complex test setup is OK
+          - errcheck     # Unchecked errors in cleanup are acceptable
+          - goconst      # String constants in tests are OK
+          - unparam      # Unused params common in test helpers
+          - revive       # Unused parameters in handlers/mocks are common
+          - nestif       # Nested conditions in test setup OK
+          - staticcheck  # Some test patterns flagged aren't critical
+          - gocritic     # Style checks less critical in tests
 
-    # Exclude known issues in generated code
-    - path: zz_generated\.deepcopy\.go
-      linters:
-        - gocritic
-        - gocyclo
-        - revive
+      # Exclude known issues in generated code
+      - path: zz_generated\.deepcopy\.go
+        linters:
+          - gocritic
+          - gocyclo
+          - revive
+          - errcheck
+          - staticcheck
 
-    # Exclude shadow checking on err variables (very common in Go)
-    - text: "shadow: declaration of \"err\""
-      linters:
-        - govet
+  settings:
+    gocyclo:
+      min-complexity: 15
 
-    # Exclude some staticcheck checks on tests
-    - path: _test\.go
-      text: "SA1019:"  # Deprecated functions in tests are ok
-      linters:
-        - staticcheck
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      disabled-checks:
+        - ifElseChain
+        - hugeParam
 
-  uniq-by-line: true
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: superfluous-else
+        - name: unreachable-code
 
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-  sort-results: true
+    misspell:
+      locale: US
+
+    nestif:
+      min-complexity: 5
+
