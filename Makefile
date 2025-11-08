@@ -182,24 +182,24 @@ check-deps: ## Check if required dependencies are installed
 
 .PHONY: test-e2e
 test-e2e: ## Run all E2E tests
-	npm run test:e2e
+	devbox run -- npm run test:e2e
 
 .PHONY: test-e2e-ui
 test-e2e-ui: ## Run E2E tests with interactive UI
-	npm run test:e2e:ui
+	devbox run -- npm run test:e2e:ui
 
 .PHONY: test-e2e-debug
 test-e2e-debug: ## Run E2E tests with Playwright debugger
-	npm run test:e2e:debug
+	devbox run -- npm run test:e2e:debug
 
 .PHONY: test-e2e-report
 test-e2e-report: ## View E2E test HTML report
-	npm run test:e2e:report
+	devbox run -- npm run test:e2e:report
 
 .PHONY: test-e2e-install
 test-e2e-install: ## Install E2E test dependencies and browser binaries
-	npm install
-	npx playwright install
+	devbox run -- npm install
+	devbox run -- npx playwright install
 
 ##@ Local Development
 

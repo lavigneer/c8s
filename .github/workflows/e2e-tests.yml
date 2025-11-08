@@ -39,23 +39,17 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
       - name: Install dependencies
-        run: npm ci
+        run: devbox run -- npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
+        run: devbox run -- npx playwright install --with-deps chromium firefox
 
       - name: Build CSS
-        run: npm run build:css
+        run: devbox run -- npm run build:css
 
       - name: Run E2E Tests (${{ matrix.browser }})
-        run: npm run test:e2e -- --project=${{ matrix.browser }}-desktop --project=${{ matrix.browser }}-tablet --project=${{ matrix.browser }}-mobile
+        run: devbox run -- npm run test:e2e -- --project=${{ matrix.browser }}-desktop --project=${{ matrix.browser }}-tablet --project=${{ matrix.browser }}-mobile
         env:
           BASE_URL: http://localhost:8080
           API_URL: http://localhost:8080/api
