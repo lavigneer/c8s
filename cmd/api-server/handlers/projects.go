@@ -44,24 +44,23 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	dtos := make([]*dashboard.ProjectDTO, 0, len(configs.Items))
 	for i := range configs.Items {
 		// Check if user has read access to this project
-		config := &configs.Items[i]
-		hasAccess, err := authzService.UserHasProjectAccess(r.Context(), user.ID, config.Name)
+		hasAccess, err := authzService.UserHasProjectAccess(r.Context(), user.ID, configs.Items[i].Name)
 		if err != nil {
 			// Log but continue (user might not have role binding)
-			fmt.Printf("authorization check failed for project %s: %v\n", config.Name, err)
+			fmt.Printf("authorization check failed for project %s: %v\n", configs.Items[i].Name, err)
 			continue
 		}
 
 		if hasAccess {
 			// Get user's role for field-level filtering
-			role, err := authzService.GetUserRoleForProject(r.Context(), user.ID, config.Name)
+			role, err := authzService.GetUserRoleForProject(r.Context(), user.ID, configs.Items[i].Name)
 			if err != nil {
 				// Default to viewer role if role lookup fails
 				role = dashboard.RoleViewer
 			}
 
 			// Map and filter fields based on role
-			dto := mapPipelineConfigToProjectDTO(&config, user.Namespace)
+			dto := mapPipelineConfigToProjectDTO(&configs.Items[i], user.Namespace)
 			dto = dashboard.FilterProjectDTOForRole(dto, role)
 			dtos = append(dtos, dto)
 		}
