@@ -92,7 +92,7 @@ func (aw *AdmissionWebhook) HandleValidation(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(respBytes)
+	_, _ = w.Write(respBytes)
 }
 
 // validatePipelineConfig validates a PipelineConfig for secret references
@@ -158,7 +158,7 @@ func (aw *AdmissionWebhook) validatePipelineConfig(ctx context.Context, req *adm
 // HandleHealth handles health check requests
 func (aw *AdmissionWebhook) HandleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // HandleReady handles readiness check requests
@@ -172,5 +172,5 @@ func (aw *AdmissionWebhook) HandleReady(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Ready"))
+	_, _ = w.Write([]byte("Ready"))
 }

@@ -46,7 +46,7 @@ const (
 func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *User, projectID string, requiredRole dashboard.Role) bool {
 	if authzService == nil {
 		log.Printf("ERROR: Authorization service not initialized")
-		dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Authorization service not available")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Authorization service not available")
 		return false
 	}
 
@@ -56,14 +56,14 @@ func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *User, proj
 		// Log error but don't leak details to client
 		log.Printf("ERROR: Failed to check authorization: user=%s project=%s role=%s err=%v",
 			user.ID, projectID, requiredRole, err)
-		dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Failed to verify permissions")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Failed to verify permissions")
 		return false
 	}
 
 	if !hasRole {
 		// User doesn't have required role
 		log.Printf("AUTHZ_DENIED: user=%s project=%s required_role=%s", user.ID, projectID, requiredRole)
-		dashboard.RespondError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
+		_ = dashboard.RespondError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
 		return false
 	}
 
@@ -83,7 +83,7 @@ func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *User
 	case ActionDelete, ActionAdmin:
 		requiredRole = dashboard.RoleAdmin
 	default:
-		dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Invalid authorization action")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Invalid authorization action")
 		return false
 	}
 
@@ -94,7 +94,7 @@ func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *User
 func CheckUserExists(w http.ResponseWriter, r *http.Request) (*User, bool) {
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return nil, false
 	}
 	return user, true

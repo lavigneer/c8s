@@ -185,5 +185,5 @@ func (w *QuotaAdmissionWebhook) ServeHTTP(rw http.ResponseWriter, r *http.Reques
 	admissionReview.Response = &response
 
 	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(admissionReview)
+	_ = json.NewEncoder(rw).Encode(admissionReview)
 }

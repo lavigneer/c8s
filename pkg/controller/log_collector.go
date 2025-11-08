@@ -68,7 +68,7 @@ func (lc *LogCollector) CollectLogs(ctx context.Context, pod *corev1.Pod) ([]byt
 		logger.Error(err, "failed to stream logs", "pod", pod.Name, "container", mainContainer)
 		return nil, fmt.Errorf("failed to stream logs from pod %s/%s: %w", pod.Namespace, pod.Name, err)
 	}
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Read logs into buffer with size limit
 	buf := &bytes.Buffer{}

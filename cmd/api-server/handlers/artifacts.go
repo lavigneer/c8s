@@ -57,7 +57,7 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -117,7 +117,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 

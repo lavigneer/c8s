@@ -163,7 +163,7 @@ func main() {
 func healthHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"api-server"}`)
+	_, _ = fmt.Fprintf(w, `{"status":"healthy","service":"api-server"}`)
 }
 
 // redirectToLogin redirects root to login page

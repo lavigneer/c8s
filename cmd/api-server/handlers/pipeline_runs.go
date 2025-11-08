@@ -26,13 +26,13 @@ type PipelineFilters struct {
 func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -68,10 +68,10 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 		data := map[string]interface{}{
 			"PipelineRuns": pagedRuns,
 		}
-		dashboard.RenderTemplate(w, "pipeline_list_rows", data)
+		_ = dashboard.RenderTemplate(w, "pipeline_list_rows", data)
 	} else {
 		// Return JSON API response
-		dashboard.RespondSuccessWithMeta(w, http.StatusOK, pagedRuns, paginationMeta)
+		_ = dashboard.RespondSuccessWithMeta(w, http.StatusOK, pagedRuns, paginationMeta)
 	}
 }
 
@@ -121,13 +121,13 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	runID := chi.URLParam(r, "runId")
 
 	if runID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -135,13 +135,13 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	run := FetchPipelineRunByID(r.Context(), user.Namespace, runID)
 
 	if run == nil {
-		dashboard.RespondNotFound(w, "run")
+		_ = dashboard.RespondNotFound(w, "run")
 		return
 	}
 
 	// Convert to DTO
 	dto := dashboard.MapPipelineRunToDTO(run)
-	dashboard.RespondSuccess(w, http.StatusOK, dto)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, dto)
 }
 
 // FetchPipelineRuns queries Kubernetes for pipeline runs with optional filters
@@ -186,13 +186,13 @@ func ParseFilters(r *http.Request) PipelineFilters {
 func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -210,5 +210,5 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	dashboard.RespondSuccess(w, http.StatusOK, branches)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, branches)
 }

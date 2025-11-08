@@ -115,6 +115,7 @@ func handleStreamError(w http.ResponseWriter, err error) {
 	if _, writeErr := fmt.Fprintf(w, "event: error\ndata: %s\n\n", data); writeErr != nil {
 		log.Printf("ERROR: Failed to send error event: %v", writeErr)
 	}
+	_ = writeErr // Explicitly ignore - client disconnection is expected
 }
 
 // sendCompleteEvent sends a completion event to the client
@@ -199,7 +200,7 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	lines := 100
 	if linesParam := r.URL.Query().Get("lines"); linesParam != "" {
 		if _, err := fmt.Sscanf(linesParam, "%d", &lines); err != nil {
-			dashboard.RespondError(w, http.StatusBadRequest, "INVALID_PARAM", "Invalid lines parameter")
+			_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_PARAM", "Invalid lines parameter")
 			return
 		}
 	}
@@ -210,12 +211,12 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	// Get log snapshot
 	logLines, err := logStorage.GetLogSnapshot(r.Context(), runID, stepID, lines)
 	if err != nil {
-		dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
+		_ = dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
 		return
 	}
 
 	// Return as JSON
-	dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
+	_ = dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"runId":  runID,
 		"stepId": stepID,
 		"lines":  logLines,
@@ -229,13 +230,13 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 	runID := chi.URLParam(r, "runId")
 
 	if runID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
 	user, ok := GetUserFromContext(r.Context())
 	if !ok {
-		dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -246,7 +247,7 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if run == nil {
-		dashboard.RespondNotFound(w, "run")
+		_ = dashboard.RespondNotFound(w, "run")
 		return
 	}
 
@@ -278,5 +279,5 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	dashboard.RespondSuccess(w, http.StatusOK, steps)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, steps)
 }

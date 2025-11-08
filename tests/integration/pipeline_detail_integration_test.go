@@ -48,13 +48,13 @@ func setupDetailTestServer(t *testing.T) *httptest.Server {
 // TestPipelineDetailPageReturnsOK verifies detail page loads
 func TestPipelineDetailPageReturnsOK(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/dashboard/runs/test-run-123")
 	if err != nil {
 		t.Fatalf("Failed to request detail page: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusInternalServerError {
 		t.Logf("Expected status 200 or 500, got %d", resp.StatusCode)
@@ -64,13 +64,13 @@ func TestPipelineDetailPageReturnsOK(t *testing.T) {
 // TestGetPipelineRunReturnsJSON verifies API returns run details
 func TestGetPipelineRunReturnsJSON(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/api/runs/test-run-123")
 	if err != nil {
 		t.Fatalf("Failed to request run details: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 404 since no K8s integration yet
 	if resp.StatusCode != http.StatusNotFound {
@@ -81,13 +81,13 @@ func TestGetPipelineRunReturnsJSON(t *testing.T) {
 // TestLogStreamingEndpointReturnsSSE verifies log streaming endpoint
 func TestLogStreamingEndpointReturnsSSE(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/api/runs/test-run-123/steps/step-1/logs")
 	if err != nil {
 		t.Fatalf("Failed to request log stream: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
@@ -108,13 +108,13 @@ func TestLogStreamingEndpointReturnsSSE(t *testing.T) {
 // TestLogStreamingWithInvalidRunID returns error
 func TestLogStreamingWithInvalidRunID(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/api/runs//steps/step-1/logs")
 	if err != nil {
 		t.Fatalf("Failed to request log stream: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return bad request or not found
 	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
@@ -125,7 +125,7 @@ func TestLogStreamingWithInvalidRunID(t *testing.T) {
 // TestLogStreamingMultipleSteps verifies streaming works for different steps
 func TestLogStreamingMultipleSteps(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	steps := []string{"build", "test", "deploy"}
 
@@ -134,7 +134,7 @@ func TestLogStreamingMultipleSteps(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to request log stream for step %s: %v", step, err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			t.Logf("Expected status 200 for step %s, got %d", step, resp.StatusCode)

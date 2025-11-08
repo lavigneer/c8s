@@ -41,7 +41,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	router.Handle("/static/*", handlers.ServeStatic("../cmd/api-server/static"))
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy"}`))
+		_, _ = w.Write([]byte(`{"status":"healthy"}`))
 	})
 
 	// Dashboard routes
@@ -49,7 +49,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		r.Use(handlers.AuthMiddleware)
 		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<h1>Dashboard</h1>"))
+			_, _ = w.Write([]byte("<h1>Dashboard</h1>"))
 		})
 	})
 
@@ -69,13 +69,13 @@ func TestDashboardTemplatesLoad(t *testing.T) {
 // TestHealthEndpointReturnsOK verifies health check endpoint works.
 func TestHealthEndpointReturnsOK(t *testing.T) {
 	server := setupTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/health")
 	if err != nil {
 		t.Fatalf("Failed to get health endpoint: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
@@ -85,7 +85,7 @@ func TestHealthEndpointReturnsOK(t *testing.T) {
 // TestStaticFilesAreAccessible verifies static assets can be served.
 func TestStaticFilesAreAccessible(t *testing.T) {
 	server := setupTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	// Test accessing a CSS file (if it exists)
 	resp, err := http.Get(server.URL + "/static/css/dashboard.css")
@@ -95,7 +95,7 @@ func TestStaticFilesAreAccessible(t *testing.T) {
 	}
 
 	if resp != nil {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		// Status may be 200 or 404 depending on if file exists
 		if resp.StatusCode < 400 || resp.StatusCode == 404 {
 			t.Logf("Static file access returned status %d", resp.StatusCode)
@@ -106,7 +106,7 @@ func TestStaticFilesAreAccessible(t *testing.T) {
 // TestDashboardRequiresAuth verifies dashboard is protected by authentication.
 func TestDashboardRequiresAuth(t *testing.T) {
 	server := setupTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	// Request without auth token should fail
 	req, err := http.NewRequest("GET", server.URL+"/dashboard", http.NoBody)
@@ -118,7 +118,7 @@ func TestDashboardRequiresAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should get 401 Unauthorized
 	if resp.StatusCode != http.StatusUnauthorized {
@@ -129,13 +129,13 @@ func TestDashboardRequiresAuth(t *testing.T) {
 // TestNotFoundHandlerReturnsProperStatus verifies 404 handling.
 func TestNotFoundHandlerReturnsProperStatus(t *testing.T) {
 	server := setupTestServer(t)
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	resp, err := http.Get(server.URL + "/nonexistent")
 	if err != nil {
 		t.Fatalf("Failed to get nonexistent endpoint: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("Expected status 404, got %d", resp.StatusCode)

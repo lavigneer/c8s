@@ -36,7 +36,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to fetch projects for user %s: %v\n", user.ID, err)
-		dashboard.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
 		return
 	}
 
@@ -66,7 +66,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	dashboard.RespondSuccess(w, http.StatusOK, dtos)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, dtos)
 }
 
 // CreateProjectHandler creates new project (PipelineConfig)
@@ -86,13 +86,13 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
 	// Validate inputs
 	if err := validateProjectRequest(req.Name, req.RepoURL); err != nil {
-		dashboard.RespondError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error())
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error())
 		return
 	}
 
@@ -117,7 +117,7 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.CreatePipelineConfig(r.Context(), config); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to create project %s for user %s: %v\n", req.Name, user.ID, err)
-		dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
 		return
 	}
 
@@ -144,7 +144,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
@@ -156,7 +156,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 	// Fetch project
 	config, err := k8sClient.GetPipelineConfig(r.Context(), user.Namespace, projectID)
 	if err != nil {
-		dashboard.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
+		_ = dashboard.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
 		return
 	}
 
@@ -169,7 +169,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 		"git_platform": "github",
 	}
 
-	dashboard.RespondSuccess(w, http.StatusOK, response)
+	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
 }
 
 // DeleteProjectHandler deletes a project
@@ -183,7 +183,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
@@ -196,7 +196,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.DeletePipelineConfig(r.Context(), user.Namespace, projectID); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to delete project %s for user %s: %v\n", projectID, user.ID, err)
-		dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
+		_ = dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
 		return
 	}
 
