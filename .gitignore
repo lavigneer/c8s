@@ -5,6 +5,11 @@
 *.so
 *.dylib
 bin/
+# Root-level binaries built locally
+/c8s
+/controller
+/api-server
+/webhook
 *.test
 *.out
 
