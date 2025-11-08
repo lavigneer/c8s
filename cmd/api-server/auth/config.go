@@ -31,6 +31,10 @@ const (
 	AlgorithmHS256 = "HS256"
 	// AlgorithmRS256 represents the RSA-SHA256 signing algorithm
 	AlgorithmRS256 = "RS256"
+	// ModeJWT represents JWT authentication mode
+	ModeJWT = "jwt"
+	// ModeNone represents no authentication (development only)
+	ModeNone = "none"
 )
 
 // Config holds authentication configuration
@@ -68,7 +72,7 @@ func NewConfigFromEnv() *Config {
 	}
 
 	return &Config{
-		Mode:             getEnv("AUTH_MODE", "jwt"),
+		Mode:             getEnv("AUTH_MODE", ModeJWT),
 		Algorithm:        getEnv("JWT_ALGORITHM", AlgorithmHS256),
 		Issuer:           getEnv("JWT_ISSUER", "c8s-auth"),
 		Audience:         getEnv("JWT_AUDIENCE", "c8s-api"),
@@ -85,16 +89,16 @@ func NewConfigFromEnv() *Config {
 
 // Validate checks if configuration is valid
 func (c *Config) Validate() error {
-	if c.Mode != "jwt" && c.Mode != "none" {
-		return fmt.Errorf("invalid AUTH_MODE: %s (must be 'jwt' or 'none')", c.Mode)
+	if c.Mode != ModeJWT && c.Mode != ModeNone {
+		return fmt.Errorf("invalid AUTH_MODE: %s (must be '%s' or '%s')", c.Mode, ModeJWT, ModeNone)
 	}
 
-	if c.Mode == "none" {
+	if c.Mode == ModeNone {
 		return nil // Skip validation for dev-only mode
 	}
 
 	if c.Algorithm != AlgorithmHS256 && c.Algorithm != AlgorithmRS256 {
-		return fmt.Errorf("invalid JWT_ALGORITHM: %s (must be 'HS256' or 'RS256')", c.Algorithm)
+		return fmt.Errorf("invalid JWT_ALGORITHM: %s (must be '%s' or '%s')", c.Algorithm, AlgorithmHS256, AlgorithmRS256)
 	}
 
 	if c.Algorithm == AlgorithmHS256 && c.Secret == "" {
