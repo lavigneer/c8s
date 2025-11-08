@@ -28,7 +28,7 @@ import (
 	"github.com/org/c8s/pkg/dashboard"
 )
 
-// setupTestServer creates a test HTTP server with dashboard routes
+// setupTestServer creates a test HTTP server with dashboard routes.
 func setupTestServer(t *testing.T) *httptest.Server {
 	// Note: In a real scenario, you would load templates from disk
 	// For testing, we'll just register routes without template rendering
@@ -59,14 +59,14 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(router)
 }
 
-// TestDashboardTemplatesLoad verifies templates can be loaded without errors
+// TestDashboardTemplatesLoad verifies templates can be loaded without errors.
 func TestDashboardTemplatesLoad(t *testing.T) {
 	// This test would load actual templates
 	// For now, we just verify the package can be imported
 	_ = dashboard.Templates
 }
 
-// TestHealthEndpointReturnsOK verifies health check endpoint works
+// TestHealthEndpointReturnsOK verifies health check endpoint works.
 func TestHealthEndpointReturnsOK(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
@@ -82,7 +82,7 @@ func TestHealthEndpointReturnsOK(t *testing.T) {
 	}
 }
 
-// TestStaticFilesAreAccessible verifies static assets can be served
+// TestStaticFilesAreAccessible verifies static assets can be served.
 func TestStaticFilesAreAccessible(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
@@ -103,13 +103,13 @@ func TestStaticFilesAreAccessible(t *testing.T) {
 	}
 }
 
-// TestDashboardRequiresAuth verifies dashboard is protected by authentication
+// TestDashboardRequiresAuth verifies dashboard is protected by authentication.
 func TestDashboardRequiresAuth(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
 
 	// Request without auth token should fail
-	req, err := http.NewRequest("GET", server.URL+"/dashboard", nil)
+	req, err := http.NewRequest("GET", server.URL+"/dashboard", http.NoBody)
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestDashboardRequiresAuth(t *testing.T) {
 	}
 }
 
-// TestNotFoundHandlerReturnsProperStatus verifies 404 handling
+// TestNotFoundHandlerReturnsProperStatus verifies 404 handling.
 func TestNotFoundHandlerReturnsProperStatus(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
