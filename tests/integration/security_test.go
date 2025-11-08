@@ -17,24 +17,23 @@ limitations under the License.
 package integration
 
 import (
-	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
-	"github.com/org/c8s/cmd/api-server/middleware"
+	apimiddleware "github.com/org/c8s/cmd/api-server/middleware"
 )
 
 // setupSecurityTestServer creates a test server with security middleware
 func setupSecurityTestServer(t *testing.T) *httptest.Server {
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.SecurityHeadersMiddleware)
+	router.Use(chimiddleware.Logger)
+	router.Use(chimiddleware.Recoverer)
+	router.Use(apimiddleware.SecurityHeadersMiddleware)
 
 	router.Get("/api/test", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

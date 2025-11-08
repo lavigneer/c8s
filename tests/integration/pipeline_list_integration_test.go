@@ -35,15 +35,14 @@ func setupPipelineTestServer(t *testing.T) *httptest.Server {
 	// Auth middleware that attaches test user
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			testUser := &handlers.User{
+			// Create test user for authentication
+			_ = &handlers.User{
 				ID:       "test-user",
 				Username: "testuser",
 				Email:    "test@example.com",
 			}
-			ctx = r.Context()
-			// Store user in context (using unexported method, would need export in real code)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			// TODO: Implement context storage for authenticated user once handlers exports context helpers
+			next.ServeHTTP(w, r)
 		})
 	})
 

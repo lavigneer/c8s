@@ -25,7 +25,6 @@ linters:
     - nolintlint     # Ill-formed or insufficient nolint directives
     - unconvert      # Remove unnecessary type conversions
     - unparam        # Reports unused function parameters
-    - exportloopref  # Checks for pointers to enclosing loop variables
     - goconst        # Find repeated strings that could be constants
     - godot          # Check comments end in period
     - gocyclo        # Cyclomatic complexity
