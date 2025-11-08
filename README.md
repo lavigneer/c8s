@@ -328,43 +328,31 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Documentation
 
-### Getting Started
-- **[Getting Started Guide](./docs/GETTING_STARTED.md)** - Installation (5 min), first pipeline, dashboard tour
-- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues, diagnostics, debug commands
-- [Quick Start Guide](./specs/001-build-a-continuous/quickstart.md) - Legacy quickstart
+### User Guides
+- **[Getting Started Guide](./docs/GETTING_STARTED.md)** - Installation and first pipeline setup
+- **[Pipeline Syntax](./docs/PIPELINE_SYNTAX.md)** - Complete YAML configuration reference
+- **[Configuration Guide](./docs/CONFIGURATION.md)** - System configuration and setup
+- **[Dashboard Features](./docs/DASHBOARD_FEATURES.md)** - Web UI guide and keyboard shortcuts
+- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Development
+- **[Development Guide](./docs/development.md)** - Building and testing locally
+- **[Tilt Setup](./docs/tilt-setup.md)** - Local Kubernetes development with Tilt
+- **[Local Testing](./docs/local-testing.md)** - Running tests locally
+- [Devbox Setup](./docs/devbox-setup.md) - Using Devbox for development environment
+
+### Operations & Security
+- **[Operator Guide](./docs/OPERATOR_GUIDE.md)** - Deployment and management
+- **[Authentication](./docs/AUTHENTICATION.md)** - JWT and API key setup
+- **[HTTPS Setup](./docs/HTTPS_SETUP.md)** - TLS/HTTPS configuration
+- **[Autoscaling](./docs/autoscaling.md)** - Pod autoscaling configuration
 
 ### Reference
 - [Feature Specification](./specs/001-build-a-continuous/spec.md)
-- [Implementation Plan](./specs/001-build-a-continuous/plan.md)
 - [Data Model](./specs/001-build-a-continuous/data-model.md)
-- [API Contracts](./specs/001-build-a-continuous/contracts/)
-- [CLI Reference](./docs/CLI_REFERENCE.md) (coming soon)
-- [Security Guide](./docs/SECURITY.md) (coming soon)
+- [API Contracts](./specs/001-build-a-continuous/contracts/openapi.yaml)
 
 ## Community
 
 - **GitHub Issues**: https://github.com/org/c8s/issues
-- **Slack**: https://c8s.slack.com
-- **Documentation**: https://docs.c8s.dev
-
-## Status
-
-✅ **Core Features Complete** - C8S is feature-complete for Phase 1 core functionality.
-
-### Phase 1 Completion: 54% (7 of 13 phases)
-
-**Completed Phases** ✅
-- S1: Authentication Implementation
-- S2: Authorization Implementation
-- C1: Error Handling
-- S3: Webhook Signature Validation
-- S4: Request Size Limit Middleware
-- S5: Information Disclosure Fixes
-- S6: CORS Configuration
-
-**In Progress** 🚀
-- D1-D3: Critical Documentation (Getting Started, Troubleshooting, README)
-- S7: Optional Security Enhancements
-- T1: Handler Unit Tests
-
-See [PHASE1_PROGRESS_UPDATE.md](./PHASE1_PROGRESS_UPDATE.md) for detailed progress and [tasks.md](./specs/001-build-a-continuous/tasks.md) for implementation details.
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
