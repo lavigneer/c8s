@@ -148,13 +148,7 @@ deploy: manifests ## Deploy controller and webhook to cluster
 undeploy: ## Remove controller and webhook from cluster
 	kubectl delete -f deploy/
 
-##@ Tools
-
-.PHONY: tools
-tools: ## Note: Tools are now managed via go.mod tool directive
-	@echo "Tools are now managed via go.mod tool directive"
-	@echo "Available tools: controller-gen, setup-envtest, golangci-lint"
-	@echo "They will be installed automatically via 'go tool <name>' when needed"
+##@ Check
 
 .PHONY: check-deps
 check-deps: ## Check if required dependencies are installed
