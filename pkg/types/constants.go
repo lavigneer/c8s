@@ -18,61 +18,89 @@ limitations under the License.
 package types
 
 const (
-	// Label keys
+	// LabelPipelineConfig is the label key for pipeline configuration name.
 	LabelPipelineConfig = "c8s.dev/pipeline-config"
-	LabelPipelineRun    = "c8s.dev/pipeline-run"
-	LabelStepName       = "c8s.dev/step-name"
-	LabelCommit         = "c8s.dev/commit"
-	LabelBranch         = "c8s.dev/branch"
-	LabelManagedBy      = "app.kubernetes.io/managed-by"
+	// LabelPipelineRun is the label key for pipeline run name.
+	LabelPipelineRun = "c8s.dev/pipeline-run"
+	// LabelStepName is the label key for step name.
+	LabelStepName = "c8s.dev/step-name"
+	// LabelCommit is the label key for commit SHA.
+	LabelCommit = "c8s.dev/commit"
+	// LabelBranch is the label key for branch name.
+	LabelBranch = "c8s.dev/branch"
+	// LabelManagedBy is the label key for managed-by identifier.
+	LabelManagedBy = "app.kubernetes.io/managed-by"
 
-	// Annotation keys
+	// AnnotationCommitMessage is the annotation key for commit message.
 	AnnotationCommitMessage = "c8s.dev/commit-message"
-	AnnotationAuthor        = "c8s.dev/author"
-	AnnotationTriggeredBy   = "c8s.dev/triggered-by"
-	AnnotationLogURL        = "c8s.dev/log-url"
-	AnnotationArtifactURLs  = "c8s.dev/artifact-urls"
+	// AnnotationAuthor is the annotation key for commit author.
+	AnnotationAuthor = "c8s.dev/author"
+	// AnnotationTriggeredBy is the annotation key for trigger source.
+	AnnotationTriggeredBy = "c8s.dev/triggered-by"
+	// AnnotationLogURL is the annotation key for log URL.
+	AnnotationLogURL = "c8s.dev/log-url"
+	// AnnotationArtifactURLs is the annotation key for artifact URLs.
+	AnnotationArtifactURLs = "c8s.dev/artifact-urls"
 
-	// Finalizer names
+	// FinalizerPipelineRun is the finalizer for pipeline run cleanup.
 	FinalizerPipelineRun = "c8s.dev/pipelinerun"
+	// FinalizerCleanupJobs is the finalizer for job cleanup.
 	FinalizerCleanupJobs = "c8s.dev/cleanup-jobs"
+	// FinalizerCleanupLogs is the finalizer for log cleanup.
 	FinalizerCleanupLogs = "c8s.dev/cleanup-logs"
 
-	// Managed by value
+	// ManagedByC8S is the value for the managed-by label.
 	ManagedByC8S = "c8s"
 
-	// Job configuration
-	JobTTLSecondsAfterFinished = 3600 // 1 hour
-	JobBackoffLimit            = 0    // No retries at Job level (handled by RetryPolicy)
+	// JobTTLSecondsAfterFinished is the TTL for finished jobs (1 hour).
+	JobTTLSecondsAfterFinished = 3600
+	// JobBackoffLimit is the backoff limit for jobs (no retries at Job level).
+	JobBackoffLimit = 0
 
-	// Container names
+	// ContainerNameGitClone is the container name for git clone step.
 	ContainerNameGitClone = "git-clone"
-	ContainerNameStep     = "step"
+	// ContainerNameStep is the container name for pipeline step.
+	ContainerNameStep = "step"
+	// ContainerNameArtifact is the container name for artifact upload.
 	ContainerNameArtifact = "artifact-upload"
 
-	// Volume names
+	// VolumeNameWorkspace is the volume name for workspace.
 	VolumeNameWorkspace = "workspace"
-	VolumeNameSecrets   = "secrets"
+	// VolumeNameSecrets is the volume name for secrets.
+	VolumeNameSecrets = "secrets"
 
-	// Mount paths
+	// MountPathWorkspace is the mount path for workspace volume.
 	MountPathWorkspace = "/workspace"
-	MountPathSecrets   = "/secrets"
+	// MountPathSecrets is the mount path for secrets volume.
+	MountPathSecrets = "/secrets"
 
-	// Environment variables
-	EnvCommitSHA    = "COMMIT_SHA"
-	EnvBranch       = "BRANCH"
-	EnvPipelineRun  = "PIPELINE_RUN"
-	EnvStepName     = "STEP_NAME"
-	EnvWorkspace    = "WORKSPACE"
+	// EnvCommitSHA is the environment variable for commit SHA.
+	EnvCommitSHA = "COMMIT_SHA"
+	// EnvBranch is the environment variable for branch name.
+	EnvBranch = "BRANCH"
+	// EnvPipelineRun is the environment variable for pipeline run name.
+	EnvPipelineRun = "PIPELINE_RUN"
+	// EnvStepName is the environment variable for step name.
+	EnvStepName = "STEP_NAME"
+	// EnvWorkspace is the environment variable for workspace path.
+	EnvWorkspace = "WORKSPACE"
+	// EnvC8SNamespace is the environment variable for C8S namespace.
 	EnvC8SNamespace = "C8S_NAMESPACE"
 
-	// Storage configuration
-	StorageBucketEnv        = "C8S_STORAGE_BUCKET"
-	StorageRegionEnv        = "C8S_STORAGE_REGION"
-	StorageEndpointEnv      = "C8S_STORAGE_ENDPOINT"
-	StorageAccessKeyEnv     = "AWS_ACCESS_KEY_ID"
-	StorageSecretKeyEnv     = "AWS_SECRET_ACCESS_KEY"
-	StorageLogPrefix        = "c8s-logs"
-	StorageArtifactPrefix   = "c8s-artifacts"
-	StorageURLExpirySeconds = 3600 // 1 hour
+	// StorageBucketEnv is the environment variable for storage bucket.
+	StorageBucketEnv = "C8S_STORAGE_BUCKET"
+	// StorageRegionEnv is the environment variable for storage region.
+	StorageRegionEnv = "C8S_STORAGE_REGION"
+	// StorageEndpointEnv is the environment variable for storage endpoint.
+	StorageEndpointEnv = "C8S_STORAGE_ENDPOINT"
+	// StorageAccessKeyEnv is the environment variable for storage access key.
+	StorageAccessKeyEnv = "AWS_ACCESS_KEY_ID"
+	// StorageSecretKeyEnv is the environment variable for storage secret key.
+	StorageSecretKeyEnv = "AWS_SECRET_ACCESS_KEY"
+	// StorageLogPrefix is the prefix for log storage paths.
+	StorageLogPrefix = "c8s-logs"
+	// StorageArtifactPrefix is the prefix for artifact storage paths.
+	StorageArtifactPrefix = "c8s-artifacts"
+	// StorageURLExpirySeconds is the expiry time for storage URLs (1 hour).
+	StorageURLExpirySeconds = 3600
 )

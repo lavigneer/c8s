@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package main implements the C8S webhook service for Git provider integrations (GitHub, GitLab, Bitbucket).
 package main
 
 import (

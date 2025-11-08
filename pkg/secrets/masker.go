@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package secrets provides secret masking and validation utilities for pipeline logs and configuration.
 package secrets
 
 import (

@@ -15,8 +15,10 @@ import (
 type ExportFormat string
 
 const (
+	// ExportFormatJSON represents JSON export format.
 	ExportFormatJSON ExportFormat = "json"
-	ExportFormatCSV  ExportFormat = "csv"
+	// ExportFormatCSV represents CSV export format.
+	ExportFormatCSV ExportFormat = "csv"
 )
 
 // ExportPipelineRunsHandler exports pipeline runs in specified format

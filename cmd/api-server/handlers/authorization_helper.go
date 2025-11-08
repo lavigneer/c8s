@@ -35,10 +35,14 @@ func InitAuthorizationService(service dashboard.ProjectAccessService) {
 type AuthorizationAction string
 
 const (
-	ActionRead   AuthorizationAction = "read"
-	ActionWrite  AuthorizationAction = "write"
+	// ActionRead represents read access action.
+	ActionRead AuthorizationAction = "read"
+	// ActionWrite represents write access action.
+	ActionWrite AuthorizationAction = "write"
+	// ActionDelete represents delete access action.
 	ActionDelete AuthorizationAction = "delete"
-	ActionAdmin  AuthorizationAction = "admin"
+	// ActionAdmin represents admin access action.
+	ActionAdmin AuthorizationAction = "admin"
 )
 
 // CheckProjectAccess verifies user has required role for project

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package webhook provides Kubernetes admission webhook validation and Git provider webhook handlers.
 package webhook
 
 import (

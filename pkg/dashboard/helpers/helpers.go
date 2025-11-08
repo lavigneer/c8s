@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package helpers provides template helper functions for the C8S dashboard templates.
 package helpers
 
 // Dict creates a map from key-value pairs for use in templates

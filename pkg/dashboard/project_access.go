@@ -14,12 +14,15 @@ import (
 type Role string
 
 const (
-	RoleAdmin  Role = "admin"
+	// RoleAdmin represents administrator role with full permissions.
+	RoleAdmin Role = "admin"
+	// RoleEditor represents editor role with read and write permissions.
 	RoleEditor Role = "editor"
+	// RoleViewer represents viewer role with read-only permissions.
 	RoleViewer Role = "viewer"
 )
 
-// RoleLevel returns numeric level for role hierarchy comparison
+// Level returns numeric level for role hierarchy comparison.
 // Higher level = more permissions
 func (r Role) Level() int {
 	switch r {

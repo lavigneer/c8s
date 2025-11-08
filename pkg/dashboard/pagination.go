@@ -132,7 +132,7 @@ func CalculatePageCount(total, perPage int) int {
 	return pages
 }
 
-// BuildPaginationLinks generates links for pagination
+// PaginationLinks holds pagination navigation links.
 type PaginationLinks struct {
 	First    string
 	Last     string

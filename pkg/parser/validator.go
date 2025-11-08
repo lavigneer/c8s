@@ -314,6 +314,7 @@ type ValidationErrors struct {
 	Errors []*ValidationError
 }
 
+// Add appends a validation error with field and message.
 func (ve *ValidationErrors) Add(field, message string) {
 	ve.Errors = append(ve.Errors, &ValidationError{
 		Field:   field,
@@ -321,12 +322,14 @@ func (ve *ValidationErrors) Add(field, message string) {
 	})
 }
 
+// Merge combines another ValidationErrors into this one.
 func (ve *ValidationErrors) Merge(other *ValidationErrors) {
 	if other != nil {
 		ve.Errors = append(ve.Errors, other.Errors...)
 	}
 }
 
+// HasErrors returns true if there are any validation errors.
 func (ve *ValidationErrors) HasErrors() bool {
 	return len(ve.Errors) > 0
 }

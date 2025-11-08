@@ -23,8 +23,8 @@ import (
 	"time"
 )
 
-// StorageClient defines the interface for object storage operations
-type StorageClient interface {
+// Client defines the interface for object storage operations
+type Client interface {
 	// UploadLog uploads log content to object storage
 	// key format: "c8s-logs/{namespace}/{pipeline-run}/{step-name}.log"
 	UploadLog(ctx context.Context, key string, content io.Reader) error

@@ -1,3 +1,4 @@
+// Package main provides a deprecation notice for the c8s CLI tool.
 package main
 
 import (

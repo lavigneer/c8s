@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package s3 provides S3 implementation of the StorageClient interface
+// Package s3 provides S3 implementation of the storage.Client interface
 package s3
 
 import (
@@ -32,7 +32,7 @@ import (
 	"github.com/org/c8s/pkg/storage"
 )
 
-// Client implements StorageClient interface using AWS S3
+// Client implements storage.Client interface using AWS S3
 type Client struct {
 	s3Client   *s3.S3
 	uploader   *s3manager.Uploader

@@ -10,6 +10,7 @@ import (
 	"github.com/org/c8s/pkg/dashboard/helpers"
 )
 
+// Templates is the template set for rendering HTML pages.
 var Templates *template.Template
 
 // LoadTemplates parses all templates from templates/ directory with custom functions

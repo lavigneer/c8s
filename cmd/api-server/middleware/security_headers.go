@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package middleware provides HTTP middleware for security headers, CORS, and content sniffing prevention.
 package middleware
 
 import "net/http"

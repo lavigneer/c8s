@@ -1,3 +1,4 @@
+// Package handlers provides HTTP request handlers for the C8S API server.
 package handlers
 
 import (

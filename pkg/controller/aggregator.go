@@ -1,3 +1,4 @@
+// Package controller implements the C8S Kubernetes controller for PipelineRun reconciliation and matrix aggregation.
 package controller
 
 import (
