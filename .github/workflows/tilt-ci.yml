@@ -51,7 +51,7 @@ jobs:
 
     - name: Run Tilt CI
       run: |
-        devbox run tilt ci --file=Tiltfile --timeout=600s --log-source=all
+        devbox run -- tilt ci --file=Tiltfile --timeout=600s --log-source=all
       env:
         DOCKER_HOST: unix:///var/run/docker.sock
 
