@@ -56,7 +56,8 @@ func AggregateMatrixResults(ctx context.Context, c client.Client, namespace, par
 
 	var totalDurationSeconds int64
 
-	for _, run := range matrixRuns {
+	for i := range matrixRuns {
+		run := &matrixRuns[i]
 		// Count by phase
 		switch run.Status.Phase {
 		case c8sv1alpha1.PipelineRunPhaseSucceeded:
@@ -80,16 +81,16 @@ func AggregateMatrixResults(ctx context.Context, c client.Client, namespace, par
 
 		// Count failed steps
 		failedSteps := 0
-		for _, step := range run.Status.Steps {
-			if step.Phase == c8sv1alpha1.StepPhaseFailed {
+		for j := range run.Status.Steps {
+			if run.Status.Steps[j].Phase == c8sv1alpha1.StepPhaseFailed {
 				failedSteps++
 			}
 		}
 
 		// Collect log URLs
-		for _, step := range run.Status.Steps {
-			if step.LogURL != "" {
-				result.LogURLs = append(result.LogURLs, step.LogURL)
+		for j := range run.Status.Steps {
+			if run.Status.Steps[j].LogURL != "" {
+				result.LogURLs = append(result.LogURLs, run.Status.Steps[j].LogURL)
 			}
 		}
 

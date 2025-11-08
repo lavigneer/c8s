@@ -53,8 +53,8 @@ func FetchPipelineConfigsForUser(ctx context.Context, namespace string) []*dashb
 	if k8sClient != nil {
 		configs, err := k8sClient.ListPipelineConfigs(ctx, namespace)
 		if err == nil && configs != nil {
-			for _, config := range configs.Items {
-				projects = append(projects, mapPipelineConfigToProjectDTO(&config, namespace))
+			for i := range configs.Items {
+				projects = append(projects, mapPipelineConfigToProjectDTO(&configs.Items[i], namespace))
 			}
 		}
 	}

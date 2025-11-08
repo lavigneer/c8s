@@ -42,8 +42,9 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Map to DTOs - filter by user's access
 	dtos := make([]*dashboard.ProjectDTO, 0, len(configs.Items))
-	for _, config := range configs.Items {
+	for i := range configs.Items {
 		// Check if user has read access to this project
+		config := &configs.Items[i]
 		hasAccess, err := authzService.UserHasProjectAccess(r.Context(), user.ID, config.Name)
 		if err != nil {
 			// Log but continue (user might not have role binding)
