@@ -328,26 +328,26 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Documentation
 
-### User Guides
-- **[Getting Started Guide](./docs/GETTING_STARTED.md)** - Installation and first pipeline setup
-- **[Pipeline Syntax](./docs/PIPELINE_SYNTAX.md)** - Complete YAML configuration reference
-- **[Configuration Guide](./docs/CONFIGURATION.md)** - System configuration and setup
-- **[Dashboard Features](./docs/DASHBOARD_FEATURES.md)** - Web UI guide and keyboard shortcuts
-- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+See [docs/README.md](./docs/README.md) for complete documentation index.
 
-### Development
-- **[Development Guide](./docs/development.md)** - Building and testing locally
-- **[Tilt Setup](./docs/tilt-setup.md)** - Local Kubernetes development with Tilt
-- **[Local Testing](./docs/local-testing.md)** - Running tests locally
-- [Devbox Setup](./docs/devbox-setup.md) - Using Devbox for development environment
+### Quick Links
 
-### Operations & Security
-- **[Operator Guide](./docs/OPERATOR_GUIDE.md)** - Deployment and management
-- **[Authentication](./docs/AUTHENTICATION.md)** - JWT and API key setup
-- **[HTTPS Setup](./docs/HTTPS_SETUP.md)** - TLS/HTTPS configuration
-- **[Autoscaling](./docs/autoscaling.md)** - Pod autoscaling configuration
+**Getting Started**
+- [Getting Started Guide](./docs/guides/getting-started.md) - Installation and first pipeline
+- [Pipeline Syntax](./docs/guides/pipeline-syntax.md) - YAML configuration reference
+- [Troubleshooting](./docs/guides/troubleshooting.md) - Common issues and solutions
 
-### Reference
+**Development**
+- [Development Guide](./docs/development/development.md) - Building and testing
+- [Tilt Setup](./docs/development/tilt-setup.md) - Local Kubernetes development
+- [Local Testing](./docs/development/local-testing.md) - Running tests
+
+**Operations**
+- [Operator Guide](./docs/operations/operator-guide.md) - Deployment and management
+- [Authentication](./docs/operations/authentication.md) - JWT and API key setup
+- [HTTPS Setup](./docs/operations/https-setup.md) - TLS/HTTPS configuration
+
+**Reference**
 - [Feature Specification](./specs/001-build-a-continuous/spec.md)
 - [Data Model](./specs/001-build-a-continuous/data-model.md)
 - [API Contracts](./specs/001-build-a-continuous/contracts/openapi.yaml)
