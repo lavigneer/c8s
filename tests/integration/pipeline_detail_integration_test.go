@@ -48,7 +48,7 @@ func setupDetailTestServer(t *testing.T) *httptest.Server {
 // TestPipelineDetailPageReturnsOK verifies detail page loads
 func TestPipelineDetailPageReturnsOK(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/dashboard/runs/test-run-123")
 	if err != nil {
@@ -64,7 +64,7 @@ func TestPipelineDetailPageReturnsOK(t *testing.T) {
 // TestGetPipelineRunReturnsJSON verifies API returns run details
 func TestGetPipelineRunReturnsJSON(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/api/runs/test-run-123")
 	if err != nil {
@@ -81,7 +81,7 @@ func TestGetPipelineRunReturnsJSON(t *testing.T) {
 // TestLogStreamingEndpointReturnsSSE verifies log streaming endpoint
 func TestLogStreamingEndpointReturnsSSE(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/api/runs/test-run-123/steps/step-1/logs")
 	if err != nil {
@@ -108,7 +108,7 @@ func TestLogStreamingEndpointReturnsSSE(t *testing.T) {
 // TestLogStreamingWithInvalidRunID returns error
 func TestLogStreamingWithInvalidRunID(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/api/runs//steps/step-1/logs")
 	if err != nil {
@@ -125,7 +125,7 @@ func TestLogStreamingWithInvalidRunID(t *testing.T) {
 // TestLogStreamingMultipleSteps verifies streaming works for different steps
 func TestLogStreamingMultipleSteps(t *testing.T) {
 	server := setupDetailTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	steps := []string{"build", "test", "deploy"}
 

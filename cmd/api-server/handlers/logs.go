@@ -112,10 +112,7 @@ func handleStreamError(w http.ResponseWriter, err error) {
 		log.Printf("ERROR: Failed to marshal error response: %v", marshalErr)
 		return
 	}
-	if _, writeErr := fmt.Fprintf(w, "event: error\ndata: %s\n\n", data); writeErr != nil {
-		log.Printf("ERROR: Failed to send error event: %v", writeErr)
-	}
-	_ = writeErr // Explicitly ignore - client disconnection is expected
+	_, _ = fmt.Fprintf(w, "event: error\ndata: %s\n\n", data)
 }
 
 // sendCompleteEvent sends a completion event to the client

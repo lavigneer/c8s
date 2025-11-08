@@ -69,7 +69,7 @@ func TestDashboardTemplatesLoad(t *testing.T) {
 // TestHealthEndpointReturnsOK verifies health check endpoint works.
 func TestHealthEndpointReturnsOK(t *testing.T) {
 	server := setupTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/health")
 	if err != nil {
@@ -85,7 +85,7 @@ func TestHealthEndpointReturnsOK(t *testing.T) {
 // TestStaticFilesAreAccessible verifies static assets can be served.
 func TestStaticFilesAreAccessible(t *testing.T) {
 	server := setupTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	// Test accessing a CSS file (if it exists)
 	resp, err := http.Get(server.URL + "/static/css/dashboard.css")
@@ -106,7 +106,7 @@ func TestStaticFilesAreAccessible(t *testing.T) {
 // TestDashboardRequiresAuth verifies dashboard is protected by authentication.
 func TestDashboardRequiresAuth(t *testing.T) {
 	server := setupTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	// Request without auth token should fail
 	req, err := http.NewRequest("GET", server.URL+"/dashboard", http.NoBody)
@@ -129,7 +129,7 @@ func TestDashboardRequiresAuth(t *testing.T) {
 // TestNotFoundHandlerReturnsProperStatus verifies 404 handling.
 func TestNotFoundHandlerReturnsProperStatus(t *testing.T) {
 	server := setupTestServer(t)
-	defer func() { _ = server.Close() }()
+	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/nonexistent")
 	if err != nil {
