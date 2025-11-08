@@ -24,23 +24,28 @@ jobs:
       with:
         enable-cache: true
 
+    - name: Create kind config file
+      run: |
+        cat > kind-config.yaml << 'EOF'
+        kind: Cluster
+        apiVersion: kind.x-k8s.io/v1alpha4
+        name: c8s
+        nodes:
+        - role: control-plane
+          extraPortMappings:
+          - containerPort: 80
+            hostPort: 8080
+            listenAddress: "127.0.0.1"
+          - containerPort: 443
+            hostPort: 8443
+            listenAddress: "127.0.0.1"
+        EOF
+
     - name: Set up Kind cluster
       uses: helm/kind-action@v1.7.0
       with:
         cluster_name: c8s
-        config: |
-          kind: Cluster
-          apiVersion: kind.x-k8s.io/v1alpha4
-          name: c8s
-          nodes:
-          - role: control-plane
-            extraPortMappings:
-            - containerPort: 80
-              hostPort: 8080
-              listenAddress: "127.0.0.1"
-            - containerPort: 443
-              hostPort: 8443
-              listenAddress: "127.0.0.1"
+        config: kind-config.yaml
 
     - name: Run Tilt CI
       run: |
