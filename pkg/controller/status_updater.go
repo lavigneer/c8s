@@ -287,9 +287,9 @@ func GetStepStatus(pipelineRun *c8sv1alpha1.PipelineRun, stepName string) *c8sv1
 // GetCompletedSteps returns a map of completed step names
 func GetCompletedSteps(pipelineRun *c8sv1alpha1.PipelineRun) map[string]bool {
 	completed := make(map[string]bool)
-	for _, step := range pipelineRun.Status.Steps {
-		if step.Phase == c8sv1alpha1.StepPhaseSucceeded {
-			completed[step.Name] = true
+	for i := range pipelineRun.Status.Steps {
+		if pipelineRun.Status.Steps[i].Phase == c8sv1alpha1.StepPhaseSucceeded {
+			completed[pipelineRun.Status.Steps[i].Name] = true
 		}
 	}
 	return completed

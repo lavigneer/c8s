@@ -44,7 +44,7 @@ func LoadTemplates(basePath string) error {
 		funcMap[name] = fn
 	}
 
-	pattern := filepath.Join(basePath, "templates/**/*.html")
+	pattern := filepath.Join(basePath, "templates") + "/**/*.html"
 	var err error
 	Templates, err = template.New("").Funcs(funcMap).ParseGlob(pattern)
 	if err != nil {

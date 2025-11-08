@@ -241,7 +241,9 @@ func validateNoCycles(steps []c8sv1alpha1.PipelineStep) error {
 						break
 					}
 				}
-				cyclePath := append(path[cycleStart:], dep)
+				cyclePath := make([]string, 0, len(path[cycleStart:])+1)
+				cyclePath = append(cyclePath, path[cycleStart:]...)
+				cyclePath = append(cyclePath, dep)
 				return fmt.Errorf("circular dependency detected: %s", strings.Join(cyclePath, " -> "))
 			}
 		}

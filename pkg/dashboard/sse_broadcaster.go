@@ -144,7 +144,7 @@ func NewStatusUpdateEvent(id, status, message string) SSEEvent {
 	return SSEEvent{
 		ID:    id,
 		Event: "status",
-		Data:  fmt.Sprintf(`{"status":"%s","message":"%s"}`, status, message),
+		Data:  fmt.Sprintf(`{"status":%q,"message":%q}`, status, message),
 	}
 }
 
@@ -153,7 +153,7 @@ func NewLogEvent(id, message string) SSEEvent {
 	return SSEEvent{
 		ID:    id,
 		Event: "log",
-		Data:  fmt.Sprintf(`{"message":"%s"}`, message),
+		Data:  fmt.Sprintf(`{"message":%q}`, message),
 	}
 }
 
@@ -171,6 +171,6 @@ func NewErrorEvent(id, errorMsg string) SSEEvent {
 	return SSEEvent{
 		ID:    id,
 		Event: "error",
-		Data:  fmt.Sprintf(`{"error":"%s"}`, errorMsg),
+		Data:  fmt.Sprintf(`{"error":%q}`, errorMsg),
 	}
 }

@@ -72,10 +72,7 @@ func Paginate(items interface{}, total int, params PaginationParams) *Pagination
 	start := (params.Page - 1) * params.PerPage
 	end := start + params.PerPage
 
-	// Ensure bounds
-	if start < 0 {
-		start = 0
-	}
+	// Ensure end doesn't exceed total
 	if end > total {
 		end = total
 	}

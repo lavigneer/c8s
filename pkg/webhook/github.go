@@ -36,6 +36,8 @@ import (
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 )
 
+const defaultNamespace = "default"
+
 // GitHubHandler handles GitHub webhook events
 type GitHubHandler struct {
 	client client.Client
@@ -99,7 +101,7 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, http.StatusBadRequest, "Failed to read request body")
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	// Parse push event
 	var pushEvent GitHubPushEvent
@@ -120,7 +122,7 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	// Find RepositoryConnection for this repository
 	// Note: Using default namespace for now. In production, this would be configurable
-	namespace := "default"
+	namespace := defaultNamespace
 	repoConn, err := findRepositoryConnection(ctx, h.client, pushEvent.Repository.CloneURL, namespace)
 	if err != nil {
 		// Try SSH URL as well

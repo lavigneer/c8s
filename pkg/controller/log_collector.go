@@ -47,9 +47,9 @@ func (lc *LogCollector) CollectLogs(ctx context.Context, pod *corev1.Pod) ([]byt
 
 	// Find the main container (not init containers)
 	var mainContainer string
-	for _, container := range pod.Spec.Containers {
-		if container.Name != "git-clone" {
-			mainContainer = container.Name
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name != "git-clone" {
+			mainContainer = pod.Spec.Containers[i].Name
 			break
 		}
 	}

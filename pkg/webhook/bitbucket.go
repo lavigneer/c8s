@@ -110,7 +110,7 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, http.StatusBadRequest, "Failed to read request body")
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	// Parse push event
 	var pushEvent BitbucketPushEvent

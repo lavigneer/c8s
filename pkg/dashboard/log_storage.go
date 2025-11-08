@@ -79,7 +79,7 @@ func (s *InMemoryLogStorage) populateDemoLogs() {
 }
 
 // SetLog sets log content for a step (for testing)
-func (s *InMemoryLogStorage) SetLog(runID, stepID string, content string) {
+func (s *InMemoryLogStorage) SetLog(runID, stepID, content string) {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	s.logs[key] = content
 }

@@ -85,8 +85,8 @@ func (w *QuotaAdmissionWebhook) Handle(ctx context.Context, req admissionv1.Admi
 	}
 
 	// Check against each quota
-	for _, quota := range quotaList.Items {
-		if err := checkQuota(quota, totalCPU, totalMemory); err != nil {
+	for i := range quotaList.Items {
+		if err := checkQuota(quotaList.Items[i], totalCPU, totalMemory); err != nil {
 			return admissionv1.AdmissionResponse{
 				Allowed: false,
 				Result: &metav1.Status{
@@ -107,9 +107,9 @@ func calculateTotalResources(steps []v1alpha1.PipelineStep) (cpu, memory resourc
 	cpu = resource.MustParse("0")
 	memory = resource.MustParse("0")
 
-	for _, step := range steps {
-		if step.Resources.CPU != "" {
-			stepCPU, err := resource.ParseQuantity(step.Resources.CPU)
+	for i := range steps {
+		if steps[i].Resources.CPU != "" {
+			stepCPU, err := resource.ParseQuantity(steps[i].Resources.CPU)
 			if err == nil {
 				cpu.Add(stepCPU)
 			}
@@ -118,8 +118,8 @@ func calculateTotalResources(steps []v1alpha1.PipelineStep) (cpu, memory resourc
 			cpu.Add(resource.MustParse("1"))
 		}
 
-		if step.Resources.Memory != "" {
-			stepMemory, err := resource.ParseQuantity(step.Resources.Memory)
+		if steps[i].Resources.Memory != "" {
+			stepMemory, err := resource.ParseQuantity(steps[i].Resources.Memory)
 			if err == nil {
 				memory.Add(stepMemory)
 			}

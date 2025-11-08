@@ -164,7 +164,7 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 		_ = dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
 		return
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Return as plain text
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

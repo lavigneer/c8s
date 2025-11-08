@@ -26,8 +26,8 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 	}
 
 	// Count step statuses
-	for _, step := range run.Status.Steps {
-		switch step.Phase {
+	for i := range run.Status.Steps {
+		switch run.Status.Steps[i].Phase {
 		case v1alpha1.StepPhaseSucceeded:
 			dto.SuccessCount++
 		case v1alpha1.StepPhaseFailed:
@@ -52,8 +52,8 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 	}
 
 	// Count artifacts - sum all artifact URLs from steps
-	for _, step := range run.Status.Steps {
-		dto.ArtifactCount += len(step.ArtifactURLs)
+	for i := range run.Status.Steps {
+		dto.ArtifactCount += len(run.Status.Steps[i].ArtifactURLs)
 	}
 
 	return dto

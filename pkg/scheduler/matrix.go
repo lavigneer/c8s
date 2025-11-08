@@ -90,7 +90,7 @@ func generateCombinations(dimensions map[string][]string) []map[string]string {
 }
 
 // filterExclusions removes combinations that match exclusion rules
-func filterExclusions(combinations []map[string]string, exclusions []map[string]string) []map[string]string {
+func filterExclusions(combinations, exclusions []map[string]string) []map[string]string {
 	if len(exclusions) == 0 {
 		return combinations
 	}
@@ -117,7 +117,7 @@ func isExcluded(combo map[string]string, exclusions []map[string]string) bool {
 
 // matchesExclusion checks if a combination matches a specific exclusion rule
 // All keys in the exclusion must match the combination
-func matchesExclusion(combo map[string]string, exclusion map[string]string) bool {
+func matchesExclusion(combo, exclusion map[string]string) bool {
 	for key, value := range exclusion {
 		comboValue, exists := combo[key]
 		if !exists || comboValue != value {

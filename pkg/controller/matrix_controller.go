@@ -122,10 +122,10 @@ func GetMatrixParentRun(ctx context.Context, c client.Client, matrixRun *c8sv1al
 		return nil, err
 	}
 
-	for _, run := range runs.Items {
-		expectedID := fmt.Sprintf("%s-%s", run.Name, run.UID[:8])
+	for i := range runs.Items {
+		expectedID := fmt.Sprintf("%s-%s", runs.Items[i].Name, runs.Items[i].UID[:8])
 		if expectedID == parentID {
-			return &run, nil
+			return &runs.Items[i], nil
 		}
 	}
 

@@ -112,7 +112,8 @@ func (s *ProjectAccessServiceImpl) GetUserRoleForProject(ctx context.Context, us
 
 	// Find RoleBindings that include this user
 	var highestRole Role
-	for _, rb := range roleBindings.Items {
+	for i := range roleBindings.Items {
+		rb := &roleBindings.Items[i]
 		// Check if user is a subject of this RoleBinding
 		userFound := false
 		for _, subject := range rb.Subjects {

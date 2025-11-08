@@ -59,7 +59,7 @@ func (aw *AdmissionWebhook) HandleValidation(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	// Parse the admission review
 	admissionReview := &admissionv1.AdmissionReview{}

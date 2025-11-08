@@ -110,7 +110,8 @@ func Parse(yamlContent []byte) (*c8sv1alpha1.PipelineConfigSpec, error) {
 // convertSteps converts YAML steps to CRD steps
 func convertSteps(yamlSteps []PipelineStepYAML) []c8sv1alpha1.PipelineStep {
 	steps := make([]c8sv1alpha1.PipelineStep, len(yamlSteps))
-	for i, ys := range yamlSteps {
+	for i := range yamlSteps {
+		ys := yamlSteps[i]
 		steps[i] = c8sv1alpha1.PipelineStep{
 			Name:        ys.Name,
 			Image:       ys.Image,
@@ -127,23 +128,23 @@ func convertSteps(yamlSteps []PipelineStepYAML) []c8sv1alpha1.PipelineStep {
 }
 
 // convertResources converts YAML resources to CRD resources
-func convertResources(yaml *ResourceRequirementsYAML) *c8sv1alpha1.ResourceRequirements {
-	if yaml == nil {
+func convertResources(res *ResourceRequirementsYAML) *c8sv1alpha1.ResourceRequirements {
+	if res == nil {
 		return nil
 	}
 	return &c8sv1alpha1.ResourceRequirements{
-		CPU:    yaml.CPU,
-		Memory: yaml.Memory,
+		CPU:    res.CPU,
+		Memory: res.Memory,
 	}
 }
 
 // convertSecrets converts YAML secrets to CRD secrets
-func convertSecrets(yaml []SecretReferenceYAML) []c8sv1alpha1.SecretReference {
-	if yaml == nil {
+func convertSecrets(secs []SecretReferenceYAML) []c8sv1alpha1.SecretReference {
+	if secs == nil {
 		return nil
 	}
-	secrets := make([]c8sv1alpha1.SecretReference, len(yaml))
-	for i, ys := range yaml {
+	secrets := make([]c8sv1alpha1.SecretReference, len(secs))
+	for i, ys := range secs {
 		secrets[i] = c8sv1alpha1.SecretReference{
 			SecretRef: ys.SecretRef,
 			Key:       ys.Key,
@@ -154,13 +155,13 @@ func convertSecrets(yaml []SecretReferenceYAML) []c8sv1alpha1.SecretReference {
 }
 
 // convertConditional converts YAML conditional to CRD conditional
-func convertConditional(yaml *ConditionalYAML) *c8sv1alpha1.ConditionalExecution {
-	if yaml == nil {
+func convertConditional(cond *ConditionalYAML) *c8sv1alpha1.ConditionalExecution {
+	if cond == nil {
 		return nil
 	}
-	onSuccess := yaml.OnSuccess
+	onSuccess := cond.OnSuccess
 	return &c8sv1alpha1.ConditionalExecution{
-		Branch:    yaml.Branch,
+		Branch:    cond.Branch,
 		OnSuccess: &onSuccess,
 	}
 }
