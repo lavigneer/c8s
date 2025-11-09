@@ -84,9 +84,30 @@ jobs:
           echo "payload-file=webhook-payload.json" >> $GITHUB_OUTPUT
           cat webhook-payload.json
 
+      - name: Test webhook connectivity
+        if: steps.check-secrets.outputs.configured == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
+        run: |
+          # Append /webhooks/github to the webhook URL if not already present
+          if [[ "$WEBHOOK_URL" != *"/webhooks/github" ]]; then
+            WEBHOOK_URL="$WEBHOOK_URL/webhooks/github"
+          fi
+
+          echo "Testing connectivity to webhook: $WEBHOOK_URL"
+          echo "Attempting to connect with 10 second timeout..."
+
+          # Test with HEAD request first
+          if curl -m 10 -I "$WEBHOOK_URL" 2>&1; then
+            echo "✓ Webhook endpoint is reachable"
+          else
+            echo "⚠️ Could not reach webhook endpoint (may still work with POST)"
+          fi
+
       - name: Trigger C8S Pipeline via webhook
         if: steps.check-secrets.outputs.configured == 'true'
         id: trigger
+        timeout-minutes: 5
         env:
           WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
         run: |
@@ -111,8 +132,8 @@ jobs:
           # Calculate signature
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hex | cut -d' ' -f2)
 
-          echo "Sending GitHub webhook event..."
-          RESPONSE=$(curl -v -w "\n%{http_code}" \
+          echo "Sending GitHub webhook event (30 second timeout)..."
+          RESPONSE=$(curl -m 30 -v -w "\n%{http_code}" \
             -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: push" \
