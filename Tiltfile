@@ -122,8 +122,9 @@ local_resource(
   name='helm-dependencies',
   cmd='helm dependency update ./chart/c8s',
   dir='.',
-  trigger_mode=TRIGGER_MODE_MANUAL,
+  trigger_mode=TRIGGER_MODE_AUTO,
   labels=['helm'],
+  auto_init=True,
 )
 
 # ============================================================================
