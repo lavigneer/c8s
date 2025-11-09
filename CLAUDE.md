@@ -10,6 +10,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-12
 - Uses existing C8S infrastructure (Kubernetes, S3-compatible object storage for logs/artifacts) (004-create-a-front)
 - Go 1.25.0 (CLI tool), existing C8S backend/frontend (no changes required) + kubectl (Kubernetes client), existing C8S components (API server, controller, frontend) (008-create-a-simple)
 - Kubernetes persistent volumes, S3-compatible object storage (already integrated in C8S) (008-create-a-simple)
+- Helm 3.x (chart templating), Kubernetes 1.24+, YAML manifests + Helm 3.x CLI, kubectl CLI, existing C8S components (API server, controller, webhook, frontend) (008-create-a-simple)
+- Kubernetes persistent volumes, S3-compatible object storage (MinIO or AWS S3) (008-create-a-simple)
 
 ## Project Structure
 ```
@@ -173,6 +175,7 @@ After finishing work:
 2. Review changes with `git diff HEAD~N` (where N is number of commits)
 
 ## Recent Changes
+- 008-create-a-simple: Added Helm 3.x (chart templating), Kubernetes 1.24+, YAML manifests + Helm 3.x CLI, kubectl CLI, existing C8S components (API server, controller, webhook, frontend)
 - 008-create-a-simple: Added Go 1.25.0 (CLI tool), existing C8S backend/frontend (no changes required) + kubectl (Kubernetes client), existing C8S components (API server, controller, frontend)
 - 005-create-a-robust: **COMPLETED** - Comprehensive E2E testing framework (all 7 phases)
   - Phase 1: Test infrastructure setup (Playwright, axe-core, GitHub Actions)
@@ -182,7 +185,6 @@ After finishing work:
   - Phase 5: Test reporting and performance metrics
   - Phase 6: Cross-browser and responsive design tests (25 test cases)
   - Phase 7: CI/CD integration with deployment gates
-- 004-create-a-front: **COMPLETED** - Full web dashboard implementation (all 5 user stories)
   - Pipeline history and status visualization (US1)
   - Real-time log streaming with SSE (US2)
   - Advanced filtering with URL state (US3)
