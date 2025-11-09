@@ -1,0 +1,88 @@
+# Helm Chart Ignore File
+# Files and directories to exclude from Helm package
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Development
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# Node/JavaScript (if templates use node tools)
+node_modules/
+npm-debug.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+
+# Test files and coverage
+tests/
+test/
+*_test.go
+*.test
+coverage/
+.coverage
+
+# Build artifacts
+dist/
+build/
+*.o
+*.a
+*.so
+*.exe
+*.dll
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation artifacts (keep source, exclude generated)
+*.pdf
+*.docx
+
+# Environment files (never package secrets)
+.env*
+.envrc
+
+# Helm hooks output
+charts/*/
+*.lock
+
+# Other package managers
+Gemfile.lock
+yarn.lock
+pnpm-lock.yaml
+poetry.lock

@@ -1,0 +1,67 @@
+# Production environment overrides for C8S Helm chart
+# Use with: helm install c8s ./chart/c8s -f values-prod.yaml
+
+global:
+  environment: production
+  logLevel: warn
+
+images:
+  pullPolicy: IfNotPresent
+
+components:
+  apiServer:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+  controller:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+  webhook:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+  frontend:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    serviceType: LoadBalancer
+
+storage:
+  type: s3-compatible
+  s3:
+    useSSL: true
+    endpoint: s3.amazonaws.com
+
+postInstall:
+  timeout: 900
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

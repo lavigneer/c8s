@@ -1,0 +1,226 @@
+# Default values for C8S Helm chart
+# This is a YAML-formatted file with default values for the C8S deployment
+
+# Global configuration
+global:
+  # Kubernetes namespace where C8S will be deployed
+  namespace: c8s-system
+  # Environment type: dev, staging, or production
+  environment: dev
+  # Log level: debug, info, warn, error
+  logLevel: info
+
+# Container image configuration
+images:
+  # Container image registry (Docker Hub, ECR, GCR, private registry, etc.)
+  registry: docker.io
+  # Image pull policy: Always, IfNotPresent, Never
+  pullPolicy: IfNotPresent
+
+# C8S API Server component
+components:
+  apiServer:
+    # Enable/disable API server
+    enabled: true
+    # Container image repository
+    image:
+      repository: org/c8s-api-server
+      tag: latest
+    # Number of replicas
+    replicas: 1
+    # Container port
+    port:
+      containerPort: 8080
+      servicePort: 8080
+    # Resource requests and limits
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    # Liveness probe (restart if fails)
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    # Readiness probe (ready for traffic)
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 2
+
+  # C8S Controller component
+  controller:
+    enabled: true
+    image:
+      repository: org/c8s-controller
+      tag: latest
+    replicas: 1
+    port:
+      containerPort: 8080
+      servicePort: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 2
+
+  # C8S Webhook component
+  webhook:
+    enabled: true
+    image:
+      repository: org/c8s-webhook
+      tag: latest
+    replicas: 1
+    port:
+      containerPort: 8443
+      servicePort: 443
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8443
+        scheme: HTTPS
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 8443
+        scheme: HTTPS
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 2
+
+  # C8S Frontend component
+  frontend:
+    enabled: true
+    image:
+      repository: org/c8s-frontend
+      tag: latest
+    replicas: 1
+    port:
+      containerPort: 80
+      servicePort: 80
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    # Service type: ClusterIP, NodePort, LoadBalancer
+    serviceType: LoadBalancer
+
+# Storage configuration
+storage:
+  # Storage type: s3-compatible, pvc, local
+  type: s3-compatible
+  # For S3-compatible storage
+  s3:
+    # S3 endpoint (e.g., minio.c8s-system.svc.cluster.local:9000 or s3.amazonaws.com)
+    endpoint: ""
+    # Bucket name for logs and artifacts
+    bucket: c8s-logs
+    # AWS region
+    region: us-east-1
+    # Use SSL for S3 connection
+    useSSL: false
+    # Access key (from Kubernetes secret)
+    accessKeySecretRef:
+      name: s3-credentials
+      key: access-key
+    # Secret key (from Kubernetes secret)
+    secretKeySecretRef:
+      name: s3-credentials
+      key: secret-key
+  # For PersistentVolumeClaim storage
+  pvc:
+    # StorageClass name
+    storageClass: ""
+    # PVC size
+    size: 10Gi
+    # Access mode
+    accessMode: ReadWriteOnce
+
+# Kubernetes cluster configuration
+cluster:
+  # Kubernetes version constraint
+  kubeVersion: ">=1.24.0"
+
+# RBAC (Role-Based Access Control) configuration
+rbac:
+  # Create service accounts
+  create: true
+
+# Post-install hook configuration
+postInstall:
+  # Enable post-install health verification hook
+  enabled: true
+  # Timeout for health check in seconds
+  timeout: 300
+
+# Security configuration (future use)
+security:
+  # Pod security policy
+  podSecurityPolicy: ""
+  # Network policies
+  networkPolicy:
+    enabled: false
+
+# Ingress configuration (future use)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: c8s.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Autoscaling configuration (future use, optional)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80

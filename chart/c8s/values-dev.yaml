@@ -1,0 +1,57 @@
+# Development environment overrides for C8S Helm chart
+# Use with: helm install c8s ./chart/c8s -f values-dev.yaml
+
+global:
+  environment: dev
+  logLevel: debug
+
+images:
+  pullPolicy: IfNotPresent
+
+components:
+  apiServer:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
+  controller:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
+  webhook:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    serviceType: NodePort
+
+storage:
+  type: local
+
+postInstall:
+  timeout: 300
