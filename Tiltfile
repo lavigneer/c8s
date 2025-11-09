@@ -20,6 +20,7 @@ helm_resource(
   flags=[
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
+    '--create-namespace',
   ],
   namespace='c8s-system'
 )
