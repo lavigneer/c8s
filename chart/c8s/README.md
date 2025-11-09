@@ -157,39 +157,122 @@ helm install c8s ./chart/c8s \
   --create-namespace
 ```
 
-## Upgrading
+## Lifecycle Management
 
-### To Upgrade to a New Version
+### Upgrading
+
+#### To Upgrade to a New Version
 ```bash
-# Update the chart
-helm repo update
-
-# Upgrade the release
+# Upgrade the release with new version
 helm upgrade c8s ./chart/c8s \
   -f ./chart/c8s/values-prod.yaml \
   -n c8s-system
 
-# Verify the upgrade
+# Verify the upgrade is rolling out
+kubectl rollout status deployment/c8s-api-server -n c8s-system
+kubectl rollout status deployment/c8s-controller -n c8s-system
+kubectl rollout status deployment/c8s-webhook -n c8s-system
+kubectl rollout status deployment/c8s-frontend -n c8s-system
+```
+
+**Zero-Downtime Upgrades**: The chart uses RollingUpdate strategy with:
+- `maxSurge: 1` - One extra pod allowed during update
+- `maxUnavailable: 0` - No pods taken down (zero downtime)
+- `progressDeadlineSeconds: 600` - 10 minute timeout for each component
+
+#### Upgrading with New Configuration
+```bash
+# Upgrade and change settings at the same time
+helm upgrade c8s ./chart/c8s \
+  -f ./chart/c8s/values-prod.yaml \
+  --set components.controller.replicas=5 \
+  --set environment.logLevel=debug \
+  -n c8s-system
+
+# Custom values are automatically preserved during upgrade
+```
+
+### Release History & Rollback
+
+#### View Release History
+```bash
+# See all releases for this deployment
+helm history c8s -n c8s-system
+
+# Output shows:
+# REVISION  STATUS      CHART          APP VERSION  DATE                 DESCRIPTION
+# 1         SUPERSEDED  c8s-0.1.0      0.1.0       ...                 Install complete
+# 2         DEPLOYED    c8s-0.1.1      0.1.1       ...                 Upgrade complete
+```
+
+#### Rollback to Previous Version
+```bash
+# Rollback to previous release (revision 1)
+helm rollback c8s -n c8s-system
+
+# Or rollback to specific revision
+helm rollback c8s 1 -n c8s-system
+
+# Verify rollback completed
 kubectl rollout status deployment/c8s-api-server -n c8s-system
 ```
 
-### Rolling Back
+**Note**: Rollback restores the Helm values from the previous release. Data (PVCs, logs) is preserved.
+
+### Uninstalling
+
+#### Clean Uninstall
 ```bash
-# View release history
-helm history c8s -n c8s-system
-
-# Rollback to previous version
-helm rollback c8s <revision> -n c8s-system
-```
-
-## Uninstalling
-
-```bash
-# Uninstall the release (keeps PVCs and secrets by default)
+# Uninstall the release
 helm uninstall c8s -n c8s-system
 
-# Keep the namespace (optional)
-# kubectl delete namespace c8s-system
+# This removes:
+# ✓ All C8S deployments, pods, and services
+# ✓ ConfigMaps and secrets
+# ✓ RBAC rules and service accounts
+#
+# This keeps (for data safety):
+# - PersistentVolumeClaims (PVCs)
+# - PersistentVolumes (PVs)
+# - The c8s-system namespace
+```
+
+#### Full Cleanup with Data Deletion
+```bash
+# Delete persistent volumes
+kubectl delete pvc -n c8s-system -l app.kubernetes.io/name=c8s
+
+# Delete the namespace
+kubectl delete namespace c8s-system
+
+# This completely removes all C8S resources and data
+```
+
+#### Preserve Release History for Rollback
+```bash
+# Uninstall but keep history for rollback
+helm uninstall c8s -n c8s-system --keep-history
+
+# Later, restore from history instead of reinstalling
+helm upgrade --install c8s ./chart/c8s -n c8s-system
+```
+
+### Upgrade Strategy
+
+The chart uses a **RollingUpdate** strategy for deployments:
+
+1. **Zero Downtime**: New replicas start before old ones terminate
+2. **Gradual Update**: Only one extra pod runs during update
+3. **Health Checks**: Each component waits for readiness before considering deployment ready
+4. **Automatic Rollback**: If upgrade fails, previous version is automatically kept
+
+**Upgrade Flow**:
+```
+Before:  [Pod1] [Pod2] [Pod3]  (all v0.1.0)
+Step 1:  [Pod1] [Pod2] [Pod3] [NewPod]  (new pod with v0.1.1 starting)
+Step 2:  [NewPod] [Pod2] [Pod3]  (Pod1 removed, NewPod ready)
+Step 3:  [NewPod] [NewPod] [Pod3]  (Pod2 updated)
+After:   [NewPod] [NewPod] [NewPod]  (all v0.1.1)
 ```
 
 ## Troubleshooting
