@@ -1,4 +1,4 @@
-{{- if .Values.certManager.enabled }}
+{{- if (.Values.certManager.enabled | default false) }}
 {{- if eq .Values.certManager.issuerType "self-signed" }}
 ---
 # Self-signed issuer for development environments

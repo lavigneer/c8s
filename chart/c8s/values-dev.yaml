@@ -1,6 +1,9 @@
 # Development environment overrides
 # Minimal resources, single replicas, local storage
 
+certManager:
+  enabled: false
+
 environment:
   type: dev
   logLevel: debug

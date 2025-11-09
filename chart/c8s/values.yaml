@@ -16,6 +16,18 @@ crds:
   # Set to false if CRDs are managed separately
   install: true
 
+# Cert-Manager configuration for webhook TLS certificates
+# See values-certmanager.yaml for production-ready preset
+certManager:
+  # Enable cert-manager integration for automatic certificate management
+  # When enabled, webhook TLS certificates are automatically provisioned and renewed
+  # When disabled, you must provide a caBundle in components.webhook.tls.caBundle
+  enabled: false
+  # Certificate issuer type: self-signed (dev) or letsencrypt-staging/letsencrypt-prod (prod)
+  issuerType: self-signed
+  # Email for ACME certificate notifications (required for letsencrypt issuers)
+  acmeEmail: "admin@example.com"
+
 # Global settings
 global:
   # Kubernetes namespace where C8S will be deployed
