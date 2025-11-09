@@ -8,8 +8,12 @@ metadata:
     app.kubernetes.io/component: controller
 rules:
 # Required for watching CRDs
-- apiGroups: ["c8s.anthropic.com"]
-  resources: ["pipelines", "pipelineconfigs", "pipelinehistories"]
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineruns"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+# For pipelineconfig (if used)
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineconfigs"]
   verbs: ["get", "list", "watch"]
 # Required for managing pods
 - apiGroups: [""]
