@@ -9,8 +9,12 @@
 #   tilt trigger c8s     # Manually trigger C8S update
 #
 
-# Load Helm resource extension for Helm chart support
+# Load extensions
+load('ext://namespace', 'namespace_create')
 load('ext://helm_resource', 'helm_resource')
+
+# Create the c8s-system namespace using Tilt namespace extension
+namespace_create('c8s-system')
 
 # Deploy C8S using Helm chart from ./chart/c8s
 # Uses development values with Tilt overrides for faster iteration
@@ -20,7 +24,6 @@ helm_resource(
   flags=[
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
-    '--create-namespace',
   ],
   namespace='c8s-system'
 )
