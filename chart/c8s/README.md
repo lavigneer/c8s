@@ -15,6 +15,7 @@ This Helm chart provides an easy way to deploy the complete C8S stack (API serve
 - ✅ Cross-distribution compatible (Kubernetes 1.24+)
 - ✅ S3-compatible and PVC storage support
 - ✅ RBAC and security-first design
+- ✅ Automatic webhook TLS certificate management via cert-manager
 
 ## Prerequisites
 
@@ -46,7 +47,31 @@ kubectl port-forward svc/c8s-frontend -n c8s-system 3000:80
 # Open http://localhost:3000 in your browser
 ```
 
-### 2. Install on Production Cluster
+### 2. Install with Cert-Manager (Recommended for Production)
+
+Cert-manager automatically generates and renews TLS certificates for the webhook:
+
+```bash
+# 1. Install cert-manager (one-time setup)
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+helm install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --set installCRDs=true
+
+# 2. Deploy C8S with automatic certificate management
+helm install c8s ./chart/c8s \
+  -n c8s-system \
+  --create-namespace \
+  -f ./chart/c8s/values-certmanager.yaml
+
+# Certificates are automatically generated and renewed
+```
+
+See [Cert-Manager Setup Guide](../../docs/cert-manager-setup.md) for detailed configuration options.
+
+### 3. Install on Production Cluster
 
 ```bash
 # Install with production values

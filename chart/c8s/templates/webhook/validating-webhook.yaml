@@ -1,6 +1,6 @@
 {{- if .Values.components.webhook.enabled }}
-{{- if empty .Values.components.webhook.tls.caBundle }}
-{{- fail "SECURITY ERROR: webhook.tls.caBundle is empty. The caBundle must be populated with the actual CA certificate before deployment. This is required for secure webhook communication.\n\nTo fix this, provide the base64-encoded CA certificate:\n  helm install ... --set components.webhook.tls.caBundle='<base64-encoded-ca-cert>'\n\nFor development, generate a self-signed CA:\n  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj '/CN=c8s-webhook'\n  cat cert.pem | base64 -w 0" }}
+{{- if and (not .Values.certManager.enabled) (empty .Values.components.webhook.tls.caBundle) }}
+{{- fail "SECURITY ERROR: webhook.tls.caBundle is empty and cert-manager is not enabled.\n\nYou must either:\n1. Enable cert-manager integration:\n   helm install ... -f chart/c8s/values-certmanager.yaml\n\n2. OR manually provide the caBundle:\n   helm install ... --set components.webhook.tls.caBundle='<base64-encoded-ca-cert>'\n\nFor development, generate a self-signed CA:\n  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj '/CN=c8s-webhook'\n  cat cert.pem | base64 -w 0" }}
 {{- end }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -9,6 +9,10 @@ metadata:
   labels:
     {{- include "c8s.labels" . | nindent 4 }}
     app.kubernetes.io/component: webhook
+  {{- if .Values.certManager.enabled }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ include "c8s.namespace" . }}/{{ include "c8s.fullname" . }}-webhook-tls
+  {{- end }}
 webhooks:
 - name: pipeline.c8s.anthropic.com
   clientConfig:
@@ -16,7 +20,11 @@ webhooks:
       name: {{ include "c8s.fullname" . }}-webhook
       namespace: {{ include "c8s.namespace" . }}
       path: "/validate"
+    {{- if .Values.certManager.enabled }}
+    caBundle: ""  # Injected by cert-manager via annotation
+    {{- else }}
     caBundle: {{ .Values.components.webhook.tls.caBundle | quote }}
+    {{- end }}
   rules:
   - operations: ["CREATE", "UPDATE"]
     apiGroups: ["c8s.anthropic.com"]

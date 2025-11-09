@@ -1,0 +1,27 @@
+{{- if and .Values.certManager.enabled .Values.components.webhook.tls.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook-tls
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+spec:
+  secretName: {{ include "c8s.fullname" . }}-webhook-tls
+  duration: {{ .Values.components.webhook.tls.certManager.duration }}
+  renewBefore: {{ .Values.components.webhook.tls.certManager.renewBefore }}
+  commonName: {{ include "c8s.fullname" . }}-webhook.{{ include "c8s.namespace" . }}.svc
+  dnsNames:
+    - {{ include "c8s.fullname" . }}-webhook
+    - {{ include "c8s.fullname" . }}-webhook.{{ include "c8s.namespace" . }}
+    - {{ include "c8s.fullname" . }}-webhook.{{ include "c8s.namespace" . }}.svc
+    - {{ include "c8s.fullname" . }}-webhook.{{ include "c8s.namespace" . }}.svc.cluster.local
+  issuerRef:
+    name: {{ .Values.components.webhook.tls.certManager.issuerName }}
+    kind: {{ .Values.components.webhook.tls.certManager.issuerKind }}
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+{{- end }}

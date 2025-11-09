@@ -67,6 +67,12 @@ spec:
               name: {{ include "c8s.fullname" . }}-s3-secret
               key: AWS_SECRET_ACCESS_KEY
         {{- end }}
+        {{- if .Values.certManager.enabled }}
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        {{- end }}
         resources:
           {{- toYaml .Values.components.webhook.resources | nindent 10 }}
         {{- if .Values.components.webhook.livenessProbe }}
@@ -77,4 +83,11 @@ spec:
         readinessProbe:
           {{- toYaml .Values.components.webhook.readinessProbe | nindent 10 }}
         {{- end }}
+      {{- if .Values.certManager.enabled }}
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: {{ include "c8s.fullname" . }}-webhook-tls
+          optional: false
+      {{- end }}
 {{- end }}

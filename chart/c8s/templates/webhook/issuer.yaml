@@ -1,0 +1,53 @@
+{{- if .Values.certManager.enabled }}
+{{- if eq .Values.certManager.issuerType "self-signed" }}
+---
+# Self-signed issuer for development environments
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook-selfsigned
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+spec:
+  selfSigned: {}
+{{- else if or (eq .Values.certManager.issuerType "letsencrypt-staging") (eq .Values.certManager.issuerType "letsencrypt-prod") }}
+---
+# ACME issuer for Let's Encrypt (production or staging)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook-acme-{{ .Values.certManager.issuerType }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+spec:
+  acme:
+    # LetsEncrypt server URL
+    {{- if eq .Values.certManager.issuerType "letsencrypt-staging" }}
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    {{- else }}
+    server: https://acme-v02.api.letsencrypt.org/directory
+    {{- end }}
+    email: {{ .Values.certManager.acmeEmail | quote }}
+    privateKeySecretRef:
+      name: {{ include "c8s.fullname" . }}-webhook-acme-key
+    solvers:
+    # DNS-01 solver (requires DNS provider configuration)
+    - dns01:
+        route53:
+          region: us-east-1
+          accessKeyID: AWS_ACCESS_KEY_ID
+          secretAccessKeySecretRef:
+            name: route53-credentials
+            key: secret-access-key
+      selector:
+        dnsNames:
+        - '*.{{ include "c8s.namespace" . }}.svc.cluster.local'
+    # Fallback: HTTP-01 solver (requires ingress)
+    - http01:
+        ingress:
+          class: nginx
+{{- end }}
+{{- end }}
