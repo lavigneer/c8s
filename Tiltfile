@@ -18,7 +18,7 @@
 # ngrok Integration:
 #   ngrok CLI is used to tunnel both the API server and webhook for external access
 #   Separate ngrok instances are launched for each service
-#   Port mapping: API Server 8000, Webhook 8443
+#   Port mapping: API Server 8000, Webhook 8080
 #   The tunnel URLs are displayed in Tilt logs
 #   Requirements:
 #     - ngrok installed: https://ngrok.com/download
@@ -193,7 +193,7 @@ local_resource(
 
 local_resource(
   name='c8s-webhook-port-forward',
-  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-webhook 8443:8443',
+  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-webhook 8080:8080',
   allow_parallel=True,
   resource_deps=['c8s'],
 )

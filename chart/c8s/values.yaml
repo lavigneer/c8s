@@ -142,8 +142,8 @@ components:
       pullPolicy: IfNotPresent
     replicas: 1
     port:
-      containerPort: 8443
-      servicePort: 443
+      containerPort: 8080
+      servicePort: 8080
     # TLS configuration for webhook
     tls:
       # CA certificate for webhook TLS validation (base64-encoded PEM)
