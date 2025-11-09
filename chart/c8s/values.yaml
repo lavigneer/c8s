@@ -10,6 +10,12 @@
 #
 # For more information, see the README.md file
 
+# CRD installation
+crds:
+  # Install Custom Resource Definitions (required for controller to work)
+  # Set to false if CRDs are managed separately
+  install: true
+
 # Global settings
 global:
   # Kubernetes namespace where C8S will be deployed
