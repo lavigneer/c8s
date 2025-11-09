@@ -107,30 +107,30 @@
 ### Implementation for User Story 2 (Configuration Customization)
 
 **Values Structure Enhancement**:
-- [ ] T036 [P] [US2] Add component replicas section to `values.yaml` (controller, webhook, api-server defaults)
-- [ ] T037 [P] [US2] Add resource section to `values.yaml` (requests/limits for CPU and memory per component)
-- [ ] T038 [P] [US2] Add image section to `values.yaml` (registry, repository, tag per component)
-- [ ] T039 [P] [US2] Add storage section to `values.yaml` (storage type, S3 endpoint, bucket, credentials template)
-- [ ] T040 [P] [US2] Add environment section to `values.yaml` (logLevel, environment type: dev/staging/prod)
+- [x] T036 [P] [US2] Add component replicas section to `values.yaml` (controller, webhook, api-server defaults)
+- [x] T037 [P] [US2] Add resource section to `values.yaml` (requests/limits for CPU and memory per component)
+- [x] T038 [P] [US2] Add image section to `values.yaml` (registry, repository, tag per component)
+- [x] T039 [P] [US2] Add storage section to `values.yaml` (storage type, S3 endpoint, bucket, credentials template)
+- [x] T040 [P] [US2] Add environment section to `values.yaml` (logLevel, environment type: dev/staging/prod)
 
 **Environment Preset Customization**:
-- [ ] T041 [US2] Create environment preset logic in values files (dev: 1 replica, 256Mi memory; prod: 3 replicas, 1Gi memory)
-- [ ] T042 [US2] Update deployment templates to use .Values for all customizable parameters (replicas, resources, image, env vars)
-- [ ] T043 [US2] Update configmap templates to populate from .Values entries
-- [ ] T044 [P] [US2] Verify values-dev.yaml, values-staging.yaml, values-prod.yaml all render correctly
+- [x] T041 [US2] Create environment preset logic in values files (dev: 1 replica, 256Mi memory; prod: 3 replicas, 1Gi memory)
+- [x] T042 [US2] Update deployment templates to use .Values for all customizable parameters (replicas, resources, image, env vars)
+- [x] T043 [US2] Update configmap templates to populate from .Values entries
+- [x] T044 [P] [US2] Verify values-dev.yaml, values-staging.yaml, values-prod.yaml all render correctly
 
 **Storage Configuration**:
-- [ ] T045 [P] [US2] Create `/chart/c8s/templates/storage/pvc.yaml` template (conditional based on storage type)
-- [ ] T046 [P] [US2] Create `/chart/c8s/templates/storage/s3-secret.yaml` template for S3 credentials
+- [x] T045 [P] [US2] Create `/chart/c8s/templates/storage/pvc.yaml` template (conditional based on storage type)
+- [x] T046 [P] [US2] Create `/chart/c8s/templates/storage/s3-secret.yaml` template for S3 credentials
 
 **Documentation & Examples**:
-- [ ] T047 [US2] Create `values.yaml` comments documenting all parameters and defaults
-- [ ] T048 [US2] Add environment preset examples to `/chart/c8s/README.md` (dev, staging, prod)
-- [ ] T049 [US2] Create example values files for custom scenarios (high-HA, minimal resources, external storage)
-- [ ] T050 [US2] Document override syntax: `helm install --values` and `--set` flags
+- [x] T047 [US2] Create `values.yaml` comments documenting all parameters and defaults
+- [x] T048 [US2] Add environment preset examples to `/chart/c8s/README.md` (dev, staging, prod)
+- [x] T049 [US2] Create example values files for custom scenarios (high-HA, minimal resources, external storage)
+- [x] T050 [US2] Document override syntax: `helm install --values` and `--set` flags
 
 **Testing**:
-- [ ] T051 [US2] Create `/tests/helm/template/template_test.sh` to test template rendering with different values
+- [x] T051 [US2] Create `/tests/helm/template/template_test.sh` to test template rendering with different values
 - [ ] T052 [US2] Test deployment with dev values: verify 1 replica, 256Mi memory requests
 - [ ] T053 [US2] Test deployment with prod values: verify 3 replicas, 1Gi memory limits
 - [ ] T054 [US2] Test custom S3 storage: deploy with custom S3 credentials, verify secret is created
