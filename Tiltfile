@@ -16,7 +16,12 @@
 load('ext://restart_process', 'docker_build_with_restart')
 
 # Load ngrok extension for exposing local services to GitHub Actions
-load('ext://ngrok', 'ngrok_tunnel')
+v1alpha1.extension_repo(name='default', url='https://github.com/tilt-dev/tilt-extensions')
+v1alpha1.extension(
+    name='ngrok:config',
+    repo_name='default',
+    repo_path='ngrok'
+)
 
 # Configuration with defaults - use simple assignments instead of config API
 with_samples = True
@@ -220,14 +225,6 @@ k8s_resource(
     resource_deps=['webhook-compile']  # Ensure local compilation happens first
 )
 
-# Expose webhook via ngrok tunnel for receiving GitHub webhooks
-ngrok_tunnel(
-    'c8s-webhook-tunnel',
-    9443,
-    name='c8s-webhook-tunnel',
-    proto='https'
-)
-
 # ============================================================================
 # API Server Component (HTMX Frontend) - Recommended Go Pattern
 # ============================================================================
@@ -272,16 +269,7 @@ k8s_resource(
     labels=['api-server'],
     trigger_mode=TRIGGER_MODE_AUTO,
     pod_readiness='wait',
-    resource_deps=['api-server-compile'],  # Ensure local compilation happens first
-    links=[link('http://localhost:8080', 'Local Dashboard')]
-)
-
-# Expose API server via ngrok tunnel for GitHub Actions testing
-ngrok_tunnel(
-    'c8s-api-server-tunnel',
-    8080,
-    name='c8s-api-server-tunnel',
-    proto='http'
+    resource_deps=['api-server-compile']  # Ensure local compilation happens first
 )
 
 # ============================================================================
