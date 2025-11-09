@@ -113,18 +113,23 @@ docker_build(
 # You can add a separate build when the frontend Dockerfile is available
 
 # ============================================================================
-# Helm Dependencies
+# Install Cert-Manager (Required for Webhook TLS)
 # ============================================================================
 
-# Update Helm dependencies (cert-manager) before deploying
-# This ensures cert-manager CRDs are available when C8S is deployed
-local_resource(
-  name='helm-dependencies',
-  cmd='helm dependency update ./chart/c8s',
-  dir='.',
-  trigger_mode=TRIGGER_MODE_AUTO,
-  labels=['helm'],
-  auto_init=True,
+# Create cert-manager namespace
+namespace_create('cert-manager')
+
+# Install cert-manager using Helm
+helm_resource(
+  name='cert-manager',
+  chart='cert-manager',
+  repo_name='jetstack',
+  repo_url='https://charts.jetstack.io',
+  namespace='cert-manager',
+  flags=[
+    '--set', 'installCRDs=true',
+  ],
+  labels=['infrastructure'],
 )
 
 # ============================================================================
@@ -185,7 +190,7 @@ helm_resource(
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
   ],
   namespace='c8s-system',
-  resource_deps=['helm-dependencies'],  # Ensure Helm dependencies are updated first
+  resource_deps=['cert-manager'],  # Ensure cert-manager is installed first
 )
 
 # ============================================================================
