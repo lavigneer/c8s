@@ -4,6 +4,21 @@ set -e
 NAMESPACE="{{ include "c8s.namespace" . }}"
 TIMEOUT="{{ .Values.postInstallHook.timeout }}"
 RELEASE_NAME="{{ .Release.Name }}"
+FULLNAME="{{ include "c8s.fullname" . }}"
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Component configuration
+declare -A COMPONENTS=(
+  ["api-server"]="API Server REST API"
+  ["controller"]="Pipeline Controller"
+  ["webhook"]="Webhook Validator"
+  ["frontend"]="Web Dashboard"
+)
 
 echo "=================================================="
 echo "C8S Post-Install Health Check"
@@ -13,30 +28,34 @@ echo "Namespace: $NAMESPACE"
 echo "Timeout: ${TIMEOUT}s"
 echo ""
 
-# Array of deployments to check
-DEPLOYMENTS=(
-  "{{ include "c8s.fullname" . }}-api-server"
-  "{{ include "c8s.fullname" . }}-controller"
-  "{{ include "c8s.fullname" . }}-webhook"
-  "{{ include "c8s.fullname" . }}-frontend"
-)
-
 FAILED=0
 SUCCESS=0
+FAILED_COMPONENTS=()
 
 echo "Checking deployment status..."
 echo ""
 
-for deployment in "${DEPLOYMENTS[@]}"; do
-  echo "Waiting for $deployment to be ready..."
-  
+# Check each component deployment
+for component in "${!COMPONENTS[@]}"; do
+  deployment="${FULLNAME}-${component}"
+  description="${COMPONENTS[$component]}"
+
+  echo "▶ $description ($deployment)"
+
   if kubectl rollout status deployment/$deployment -n $NAMESPACE --timeout=${TIMEOUT}s 2>/dev/null; then
-    echo "✓ $deployment is ready"
+    # Get actual replica status
+    replicas=$(kubectl get deployment $deployment -n $NAMESPACE -o jsonpath='{.status.replicas}')
+    ready=$(kubectl get deployment $deployment -n $NAMESPACE -o jsonpath='{.status.readyReplicas}')
+    echo -e "  ${GREEN}✓${NC} Ready: $ready/$replicas replicas"
     ((SUCCESS++))
   else
-    echo "✗ $deployment failed to become ready"
-    kubectl describe deployment/$deployment -n $NAMESPACE
+    echo -e "  ${RED}✗${NC} Failed to become ready"
+    FAILED_COMPONENTS+=("$component")
     ((FAILED++))
+
+    # Show pod status for failed component
+    echo "  Pod status:"
+    kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=$FULLNAME,app.kubernetes.io/component=$component -o wide 2>/dev/null || true
   fi
   echo ""
 done
@@ -44,33 +63,92 @@ done
 echo "=================================================="
 echo "Deployment Status Summary"
 echo "=================================================="
-echo "Successfully deployed: $SUCCESS/4"
-echo "Failed: $FAILED/4"
+echo "Total Components: $((SUCCESS + FAILED))/4"
+echo -e "${GREEN}✓ Ready: $SUCCESS${NC}"
+if [ $FAILED -gt 0 ]; then
+  echo -e "${RED}✗ Failed: $FAILED${NC}"
+else
+  echo "✗ Failed: 0"
+fi
 echo ""
 
+# Health Status Structure (T061)
 if [ $FAILED -eq 0 ]; then
-  echo "✓ All C8S components are ready!"
+  echo -e "${GREEN}✓ All C8S components are ready!${NC}"
   echo ""
-  echo "Next steps:"
-  echo "1. Check the service status:"
+  echo "=================================================="
+  echo "Dashboard Access"
+  echo "=================================================="
+
+  # Determine service type for dashboard
+  service_type=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.spec.type}')
+
+  if [ "$service_type" == "LoadBalancer" ]; then
+    external_ip=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    if [ -z "$external_ip" ]; then
+      external_ip=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    fi
+    if [ -n "$external_ip" ]; then
+      echo "Dashboard URL: http://${external_ip}:80"
+    else
+      echo "LoadBalancer IP not yet assigned. Check status with:"
+      echo "  kubectl get svc $FULLNAME-frontend -n $NAMESPACE"
+    fi
+  elif [ "$service_type" == "NodePort" ]; then
+    node_port=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.spec.ports[0].nodePort}')
+    echo "Dashboard is available via NodePort: $node_port"
+    echo "Access via port-forward:"
+    echo "  kubectl port-forward svc/$FULLNAME-frontend -n $NAMESPACE 3000:80"
+  else
+    echo "Dashboard is available via port-forward:"
+    echo "  kubectl port-forward svc/$FULLNAME-frontend -n $NAMESPACE 3000:80"
+  fi
+
+  echo ""
+  echo "=================================================="
+  echo "Next Steps"
+  echo "=================================================="
+  echo "1. Check service endpoints:"
   echo "   kubectl get svc -n $NAMESPACE"
   echo ""
-  echo "2. Access the dashboard:"
-  echo "   kubectl port-forward svc/{{ include "c8s.fullname" . }}-frontend -n $NAMESPACE 3000:80"
+  echo "2. View pod logs:"
+  echo "   kubectl logs -n $NAMESPACE -l app.kubernetes.io/name=$FULLNAME --tail=50"
+  echo ""
+  echo "3. Check resource usage:"
+  echo "   kubectl top pods -n $NAMESPACE"
   echo ""
   exit 0
 else
-  echo "✗ Some components failed to become ready."
+  echo -e "${RED}✗ Some components failed to become ready.${NC}"
   echo ""
-  echo "Troubleshooting:"
+  echo "=================================================="
+  echo "Troubleshooting Guide"
+  echo "=================================================="
+  echo "Failed components: ${FAILED_COMPONENTS[*]}"
+  echo ""
+
+  # Remediation Suggestions (T062)
+  echo "Remediation steps:"
+  echo ""
   echo "1. Check pod status:"
-  echo "   kubectl get pods -n $NAMESPACE"
+  echo "   kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=$FULLNAME"
   echo ""
-  echo "2. Check logs:"
-  echo "   kubectl logs -n $NAMESPACE -l app.kubernetes.io/name=c8s --tail=50"
+  echo "2. Check pod events and errors:"
+  echo "   kubectl describe pod -n $NAMESPACE -l app.kubernetes.io/name=$FULLNAME"
   echo ""
-  echo "3. Check events:"
-  echo "   kubectl describe pods -n $NAMESPACE"
+  echo "3. Check logs for failed components:"
+  for component in "${FAILED_COMPONENTS[@]}"; do
+    echo "   kubectl logs -n $NAMESPACE -l app.kubernetes.io/component=$component --tail=100"
+  done
+  echo ""
+  echo "4. Check resource availability:"
+  echo "   kubectl describe nodes"
+  echo ""
+  echo "5. Check Kubernetes events:"
+  echo "   kubectl get events -n $NAMESPACE --sort-by='.lastTimestamp'"
+  echo ""
+  echo "6. Verify image availability:"
+  echo "   kubectl describe pods -n $NAMESPACE | grep 'Image:'  "
   echo ""
   exit 1
 fi
