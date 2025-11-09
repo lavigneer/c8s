@@ -38,7 +38,7 @@ def get_github_repo():
   # Try to get from git remote (local development)
   result = local('git config --get remote.origin.url', quiet=True)
   if result:
-    url = result.strip()
+    url = str(result).strip()
     # Extract owner/repo from git@github.com:owner/repo.git or https://github.com/owner/repo
     if 'github.com' in url:
       if url.startswith('git@'):
@@ -48,7 +48,7 @@ def get_github_repo():
         # https://github.com/owner/repo
         parts = url.rstrip('/').split('/')
       if len(parts) >= 2:
-        return f"{parts[-2]}/{parts[-1]}"
+        return parts[-2] + "/" + parts[-1]
 
   # If we can't detect, fail with a helpful error message
   fail("""
@@ -67,7 +67,7 @@ def get_github_repo():
   """)
 
 GITHUB_REPO = get_github_repo()
-GHCR_REGISTRY = f"ghcr.io/{GITHUB_REPO.lower()}"
+GHCR_REGISTRY = "ghcr.io/" + GITHUB_REPO.lower()
 IMAGE_TAG = os.getenv('IMAGE_TAG', 'latest')
 
 # Build context for all images
@@ -79,9 +79,9 @@ BUILD_DIR = '.'
 
 print("=" * 80)
 print("Building C8S images...")
-print(f"Repository: {GITHUB_REPO}")
-print(f"Registry: {GHCR_REGISTRY}")
-print(f"Tag: {IMAGE_TAG}")
+print("Repository: " + GITHUB_REPO)
+print("Registry: " + GHCR_REGISTRY)
+print("Tag: " + IMAGE_TAG)
 print("=" * 80)
 
 # Build API Server image
@@ -185,16 +185,17 @@ helm_resource(
   flags=[
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
+    '--create-namespace',
+  ],
+  image_deps=[
+    'c8s-api-server',
+    'c8s-controller',
+    'c8s-webhook',
   ],
   image_keys=[
     ('components.apiServer.image.registry', 'components.apiServer.image.repository', 'components.apiServer.image.tag'),
     ('components.controller.image.registry', 'components.controller.image.repository', 'components.controller.image.tag'),
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
-  ],
-  image_refs=[
-    'c8s-api-server',
-    'c8s-controller',
-    'c8s-webhook',
   ],
   namespace='c8s-system'
 )
@@ -219,7 +220,7 @@ local_resource(
   labels=['info'],
 )
 
-info_text = f"""
+info_text = """
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║                   C8S Tilt Development Environment                         ║
 ╚════════════════════════════════════════════════════════════════════════════╝
@@ -238,13 +239,13 @@ info_text = f"""
    tilt trigger c8s     - Force redeploy
 
 📝 Images will be available at:
-   {GHCR_REGISTRY}/c8s-api-server:{IMAGE_TAG}
-   {GHCR_REGISTRY}/c8s-controller:{IMAGE_TAG}
-   {GHCR_REGISTRY}/c8s-webhook:{IMAGE_TAG}
+   {0}/c8s-api-server:{1}
+   {0}/c8s-controller:{1}
+   {0}/c8s-webhook:{1}
 
 💡 To push to GHCR:
-   docker tag c8s-api-server {GHCR_REGISTRY}/c8s-api-server:{IMAGE_TAG}
-   docker push {GHCR_REGISTRY}/c8s-api-server:{IMAGE_TAG}
+   docker tag c8s-api-server {0}/c8s-api-server:{1}
+   docker push {0}/c8s-api-server:{1}
 
    Or create a version tag (GitHub Actions will auto-build and push):
    git tag v0.1.0 && git push --tags
@@ -253,8 +254,8 @@ info_text = f"""
    kubectl port-forward svc/c8s-frontend -n c8s-system 3000:80
    Then visit http://localhost:3000
 
-ℹ️  Repository: {GITHUB_REPO}
-   Registry: {GHCR_REGISTRY}
-"""
+ℹ️  Repository: {2}
+   Registry: {0}
+""".format(GHCR_REGISTRY, IMAGE_TAG, GITHUB_REPO)
 
 print(info_text)
