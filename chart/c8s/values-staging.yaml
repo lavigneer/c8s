@@ -36,18 +36,6 @@ components:
         cpu: 1000m
         memory: 1Gi
 
-  frontend:
-    replicas: 1
-    service:
-      type: LoadBalancer
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-
 storage:
   type: pvc
   pvc:

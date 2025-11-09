@@ -30,10 +30,5 @@ components:
         duration: 2160h  # 90 days
         renewBefore: 720h  # 30 days before expiry
 
-  frontend:
-    replicas: 1
-    service:
-      type: NodePort  # Use NodePort for local Tilt development
-
 storage:
   type: local

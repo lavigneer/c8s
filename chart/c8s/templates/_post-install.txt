@@ -17,7 +17,6 @@ declare -A COMPONENTS=(
   ["api-server"]="API Server REST API"
   ["controller"]="Pipeline Controller"
   ["webhook"]="Webhook Validator"
-  ["frontend"]="Web Dashboard"
 )
 
 echo "=================================================="
@@ -79,30 +78,6 @@ if [ $FAILED -eq 0 ]; then
   echo "=================================================="
   echo "Dashboard Access"
   echo "=================================================="
-
-  # Determine service type for dashboard
-  service_type=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.spec.type}')
-
-  if [ "$service_type" == "LoadBalancer" ]; then
-    external_ip=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    if [ -z "$external_ip" ]; then
-      external_ip=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    fi
-    if [ -n "$external_ip" ]; then
-      echo "Dashboard URL: http://${external_ip}:80"
-    else
-      echo "LoadBalancer IP not yet assigned. Check status with:"
-      echo "  kubectl get svc $FULLNAME-frontend -n $NAMESPACE"
-    fi
-  elif [ "$service_type" == "NodePort" ]; then
-    node_port=$(kubectl get svc $FULLNAME-frontend -n $NAMESPACE -o jsonpath='{.spec.ports[0].nodePort}')
-    echo "Dashboard is available via NodePort: $node_port"
-    echo "Access via port-forward:"
-    echo "  kubectl port-forward svc/$FULLNAME-frontend -n $NAMESPACE 3000:80"
-  else
-    echo "Dashboard is available via port-forward:"
-    echo "  kubectl port-forward svc/$FULLNAME-frontend -n $NAMESPACE 3000:80"
-  fi
 
   echo ""
   echo "=================================================="

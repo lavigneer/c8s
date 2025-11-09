@@ -180,29 +180,6 @@ components:
       timeoutSeconds: 3
       failureThreshold: 2
 
-  # Frontend component
-  frontend:
-    enabled: true
-    image:
-      registry: docker.io
-      repository: lavigneer/c8s-frontend
-      tag: "latest"
-      pullPolicy: IfNotPresent
-    replicas: 1
-    port:
-      containerPort: 3000
-      servicePort: 80
-    service:
-      type: LoadBalancer  # Can be NodePort for local clusters
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    env: []
-
 # Storage configuration for logs and artifacts
 # Choose one of: local (ephemeral), pvc (persistent volume), or s3-compatible (object storage)
 storage:
