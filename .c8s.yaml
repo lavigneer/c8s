@@ -1,0 +1,166 @@
+version: v1alpha1
+name: c8s-main
+description: C8S continuous integration pipeline - runs tests, linting, and builds
+
+repository: https://github.com/org/c8s
+branches:
+  - main
+  - develop
+  - "release-*"
+
+timeout: 30m
+
+retryPolicy:
+  maxRetries: 2
+  backoffSeconds: 30
+
+matrix:
+  dimensions:
+    go_version: ["1.25.0", "1.24.0"]
+
+steps:
+  # ============================================================================
+  # Linting and Code Quality
+  # ============================================================================
+
+  - name: lint
+    description: Run golangci-lint on all Go code
+    image: golangci/golangci-lint:latest
+    commands:
+      - golangci-lint run ./cmd/... ./pkg/...
+    resources:
+      cpu: 500m
+      memory: 512Mi
+    timeout: 5m
+    conditional:
+      branch: ".*"  # Run on all branches
+
+  # ============================================================================
+  # Unit Tests
+  # ============================================================================
+
+  - name: test-unit
+    description: Run unit tests with coverage
+    image: golang:${{ matrix.go_version }}
+    commands:
+      - go test -v -race -coverprofile=coverage-unit.out ./cmd/...
+      - go test -v -race -coverprofile=coverage-pkg.out ./pkg/...
+      - tail -n +2 coverage-pkg.out >> coverage-unit.out
+    resources:
+      cpu: 1000m
+      memory: 1Gi
+    timeout: 10m
+    artifacts:
+      - coverage-unit.out
+    dependsOn: [lint]
+
+  # ============================================================================
+  # Integration Tests
+  # ============================================================================
+
+  - name: test-integration
+    description: Run integration tests with Kubernetes
+    image: golang:${{ matrix.go_version }}
+    commands:
+      - go test -v -race -tags=integration ./tests/integration/...
+    resources:
+      cpu: 1000m
+      memory: 1Gi
+    timeout: 15m
+    dependsOn: [lint]
+
+  # ============================================================================
+  # Build Binaries
+  # ============================================================================
+
+  - name: build
+    description: Build all C8S binaries
+    image: golang:${{ matrix.go_version }}
+    commands:
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/controller ./cmd/controller
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/webhook ./cmd/webhook
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/api-server ./cmd/api-server
+      - ls -lh bin/
+    resources:
+      cpu: 1000m
+      memory: 1Gi
+    timeout: 10m
+    artifacts:
+      - bin/controller
+      - bin/webhook
+      - bin/api-server
+    dependsOn: [test-unit, test-integration]
+
+  # ============================================================================
+  # Verify Manifests
+  # ============================================================================
+
+  - name: verify-manifests
+    description: Verify CRD manifests are up-to-date
+    image: golang:${{ matrix.go_version }}
+    commands:
+      - go run sigs.k8s.io/controller-tools/cmd/controller-gen crd:crdVersions=v1 paths=./pkg/apis/... output:crd:artifacts:config=config/crd/bases
+      - git diff --exit-code config/crd/bases || (echo "CRD manifests are out of date. Run 'make manifests' and commit changes." && exit 1)
+    resources:
+      cpu: 500m
+      memory: 512Mi
+    timeout: 5m
+    dependsOn: [build]
+
+  # ============================================================================
+  # Docker Image Builds
+  # ============================================================================
+
+  - name: build-docker-images
+    description: Build Docker images for all components
+    image: docker:latest
+    commands:
+      - docker build --target controller -t c8s-controller:test .
+      - docker build --target webhook -t c8s-webhook:test .
+      - docker build --target api-server -t c8s-api-server:test .
+      - docker images | grep c8s
+    resources:
+      cpu: 2000m
+      memory: 2Gi
+    timeout: 10m
+    dependsOn: [build]
+
+  # ============================================================================
+  # E2E Tests (if applicable)
+  # ============================================================================
+
+  - name: test-e2e-preparation
+    description: Prepare for E2E tests
+    image: alpine:latest
+    commands:
+      - echo "E2E test preparation complete"
+      - echo "Note: Full E2E tests run in separate GitHub Actions workflow with live cluster"
+    resources:
+      cpu: 100m
+      memory: 128Mi
+    timeout: 2m
+    conditional:
+      onSuccess: true  # Only run if previous steps succeed
+
+  # ============================================================================
+  # Final Status Report
+  # ============================================================================
+
+  - name: test-report
+    description: Generate test report
+    image: alpine:latest
+    commands:
+      - echo "=========================================="
+      - echo "C8S Pipeline Execution Summary"
+      - echo "=========================================="
+      - echo "✓ Lint checks passed"
+      - echo "✓ Unit tests passed (coverage included)"
+      - echo "✓ Integration tests passed"
+      - echo "✓ Binaries built successfully"
+      - echo "✓ Docker images built"
+      - echo "✓ All checks complete!"
+    resources:
+      cpu: 100m
+      memory: 128Mi
+    timeout: 2m
+    dependsOn: [verify-manifests, build-docker-images, test-e2e-preparation]

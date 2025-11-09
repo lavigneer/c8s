@@ -1,0 +1,250 @@
+name: C8S Dog-Fooding - Trigger Local C8S Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'release-*' ]
+    paths:
+      - 'cmd/**'
+      - 'pkg/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.c8s.yaml'
+  pull_request:
+    branches: [ main, develop, 'release-*' ]
+    paths:
+      - 'cmd/**'
+      - 'pkg/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.c8s.yaml'
+
+jobs:
+  prepare-dogfood-test:
+    name: Prepare Dog-Fooding Test
+    runs-on: ubuntu-latest
+    outputs:
+      webhook-url: ${{ steps.get-url.outputs.webhook-url }}
+      api-url: ${{ steps.get-url.outputs.api-url }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get ngrok URLs (from GitHub secrets)
+        id: get-url
+        run: |
+          # These should be set in GitHub repository secrets
+          echo "webhook-url=${{ secrets.C8S_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          echo "api-url=${{ secrets.C8S_API_URL }}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Display setup instructions
+        if: |
+          steps.get-url.outputs.webhook-url == '' ||
+          steps.get-url.outputs.api-url == ''
+        run: |
+          echo "=========================================="
+          echo "C8S Dog-Fooding Setup Required"
+          echo "=========================================="
+          echo ""
+          echo "To enable dog-fooding your C8S project:"
+          echo ""
+          echo "1. Ensure your local C8S instance is running:"
+          echo "   tilt up"
+          echo ""
+          echo "2. Create ngrok tunnels:"
+          echo "   - Open Tilt dashboard: http://localhost:10350"
+          echo "   - Click 'ngrok' button on c8s-api-server"
+          echo "   - Click 'ngrok' button on c8s-webhook"
+          echo "   - View URLs at: http://localhost:4040"
+          echo ""
+          echo "3. Add GitHub repository secrets:"
+          echo "   - Go to: Settings → Secrets and variables → Actions"
+          echo "   - Add C8S_WEBHOOK_URL: <your https ngrok URL for webhook>"
+          echo "   - Add C8S_API_URL: <your http ngrok URL for api server>"
+          echo ""
+          echo "4. Example secret values (replace with your actual URLs):"
+          echo "   C8S_WEBHOOK_URL: https://abc123.ngrok.io"
+          echo "   C8S_API_URL: http://def456.ngrok.io"
+          echo ""
+          echo "Dog-fooding is skipped until these secrets are configured."
+          echo "=========================================="
+
+  trigger-c8s-pipeline:
+    name: Trigger C8S Pipeline
+    runs-on: ubuntu-latest
+    needs: prepare-dogfood-test
+    if: |
+      needs.prepare-dogfood-test.outputs.webhook-url != '' &&
+      needs.prepare-dogfood-test.outputs.api-url != ''
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create PipelineRun payload
+        id: payload
+        run: |
+          cat > pipeline-payload.json << 'EOF'
+          {
+            "apiVersion": "c8s.dev/v1alpha1",
+            "kind": "PipelineRun",
+            "metadata": {
+              "name": "c8s-gh-${{ github.run_id }}-${{ github.run_number }}",
+              "namespace": "c8s-system"
+            },
+            "spec": {
+              "pipelineRef": {
+                "name": "c8s-main"
+              },
+              "commit": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}",
+              "author": "${{ github.actor }}",
+              "repository": "${{ github.repository }}",
+              "pullRequest": ${{ github.event.pull_request.number || 'null' }}
+            }
+          }
+          EOF
+
+          echo "payload-file=pipeline-payload.json" >> $GITHUB_OUTPUT
+          cat pipeline-payload.json
+
+      - name: Trigger C8S Pipeline via webhook
+        id: trigger
+        run: |
+          WEBHOOK_URL="${{ needs.prepare-dogfood-test.outputs.webhook-url }}"
+          PAYLOAD=$(cat pipeline-payload.json)
+
+          echo "Sending pipeline trigger to: $WEBHOOK_URL"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -H "X-GitHub-Delivery: ${{ github.run_id }}" \
+            -H "X-GitHub-Hook-ID: github-actions" \
+            -d "$PAYLOAD")
+
+          # Extract status code (last line) and response body
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+
+          if [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Pipeline triggered successfully"
+            echo "pipeline-run-id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Failed to trigger pipeline (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+      - name: Get Pipeline Status
+        id: status
+        run: |
+          API_URL="${{ needs.prepare-dogfood-test.outputs.api-url }}"
+          PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+
+          echo "Polling pipeline status..."
+          echo "API URL: $API_URL"
+          echo "Pipeline: $PIPELINE_RUN"
+
+          # Wait for pipeline to complete (timeout after 40 minutes)
+          ELAPSED=0
+          MAX_WAIT=2400  # 40 minutes in seconds
+          POLL_INTERVAL=10
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            STATUS=$(curl -s "$API_URL/api/v1/pipelines/$PIPELINE_RUN/status" 2>/dev/null || echo '{}')
+            PHASE=$(echo "$STATUS" | grep -o '"phase":"[^"]*"' | cut -d'"' -f4)
+
+            echo "[$((ELAPSED / 60))m] Status: $PHASE"
+            echo "Response: $STATUS"
+
+            case "$PHASE" in
+              "Succeeded")
+                echo "✓ Pipeline completed successfully!"
+                echo "pipeline-status=success" >> $GITHUB_OUTPUT
+                exit 0
+                ;;
+              "Failed"|"Error")
+                echo "✗ Pipeline failed"
+                echo "pipeline-status=failed" >> $GITHUB_OUTPUT
+                exit 1
+                ;;
+              "Running"|"Pending"|"")
+                # Still running, wait and retry
+                sleep $POLL_INTERVAL
+                ELAPSED=$((ELAPSED + POLL_INTERVAL))
+                ;;
+            esac
+          done
+
+          echo "⚠ Pipeline status check timed out after 40 minutes"
+          echo "pipeline-status=timeout" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Fetch Pipeline Logs
+        if: always()
+        continue-on-error: true
+        run: |
+          API_URL="${{ needs.prepare-dogfood-test.outputs.api-url }}"
+          PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+
+          echo "=========================================="
+          echo "C8S Pipeline Logs"
+          echo "=========================================="
+
+          curl -s "$API_URL/api/v1/pipelines/$PIPELINE_RUN/logs" 2>/dev/null || \
+            echo "Could not retrieve logs from C8S API"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ steps.status.outputs.pipeline-status }}';
+            const pipelineRun = 'c8s-gh-${{ github.run_id }}-${{ github.run_number }}';
+            const apiUrl = '${{ needs.prepare-dogfood-test.outputs.api-url }}';
+
+            let body = '## C8S Dog-Fooding Pipeline\n\n';
+
+            if (status === 'success') {
+              body += '✅ **Pipeline passed!** C8S successfully ran its own CI pipeline.\n\n';
+            } else if (status === 'failed') {
+              body += '❌ **Pipeline failed!** Check logs in the Actions workflow.\n\n';
+            } else if (status === 'timeout') {
+              body += '⚠️ **Pipeline status check timed out.** It may still be running.\n\n';
+            }
+
+            body += `**Pipeline Run**: \`${pipelineRun}\`\n`;
+            body += `**View Details**: ${apiUrl}/pipelines/${pipelineRun}\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Report Results
+        run: |
+          echo "=========================================="
+          echo "C8S Dog-Fooding Summary"
+          echo "=========================================="
+          echo "Pipeline Status: ${{ steps.status.outputs.pipeline-status }}"
+          echo "Pipeline Run: c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          echo "API URL: ${{ needs.prepare-dogfood-test.outputs.api-url }}"
+          echo ""
+          echo "Next Steps:"
+          echo "1. View pipeline in C8S dashboard: ${{ needs.prepare-dogfood-test.outputs.api-url }}"
+          echo "2. Check pipeline logs: ${{ needs.prepare-dogfood-test.outputs.api-url }}/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          echo "3. Monitor in Tilt: http://localhost:10350"
+          echo "=========================================="
