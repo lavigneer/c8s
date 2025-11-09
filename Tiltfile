@@ -90,17 +90,6 @@ docker_build(
   context=BUILD_DIR,
   dockerfile='./Dockerfile',
   target='api-server',
-  only=[
-    'cmd/api-server/',
-    'cmd/webhook/',
-    'cmd/controller/',
-    'pkg/',
-    'hack/',
-    'go.mod',
-    'go.sum',
-    'Makefile',
-    'PROJECT',
-  ],
 )
 
 # Build Controller image
@@ -109,15 +98,6 @@ docker_build(
   context=BUILD_DIR,
   dockerfile='./Dockerfile',
   target='controller',
-  only=[
-    'cmd/controller/',
-    'pkg/',
-    'hack/',
-    'go.mod',
-    'go.sum',
-    'Makefile',
-    'PROJECT',
-  ],
 )
 
 # Build Webhook image
@@ -126,15 +106,6 @@ docker_build(
   context=BUILD_DIR,
   dockerfile='./Dockerfile',
   target='webhook',
-  only=[
-    'cmd/webhook/',
-    'pkg/',
-    'hack/',
-    'go.mod',
-    'go.sum',
-    'Makefile',
-    'PROJECT',
-  ],
 )
 
 # Build Frontend image (if Dockerfile exists for it)
