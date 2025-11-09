@@ -193,7 +193,7 @@ local_resource(
 
 local_resource(
   name='c8s-webhook-port-forward',
-  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-webhook 8443:443',
+  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-webhook 8443:8443',
   allow_parallel=True,
   resource_deps=['c8s'],
 )
@@ -204,17 +204,11 @@ local_resource(
 
 local_resource(
   name='c8s-api-server-ngrok',
-  serve_cmd='ngrok http localhost:8000 --log=stdout',
+  serve_cmd='ngrok start --all --log=stdout',
   allow_parallel=True,
-  resource_deps=['c8s-api-server-port-forward'],
+  resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
 )
 
-local_resource(
-  name='c8s-webhook-ngrok',
-  serve_cmd='ngrok http https://localhost:8443 --log=stdout',
-  allow_parallel=True,
-  resource_deps=['c8s-webhook-port-forward'],
-)
 
 # ============================================================================
 # Watch Files
