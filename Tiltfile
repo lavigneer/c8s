@@ -16,7 +16,7 @@ load('ext://helm_resource', 'helm_resource')
 # Uses development values with Tilt overrides for faster iteration
 helm_resource(
   name='c8s',
-  chart_dir='./chart/c8s',
+  chart='./chart/c8s',
   flags=[
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
