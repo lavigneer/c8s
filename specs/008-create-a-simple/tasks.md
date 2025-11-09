@@ -18,16 +18,16 @@
 
 **Purpose**: Create Helm chart structure and shared infrastructure
 
-- [ ] T001 Create `/chart/c8s/` directory structure with subdirectories: `templates/`, `tests/`
-- [ ] T002 Create `/chart/c8s/Chart.yaml` with chart metadata (name: c8s, version: 0.1.0)
-- [ ] T003 [P] Create `/chart/c8s/values.yaml` with root-level defaults for all parameters
-- [ ] T004 [P] Create `/chart/c8s/values-dev.yaml` with development environment overrides
-- [ ] T005 [P] Create `/chart/c8s/values-staging.yaml` with staging environment overrides
-- [ ] T006 [P] Create `/chart/c8s/values-prod.yaml` with production environment overrides
-- [ ] T007 Create `/chart/c8s/templates/_helpers.tpl` with common Helm template functions
-- [ ] T008 Create test directory structure: `/tests/helm/lint/`, `/tests/helm/template/`, `/tests/e2e/`
-- [ ] T009 Create `Tiltfile` with Helm chart integration (helm() function)
-- [ ] T010 Create `/tilt/c8s-values.yaml` with Tilt-specific values overrides
+- [x] T001 Create `/chart/c8s/` directory structure with subdirectories: `templates/`, `tests/`
+- [x] T002 Create `/chart/c8s/Chart.yaml` with chart metadata (name: c8s, version: 0.1.0)
+- [x] T003 [P] Create `/chart/c8s/values.yaml` with root-level defaults for all parameters
+- [x] T004 [P] Create `/chart/c8s/values-dev.yaml` with development environment overrides
+- [x] T005 [P] Create `/chart/c8s/values-staging.yaml` with staging environment overrides
+- [x] T006 [P] Create `/chart/c8s/values-prod.yaml` with production environment overrides
+- [x] T007 Create `/chart/c8s/templates/_helpers.tpl` with common Helm template functions
+- [x] T008 Create test directory structure: `/tests/helm/lint/`, `/tests/helm/template/`, `/tests/e2e/`
+- [x] T009 Create `Tiltfile` with Helm chart integration (helm() function)
+- [x] T010 Create `/tilt/c8s-values.yaml` with Tilt-specific values overrides
 
 **Checkpoint**: Helm chart structure created - ready for component template implementation
 
@@ -39,12 +39,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T011 Create `/chart/c8s/templates/namespace.yaml` template for namespace creation
-- [ ] T012 Create `/chart/c8s/templates/_helpers.tpl` with helper functions (labels, names, selectors)
-- [ ] T013 Create `/chart/c8s/templates/NOTES.txt` with post-install instructions
-- [ ] T014 [P] Create `/chart/c8s/templates/common/configmap.yaml` for shared configuration
-- [ ] T015 [P] Create `/chart/c8s/templates/common/secret.yaml` for shared secrets template
-- [ ] T016 Create `/chart/c8s/templates/_post-install.sh` hook for health verification
+- [x] T011 Create `/chart/c8s/templates/namespace.yaml` template for namespace creation
+- [x] T012 Create `/chart/c8s/templates/_helpers.tpl` with helper functions (labels, names, selectors)
+- [x] T013 Create `/chart/c8s/templates/NOTES.txt` with post-install instructions
+- [x] T014 [P] Create `/chart/c8s/templates/common/configmap.yaml` for shared configuration
+- [x] T015 [P] Create `/chart/c8s/templates/common/secret.yaml` for shared secrets template
+- [x] T016 Create `/chart/c8s/templates/_post-install.sh` hook for health verification
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -59,33 +59,33 @@
 ### Implementation for User Story 1 (Basic Deployment)
 
 **API Server Component**:
-- [ ] T017 [P] [US1] Create `/chart/c8s/templates/api-server/deployment.yaml` with image, ports, probes, resource requests
-- [ ] T018 [P] [US1] Create `/chart/c8s/templates/api-server/service.yaml` with ClusterIP service
-- [ ] T019 [P] [US1] Create `/chart/c8s/templates/api-server/configmap.yaml` for configuration
+- [x] T017 [P] [US1] Create `/chart/c8s/templates/api-server/deployment.yaml` with image, ports, probes, resource requests
+- [x] T018 [P] [US1] Create `/chart/c8s/templates/api-server/service.yaml` with ClusterIP service
+- [x] T019 [P] [US1] Create `/chart/c8s/templates/api-server/configmap.yaml` for configuration
 
 **Controller Component**:
-- [ ] T020 [P] [US1] Create `/chart/c8s/templates/controller/deployment.yaml` with controller specs
-- [ ] T021 [P] [US1] Create `/chart/c8s/templates/controller/service.yaml` (optional, if needed)
-- [ ] T022 [P] [US1] Create `/chart/c8s/templates/controller/serviceaccount.yaml`
-- [ ] T023 [P] [US1] Create `/chart/c8s/templates/controller/rbac.yaml` with ClusterRole and ClusterRoleBinding
-- [ ] T024 [P] [US1] Create `/chart/c8s/templates/controller/configmap.yaml` for configuration
+- [x] T020 [P] [US1] Create `/chart/c8s/templates/controller/deployment.yaml` with controller specs
+- [x] T021 [P] [US1] Create `/chart/c8s/templates/controller/service.yaml` (optional, if needed)
+- [x] T022 [P] [US1] Create `/chart/c8s/templates/controller/serviceaccount.yaml`
+- [x] T023 [P] [US1] Create `/chart/c8s/templates/controller/rbac.yaml` with ClusterRole and ClusterRoleBinding
+- [x] T024 [P] [US1] Create `/chart/c8s/templates/controller/configmap.yaml` for configuration
 
 **Webhook Component**:
-- [ ] T025 [P] [US1] Create `/chart/c8s/templates/webhook/deployment.yaml` with webhook specs
-- [ ] T026 [P] [US1] Create `/chart/c8s/templates/webhook/service.yaml` for webhook service
-- [ ] T027 [P] [US1] Create `/chart/c8s/templates/webhook/validating-webhook.yaml` for validation webhook config
-- [ ] T028 [P] [US1] Create `/chart/c8s/templates/webhook/configmap.yaml` for configuration
+- [x] T025 [P] [US1] Create `/chart/c8s/templates/webhook/deployment.yaml` with webhook specs
+- [x] T026 [P] [US1] Create `/chart/c8s/templates/webhook/service.yaml` for webhook service
+- [x] T027 [P] [US1] Create `/chart/c8s/templates/webhook/validating-webhook.yaml` for validation webhook config
+- [x] T028 [P] [US1] Create `/chart/c8s/templates/webhook/configmap.yaml` for configuration
 
 **Frontend Component**:
-- [ ] T029 [P] [US1] Create `/chart/c8s/templates/frontend/deployment.yaml` with frontend specs
-- [ ] T030 [P] [US1] Create `/chart/c8s/templates/frontend/service.yaml` for frontend (LoadBalancer for cloud, NodePort for local)
+- [x] T029 [P] [US1] Create `/chart/c8s/templates/frontend/deployment.yaml` with frontend specs
+- [x] T030 [P] [US1] Create `/chart/c8s/templates/frontend/service.yaml` for frontend (LoadBalancer for cloud, NodePort for local)
 
 **Integration & Testing**:
-- [ ] T031 [US1] Create `/tests/helm/lint/lint_test.sh` for Helm chart lint validation
-- [ ] T032 [US1] Create `/tests/e2e/deploy_test.sh` to verify full deployment works in k3d/kind
-- [ ] T033 [US1] Update post-install hook to verify all 3+ components reach Ready state
+- [x] T031 [US1] Create `/tests/helm/lint/lint_test.sh` for Helm chart lint validation
+- [x] T032 [US1] Create `/tests/e2e/deploy_test.sh` to verify full deployment works in k3d/kind
+- [x] T033 [US1] Update post-install hook to verify all 3+ components reach Ready state
 - [ ] T034 [US1] Test deployment in 3+ Kubernetes distributions (k3s, kind, GKE) to verify vendor-agnostic compatibility
-- [ ] T035 [US1] Document quick start in `/chart/c8s/README.md` with basic deployment example
+- [x] T035 [US1] Document quick start in `/chart/c8s/README.md` with basic deployment example
 
 **Acceptance Criteria**:
 - ✅ `helm install c8s ./chart/c8s -f values-dev.yaml -n c8s-system` successfully deploys all components
