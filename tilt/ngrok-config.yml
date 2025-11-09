@@ -1,0 +1,14 @@
+version: "3"
+
+tunnels:
+  c8s-api-server:
+    proto: http
+    addr: localhost:8000
+    labels:
+      service: api-server
+
+  c8s-webhook:
+    proto: http
+    addr: localhost:8080
+    labels:
+      service: webhook

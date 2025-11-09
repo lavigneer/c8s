@@ -203,8 +203,8 @@ local_resource(
 # Each service gets its own public ngrok URL
 
 local_resource(
-  name='c8s-api-server-ngrok',
-  serve_cmd='ngrok start --all --log=stdout',
+  name='c8s-ngrok-tunnels',
+  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --log=stdout',
   allow_parallel=True,
   resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
 )
