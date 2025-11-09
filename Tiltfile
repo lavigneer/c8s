@@ -113,6 +113,20 @@ docker_build(
 # You can add a separate build when the frontend Dockerfile is available
 
 # ============================================================================
+# Helm Dependencies
+# ============================================================================
+
+# Update Helm dependencies (cert-manager) before deploying
+# This ensures cert-manager CRDs are available when C8S is deployed
+local_resource(
+  name='helm-dependencies',
+  cmd='helm dependency update ./chart/c8s',
+  dir='.',
+  trigger_mode=TRIGGER_MODE_MANUAL,
+  labels=['helm'],
+)
+
+# ============================================================================
 # Create Namespace
 # ============================================================================
 
@@ -168,7 +182,8 @@ helm_resource(
     ('components.controller.image.registry', 'components.controller.image.repository', 'components.controller.image.tag'),
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
   ],
-  namespace='c8s-system'
+  namespace='c8s-system',
+  resource_deps=['helm-dependencies'],  # Ensure Helm dependencies are updated first
 )
 
 # ============================================================================

@@ -23,6 +23,10 @@ certManager:
   # When enabled, webhook TLS certificates are automatically provisioned and renewed
   # When disabled, you must provide a caBundle in components.webhook.tls.caBundle
   enabled: false
+  # Install cert-manager as a Helm dependency (requires Chart.lock to be generated)
+  # Set to true to automatically install cert-manager, or false to use existing installation
+  # Usage: helm dependency update ./chart/c8s  (first time only)
+  installDependency: false
   # Certificate issuer type: self-signed (dev) or letsencrypt-staging/letsencrypt-prod (prod)
   issuerType: self-signed
   # Email for ACME certificate notifications (required for letsencrypt issuers)

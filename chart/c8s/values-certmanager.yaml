@@ -2,21 +2,26 @@
 # This file demonstrates how to use cert-manager to automatically provision
 # and manage webhook TLS certificates.
 #
-# Installation:
-#   helm repo add jetstack https://charts.jetstack.io
-#   helm repo update
+# Two installation options:
+#
+# Option 1: Install cert-manager automatically (recommended)
+#   helm dependency update ./chart/c8s
+#   helm install c8s ./chart/c8s -f chart/c8s/values-certmanager.yaml
+#
+# Option 2: Use existing cert-manager installation
 #   helm install cert-manager jetstack/cert-manager \
 #     --namespace cert-manager \
 #     --create-namespace \
 #     --set installCRDs=true
-#
-# Then deploy C8S with:
-#   helm install c8s ./chart/c8s \
-#     -f chart/c8s/values-certmanager.yaml
+#   helm install c8s ./chart/c8s -f chart/c8s/values-certmanager.yaml \
+#     --set certManager.installDependency=false
 
 # Enable cert-manager integration
 certManager:
   enabled: true
+  # Automatically install cert-manager as a Helm dependency
+  # Set to false if cert-manager is already installed in your cluster
+  installDependency: true
   # Certificate issuer: self-signed (dev) or letsencrypt (prod)
   issuerType: self-signed  # or "letsencrypt-staging" or "letsencrypt-prod"
   # Email for LetsEncrypt notifications (only for letsencrypt issuers)

@@ -2,9 +2,10 @@
 # These override values-dev.yaml when using Tilt
 
 # Enable cert-manager for automatic webhook TLS certificates in development
-# Requires: helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+# installDependency: true will automatically install cert-manager as part of this Helm release
 certManager:
   enabled: true
+  installDependency: true
   issuerType: self-signed
 
 environment:
