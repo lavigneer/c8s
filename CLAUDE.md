@@ -8,6 +8,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-12
 - N/A (cluster state managed by chosen local K8s distribution) (002-i-want-to)
 - Go 1.24.0 (backend API server), HTML5/CSS3/JavaScript (frontend with HTMX) (004-create-a-front)
 - Uses existing C8S infrastructure (Kubernetes, S3-compatible object storage for logs/artifacts) (004-create-a-front)
+- Go 1.25.0 (CLI tool), existing C8S backend/frontend (no changes required) + kubectl (Kubernetes client), existing C8S components (API server, controller, frontend) (008-create-a-simple)
+- Kubernetes persistent volumes, S3-compatible object storage (already integrated in C8S) (008-create-a-simple)
 
 ## Project Structure
 ```
@@ -171,6 +173,7 @@ After finishing work:
 2. Review changes with `git diff HEAD~N` (where N is number of commits)
 
 ## Recent Changes
+- 008-create-a-simple: Added Go 1.25.0 (CLI tool), existing C8S backend/frontend (no changes required) + kubectl (Kubernetes client), existing C8S components (API server, controller, frontend)
 - 005-create-a-robust: **COMPLETED** - Comprehensive E2E testing framework (all 7 phases)
   - Phase 1: Test infrastructure setup (Playwright, axe-core, GitHub Actions)
   - Phase 2: Foundational Page Objects and test fixtures
@@ -188,7 +191,6 @@ After finishing work:
   - Keyboard shortcuts (FR-013)
   - Authentication and authorization (FR-010)
   - Mobile-responsive design (FR-012)
-- 002-i-want-to: Added Go 1.25.0
 
 ## Dashboard Implementation Details
 **Status**: COMPLETE, TESTED, AND ENHANCED (Phase 2)
