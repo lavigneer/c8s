@@ -7,66 +7,10 @@ on:
     branches: [ main, develop, 'release-*' ]
 
 jobs:
-  prepare-dogfood-test:
-    name: Prepare Dog-Fooding Test
-    runs-on: ubuntu-latest
-    outputs:
-      webhook-url: ${{ steps.get-url.outputs.webhook-url }}
-      api-url: ${{ steps.get-url.outputs.api-url }}
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get ngrok URLs (from GitHub secrets)
-        id: get-url
-        run: |
-          # These should be set in GitHub repository secrets
-          echo "webhook-url=${{ secrets.C8S_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
-          echo "api-url=${{ secrets.C8S_API_URL }}" >> $GITHUB_OUTPUT
-        continue-on-error: true
-
-      - name: Display setup instructions
-        if: |
-          steps.get-url.outputs.webhook-url == '' ||
-          steps.get-url.outputs.api-url == ''
-        run: |
-          echo "=========================================="
-          echo "C8S Dog-Fooding Setup Required"
-          echo "=========================================="
-          echo ""
-          echo "To enable dog-fooding your C8S project:"
-          echo ""
-          echo "1. Ensure your local C8S instance is running:"
-          echo "   tilt up"
-          echo ""
-          echo "2. Create ngrok tunnels:"
-          echo "   - Open Tilt dashboard: http://localhost:10350"
-          echo "   - Click 'ngrok' button on c8s-api-server"
-          echo "   - Click 'ngrok' button on c8s-webhook"
-          echo "   - View URLs at: http://localhost:4040"
-          echo ""
-          echo "3. Add GitHub repository secrets:"
-          echo "   - Go to: Settings → Secrets and variables → Actions"
-          echo "   - Add C8S_WEBHOOK_URL: <your https ngrok URL for webhook>"
-          echo "   - Add C8S_API_URL: <your http ngrok URL for api server>"
-          echo ""
-          echo "4. Example secret values (replace with your actual URLs):"
-          echo "   C8S_WEBHOOK_URL: https://abc123.ngrok.io"
-          echo "   C8S_API_URL: http://def456.ngrok.io"
-          echo ""
-          echo "Dog-fooding is skipped until these secrets are configured."
-          echo "=========================================="
-
   trigger-c8s-pipeline:
     name: Trigger C8S Pipeline
     runs-on: ubuntu-latest
-    needs: prepare-dogfood-test
-    if: |
-      needs.prepare-dogfood-test.outputs.webhook-url != '' &&
-      needs.prepare-dogfood-test.outputs.api-url != ''
+    if: secrets.C8S_WEBHOOK_URL != '' && secrets.C8S_API_URL != ''
     timeout-minutes: 45
     permissions:
       contents: read
@@ -104,8 +48,9 @@ jobs:
 
       - name: Trigger C8S Pipeline via webhook
         id: trigger
+        env:
+          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
         run: |
-          WEBHOOK_URL="${{ needs.prepare-dogfood-test.outputs.webhook-url }}"
           PAYLOAD=$(cat pipeline-payload.json)
 
           echo "Sending pipeline trigger to: $WEBHOOK_URL"
@@ -135,8 +80,9 @@ jobs:
 
       - name: Get Pipeline Status
         id: status
+        env:
+          API_URL: ${{ secrets.C8S_API_URL }}
         run: |
-          API_URL="${{ needs.prepare-dogfood-test.outputs.api-url }}"
           PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
 
           echo "Polling pipeline status..."
@@ -181,8 +127,9 @@ jobs:
       - name: Fetch Pipeline Logs
         if: always()
         continue-on-error: true
+        env:
+          API_URL: ${{ secrets.C8S_API_URL }}
         run: |
-          API_URL="${{ needs.prepare-dogfood-test.outputs.api-url }}"
           PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
 
           echo "=========================================="
@@ -200,7 +147,7 @@ jobs:
           script: |
             const status = '${{ steps.status.outputs.pipeline-status }}';
             const pipelineRun = 'c8s-gh-${{ github.run_id }}-${{ github.run_number }}';
-            const apiUrl = '${{ needs.prepare-dogfood-test.outputs.api-url }}';
+            const apiUrl = '${{ secrets.C8S_API_URL }}';
 
             let body = '## C8S Dog-Fooding Pipeline\n\n';
 
@@ -223,16 +170,18 @@ jobs:
             });
 
       - name: Report Results
+        env:
+          API_URL: ${{ secrets.C8S_API_URL }}
         run: |
           echo "=========================================="
           echo "C8S Dog-Fooding Summary"
           echo "=========================================="
           echo "Pipeline Status: ${{ steps.status.outputs.pipeline-status }}"
           echo "Pipeline Run: c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
-          echo "API URL: ${{ needs.prepare-dogfood-test.outputs.api-url }}"
+          echo "API URL: $API_URL"
           echo ""
           echo "Next Steps:"
-          echo "1. View pipeline in C8S dashboard: ${{ needs.prepare-dogfood-test.outputs.api-url }}"
-          echo "2. Check pipeline logs: ${{ needs.prepare-dogfood-test.outputs.api-url }}/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          echo "1. View pipeline in C8S dashboard: $API_URL"
+          echo "2. Check pipeline logs: $API_URL/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
           echo "3. Monitor in Tilt: http://localhost:10350"
           echo "=========================================="

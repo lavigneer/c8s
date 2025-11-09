@@ -15,9 +15,28 @@
 #   tilt trigger c8s     # Force redeploy
 #   tilt logs controller # View controller logs
 #
+# ngrok Integration:
+#   ngrok CLI is used to tunnel both the API server and webhook for external access
+#   Separate ngrok instances are launched for each service
+#   Port mapping: API Server 8000, Webhook 8443
+#   The tunnel URLs are displayed in Tilt logs
+#   Requirements:
+#     - ngrok installed: https://ngrok.com/download
+#     - ngrok authtoken configured: ngrok config add-authtoken <TOKEN>
+#
+# Setup for GitHub Actions dog-fooding:
+#   1. Run: tilt up
+#   2. Get ngrok URLs from Tilt logs (c8s-api-server-ngrok and c8s-webhook-ngrok)
+#      Example: https://abc1234.ngrok.io
+#   3. Add GitHub repository secrets:
+#      - C8S_API_URL: <api-server-ngrok-url>
+#      - C8S_WEBHOOK_URL: <webhook-ngrok-url>
+#   4. Push changes - GitHub Actions will trigger your local C8S pipeline
+#
 # Environment Variables (optional):
 #   GHCR_REGISTRY=ghcr.io/lavigneer  # GitHub Container Registry path
 #   IMAGE_TAG=v0.1.0                   # Image tag (default: latest)
+#   NGROK_AUTHTOKEN=<token>            # ngrok authentication token (if not in ~/.config/ngrok/ngrok.yml)
 
 # Load extensions
 load('ext://namespace', 'namespace_create')
@@ -154,6 +173,47 @@ helm_resource(
   ],
   namespace='c8s-system',
   resource_deps=['cert-manager'],
+)
+
+# Port-forwards for ngrok integration
+# These create port-forward tunnels and expose ngrok buttons in the Tilt UI
+local_resource(
+  name='c8s-api-server-port-forward',
+  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-api-server 8000:8080',
+  allow_parallel=True,
+  resource_deps=['c8s'],
+)
+
+local_resource(
+  name='c8s-controller-port-forward',
+  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-controller 8081:8081',
+  allow_parallel=True,
+  resource_deps=['c8s'],
+)
+
+local_resource(
+  name='c8s-webhook-port-forward',
+  serve_cmd='kubectl port-forward -n c8s-system svc/c8s-webhook 8443:443',
+  allow_parallel=True,
+  resource_deps=['c8s'],
+)
+
+# ngrok tunnels for C8S services (optional)
+# Launches separate ngrok instances for API server and webhook
+# Each service gets its own public ngrok URL
+
+local_resource(
+  name='c8s-api-server-ngrok',
+  serve_cmd='ngrok http localhost:8000 --log=stdout',
+  allow_parallel=True,
+  resource_deps=['c8s-api-server-port-forward'],
+)
+
+local_resource(
+  name='c8s-webhook-ngrok',
+  serve_cmd='ngrok http https://localhost:8443 --log=stdout',
+  allow_parallel=True,
+  resource_deps=['c8s-webhook-port-forward'],
 )
 
 # ============================================================================
