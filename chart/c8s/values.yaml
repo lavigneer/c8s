@@ -1,26 +1,49 @@
 # Default values for C8S Helm chart
 # This is a YAML-formatted file declaring variables to be passed into templates
+#
+# Usage:
+#   helm install c8s ./chart/c8s                              # Use defaults
+#   helm install c8s ./chart/c8s -f values-dev.yaml          # Development
+#   helm install c8s ./chart/c8s -f values-staging.yaml      # Staging
+#   helm install c8s ./chart/c8s -f values-prod.yaml         # Production
+#   helm install c8s ./chart/c8s --set components.controller.replicas=5
+#
+# For more information, see the README.md file
 
 # Global settings
 global:
   # Kubernetes namespace where C8S will be deployed
+  # Valid values: kubernetes namespace names (lowercase, alphanumeric, hyphens, 1-63 chars)
   namespace: c8s-system
 
-# Environment type (dev/staging/production)
+# Environment type and logging configuration
 environment:
-  type: dev  # Can be overridden in values-dev.yaml, values-staging.yaml, values-prod.yaml
+  # Environment type determines default resource limits and replica counts
+  # Options: dev (development), staging, production
+  # Can be overridden in values-dev.yaml, values-staging.yaml, values-prod.yaml
+  type: dev
+  # Log level for all components
+  # Options: debug, info, warn, error
   logLevel: info
 
 # Components configuration
 components:
-  # API Server component
+  # API Server component - REST API for pipeline management
+  # Controls the C8S API server deployment
   apiServer:
     enabled: true
+    # Container image configuration
     image:
+      # Container registry (docker.io, gcr.io, ecr.aws, etc.)
       registry: docker.io
+      # Image repository path
       repository: anthropics/c8s-api-server
+      # Image tag/version (use specific versions in production, not 'latest')
       tag: "latest"
+      # Image pull policy: Always, IfNotPresent, or Never
       pullPolicy: IfNotPresent
+    # Number of pod replicas (1 for dev, 2+ for production)
+    # Valid values: 1-5
     replicas: 1
     port:
       containerPort: 8080
@@ -149,28 +172,43 @@ components:
         memory: 512Mi
     env: []
 
-# Storage configuration
+# Storage configuration for logs and artifacts
+# Choose one of: local (ephemeral), pvc (persistent volume), or s3-compatible (object storage)
 storage:
-  # Type of storage: s3-compatible, pvc, or local
+  # Storage type: local, pvc, or s3-compatible
+  # - local: Ephemeral storage (data lost when pod restarts) - dev only
+  # - pvc: Kubernetes PersistentVolumeClaim (persistent, requires storage class)
+  # - s3-compatible: S3-compatible object storage (MinIO, AWS S3, etc.)
   type: local
-  
-  # S3-compatible storage configuration (used if type: s3-compatible)
+
+  # S3-compatible storage configuration (used when type: s3-compatible)
   s3:
     enabled: false
+    # S3 endpoint URL (e.g., minio.c8s-system.svc.cluster.local:9000 or s3.amazonaws.com)
     endpoint: minio.c8s-system.svc.cluster.local:9000
+    # S3 bucket name for storing logs and artifacts
     bucket: c8s-logs
+    # AWS region (default: us-east-1)
     region: us-east-1
+    # Use HTTPS for S3 connection (set to true for production)
     useSSL: false
+    # Skip SSL certificate verification (dev only, DO NOT use in production)
     insecureSkipVerify: false
-    # accessKey and secretKey should be provided via --set or secret reference
+    # S3 access credentials (provide via --set or Kubernetes Secret)
+    # Example: --set storage.s3.accessKey=AKIA... --set storage.s3.secretKey=...
     accessKey: ""
     secretKey: ""
-  
-  # PersistentVolumeClaim configuration (used if type: pvc)
+
+  # PersistentVolumeClaim configuration (used when type: pvc)
   pvc:
     enabled: false
-    storageClass: ""  # Use default if empty
+    # Kubernetes StorageClass name (leave empty to use default)
+    # List available classes: kubectl get storageclass
+    storageClass: ""
+    # PVC size (e.g., 10Gi, 100Gi, 1Ti)
     size: 10Gi
+    # Access mode: ReadWriteOnce, ReadWriteMany, or ReadOnlyMany
+    # Most common: ReadWriteOnce (single node read/write)
     accessMode: ReadWriteOnce
 
 # Service account configuration
