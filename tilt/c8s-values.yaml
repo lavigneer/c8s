@@ -1,6 +1,12 @@
 # Tilt-specific values overrides for C8S development
 # These override values-dev.yaml when using Tilt
 
+# Enable cert-manager for automatic webhook TLS certificates in development
+# Requires: helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+certManager:
+  enabled: true
+  issuerType: self-signed
+
 environment:
   type: dev
   logLevel: debug
@@ -12,16 +18,17 @@ components:
   controller:
     replicas: 1
 
-  # Webhook is disabled in Tilt for development
-  # The webhook requires TLS certificates (via cert-manager or manual caBundle)
-  # which are not needed for local development testing.
-  # To enable webhook in Tilt:
-  #   1. Install cert-manager: helm install cert-manager jetstack/cert-manager ...
-  #   2. Deploy with: helm install c8s ./chart/c8s -f values-certmanager.yaml
-  # OR provide a caBundle: --set components.webhook.tls.caBundle=<base64-cert>
+  # Webhook is enabled with automatic self-signed certificates via cert-manager
   webhook:
-    enabled: false
+    enabled: true
     replicas: 1
+    tls:
+      certManager:
+        enabled: true
+        issuerName: c8s-webhook-selfsigned
+        issuerKind: Issuer
+        duration: 2160h  # 90 days
+        renewBefore: 720h  # 30 days before expiry
 
   frontend:
     replicas: 1
