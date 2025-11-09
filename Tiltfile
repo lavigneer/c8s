@@ -113,17 +113,29 @@ docker_build(
 # You can add a separate build when the frontend Dockerfile is available
 
 # ============================================================================
-# Create Namespace
+# Install Cert-Manager (Separate Helm Release)
+# ============================================================================
+
+namespace_create('cert-manager')
+
+helm_resource(
+  name='cert-manager',
+  chart='cert-manager',
+  repo_name='jetstack',
+  repo_url='https://charts.jetstack.io',
+  namespace='cert-manager',
+  flags=[
+    '--set', 'installCRDs=true',
+  ],
+  labels=['infrastructure'],
+)
+
+# ============================================================================
+# Deploy C8S
 # ============================================================================
 
 namespace_create('c8s-system')
 
-# ============================================================================
-# Deploy Helm Chart with Cert-Manager
-# ============================================================================
-
-# Deploy C8S using Helm chart
-# The chart includes cert-manager as a dependency and handles ordering via pre-install hooks
 helm_resource(
   name='c8s',
   chart='./chart/c8s',
@@ -131,7 +143,6 @@ helm_resource(
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
     '--create-namespace',
-    '--dependency-update',
   ],
   image_deps=[
     'c8s-api-server',
@@ -144,6 +155,7 @@ helm_resource(
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
   ],
   namespace='c8s-system',
+  resource_deps=['cert-manager'],
 )
 
 # ============================================================================

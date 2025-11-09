@@ -15,9 +15,3 @@ sources:
 maintainers:
   - name: C8S Contributors
     email: support@c8s.io
-dependencies:
-  - name: cert-manager
-    version: "v1.13.0"
-    repository: "https://charts.jetstack.io"
-    condition: certManager.installDependency
-    alias: cert-manager

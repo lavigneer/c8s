@@ -1,13 +1,10 @@
-# Tilt-specific values overrides for C8S development
-# These override values-dev.yaml when using Tilt
-
-# Tilt Development Configuration for C8S
-# Cert-manager is automatically installed as part of Tilt deployment
-# Webhook TLS certificates are automatically generated via cert-manager
+# Tilt-specific values overrides for C8S
+# Cert-manager is installed as a separate Helm release (installed first by Tilt)
+# so we can enable webhook with TLS certificates
 
 certManager:
   enabled: true
-  installDependency: true  # cert-manager installed as Helm dependency
+  installDependency: false  # cert-manager installed separately by Tilt
   issuerType: self-signed
 
 environment:
@@ -21,7 +18,7 @@ components:
   controller:
     replicas: 1
 
-  # Webhook enabled with automatic self-signed TLS certificates
+  # Webhook enabled with TLS certificates (cert-manager is available)
   webhook:
     enabled: true
     replicas: 1

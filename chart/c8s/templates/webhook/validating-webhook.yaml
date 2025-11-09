@@ -1,8 +1,16 @@
 {{- if .Values.components.webhook.enabled }}
 {{- $certManagerEnabled := .Values.certManager.enabled | default false }}
 {{- $caBundle := .Values.components.webhook.tls.caBundle | default "" }}
-{{- if and (not $certManagerEnabled) (empty $caBundle) }}
-{{- fail "SECURITY ERROR: webhook.tls.caBundle is empty and cert-manager is not enabled.\n\nYou must either:\n1. Enable cert-manager integration:\n   helm install ... -f chart/c8s/values-certmanager.yaml\n\n2. OR manually provide the caBundle:\n   helm install ... --set components.webhook.tls.caBundle='<base64-encoded-ca-cert>'\n\nFor development, generate a self-signed CA:\n  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj '/CN=c8s-webhook'\n  cat cert.pem | base64 -w 0" }}
+
+{{- /* Check if cert-manager CRDs are available when using cert-manager */ -}}
+{{- if $certManagerEnabled }}
+{{- if .Values.components.webhook.tls.certManager.enabled }}
+{{- /* When using cert-manager, skip validation - cert-manager will inject caBundle */ -}}
+{{- else if empty $caBundle }}
+{{- fail "SECURITY ERROR: webhook.tls.certManager.enabled is false but caBundle is empty.\n\nEither:\n1. Set components.webhook.tls.certManager.enabled: true\n2. OR provide caBundle manually" }}
+{{- end }}
+{{- else if empty $caBundle }}
+{{- fail "SECURITY ERROR: webhook.tls.caBundle is empty and cert-manager is not enabled.\n\nYou must either:\n1. Enable cert-manager integration:\n   helm install ... --set certManager.enabled=true --set certManager.installDependency=true\n\n2. OR manually provide the caBundle:\n   helm install ... --set components.webhook.tls.caBundle='<base64-encoded-ca-cert>'\n\nFor development, generate a self-signed CA:\n  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj '/CN=c8s-webhook'\n  cat cert.pem | base64 -w 0" }}
 {{- end }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
