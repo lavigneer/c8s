@@ -3,20 +3,8 @@ name: C8S Dog-Fooding - Trigger Local C8S Pipeline
 on:
   push:
     branches: [ main, develop, 'release-*' ]
-    paths:
-      - 'cmd/**'
-      - 'pkg/**'
-      - 'go.mod'
-      - 'go.sum'
-      - '.c8s.yaml'
   pull_request:
     branches: [ main, develop, 'release-*' ]
-    paths:
-      - 'cmd/**'
-      - 'pkg/**'
-      - 'go.mod'
-      - 'go.sum'
-      - '.c8s.yaml'
 
 jobs:
   prepare-dogfood-test:
