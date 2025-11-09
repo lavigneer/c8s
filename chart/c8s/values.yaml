@@ -128,6 +128,15 @@ components:
     port:
       containerPort: 8443
       servicePort: 443
+    # TLS configuration for webhook
+    tls:
+      # CA certificate for webhook TLS validation (base64-encoded PEM)
+      # This certificate is used by the Kubernetes API server to verify the webhook service's certificate
+      # IMPORTANT: This must be populated with the actual CA certificate before production deployment
+      # To generate a self-signed CA for development:
+      #   openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=c8s-webhook"
+      #   cat cert.pem | base64 -w 0
+      caBundle: ""
     resources:
       requests:
         cpu: 100m

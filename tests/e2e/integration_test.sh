@@ -228,12 +228,20 @@ echo ""
 echo "↩️  Testing downgrade/rollback scenario..."
 
 # Get latest revision (should be upgrade we just did)
-latest_revision=$(helm history $RELEASE_NAME -n $NAMESPACE | grep "DEPLOYED" | tail -1 | awk '{print $1}')
+latest_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" | grep "DEPLOYED" | tail -1 | awk '{print $1}')
+
+# Validate that revision is numeric before using in arithmetic
+if ! [[ "$latest_revision" =~ ^[0-9]+$ ]]; then
+  echo -e "${RED}✗ Error: Invalid revision number extracted: $latest_revision${NC}"
+  ((TESTS_FAILED++))
+  exit 1
+fi
+
 previous_revision=$((latest_revision - 1))
 
 echo "  Rolling back from revision $latest_revision to $previous_revision..."
 
-helm rollback $RELEASE_NAME $previous_revision -n $NAMESPACE
+helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
 
 kubectl rollout status deployment/c8s-controller -n $NAMESPACE --timeout=180s
 

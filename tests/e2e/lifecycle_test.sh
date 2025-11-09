@@ -63,7 +63,14 @@ echo -e "${GREEN}✓ Initial deployment successful${NC}"
 ((TESTS_PASSED++))
 
 # Get initial revision
-initial_revision=$(helm history $RELEASE_NAME -n $NAMESPACE | grep "DEPLOYED" | head -1 | awk '{print $1}')
+initial_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" | grep "DEPLOYED" | head -1 | awk '{print $1}')
+
+# Validate that revision is numeric
+if ! [[ "$initial_revision" =~ ^[0-9]+$ ]]; then
+  echo -e "${RED}✗ Error: Invalid initial revision number: $initial_revision${NC}"
+  exit 1
+fi
+
 echo "Initial revision: $initial_revision"
 
 # Test 2: Upgrade with Custom Values (T074)
@@ -133,7 +140,13 @@ echo "History:"
 echo "$history"
 
 # Get current revision before rollback
-current_revision=$(helm history $RELEASE_NAME -n $NAMESPACE | grep "DEPLOYED" | tail -1 | awk '{print $1}')
+current_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" | grep "DEPLOYED" | tail -1 | awk '{print $1}')
+
+# Validate that current revision is numeric
+if ! [[ "$current_revision" =~ ^[0-9]+$ ]]; then
+  echo -e "${RED}✗ Error: Invalid current revision number: $current_revision${NC}"
+  exit 1
+fi
 
 # Test 5: Rollback (Downgrade) (T076)
 echo ""
@@ -142,7 +155,7 @@ echo "Test 5: Rollback to Previous Release"
 echo "=================================================="
 echo "Rolling back to revision $initial_revision..."
 
-helm rollback $RELEASE_NAME $initial_revision -n $NAMESPACE
+helm rollback "$RELEASE_NAME" "$initial_revision" -n "$NAMESPACE"
 
 # Wait for rollback
 kubectl rollout status deployment/c8s-controller -n $NAMESPACE --timeout=120s

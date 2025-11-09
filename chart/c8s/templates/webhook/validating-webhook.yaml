@@ -1,4 +1,7 @@
 {{- if .Values.components.webhook.enabled }}
+{{- if empty .Values.components.webhook.tls.caBundle }}
+{{- fail "SECURITY ERROR: webhook.tls.caBundle is empty. The caBundle must be populated with the actual CA certificate before deployment. This is required for secure webhook communication.\n\nTo fix this, provide the base64-encoded CA certificate:\n  helm install ... --set components.webhook.tls.caBundle='<base64-encoded-ca-cert>'\n\nFor development, generate a self-signed CA:\n  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj '/CN=c8s-webhook'\n  cat cert.pem | base64 -w 0" }}
+{{- end }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -13,7 +16,7 @@ webhooks:
       name: {{ include "c8s.fullname" . }}-webhook
       namespace: {{ include "c8s.namespace" . }}
       path: "/validate"
-    caBundle: ""  # TODO: Update with actual CA bundle for production
+    caBundle: {{ .Values.components.webhook.tls.caBundle | quote }}
   rules:
   - operations: ["CREATE", "UPDATE"]
     apiGroups: ["c8s.anthropic.com"]
