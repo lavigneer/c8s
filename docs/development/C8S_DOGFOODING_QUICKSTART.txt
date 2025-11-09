@@ -1,0 +1,213 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   C8S DOG-FOODING QUICK START GUIDE                           ║
+║                                                                              ║
+║          Use GitHub Actions to trigger your local C8S via ngrok             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: START LOCAL C8S
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  tilt up
+
+  Wait for all pods to be ready:
+  - c8s-controller ✓
+  - c8s-webhook ✓
+  - c8s-api-server ✓
+
+  Access: http://localhost:10350
+
+
+STEP 2: CREATE NGROK TUNNELS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Option A: Via Tilt UI (Recommended)
+  ────────────────────────────────────
+  1. Open http://localhost:10350
+  2. Click "ngrok" button on c8s-webhook
+  3. Copy HTTPS URL (e.g., https://abc123.ngrok.io)
+  4. Click "ngrok" button on c8s-api-server
+  5. Copy HTTP URL (e.g., http://def456.ngrok.io)
+  6. View all tunnels: http://localhost:4040
+
+  Option B: Manual ngrok
+  ──────────────────────
+  Terminal 1: ngrok http --proto=https 9443
+  Terminal 2: ngrok http 8080
+  Terminal 3: open http://localhost:4040
+
+
+STEP 3: CONFIGURE GITHUB SECRETS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Go to GitHub repo → Settings → Secrets and variables → Actions
+
+  2. Create secret: C8S_WEBHOOK_URL
+     Value: https://YOUR_WEBHOOK_NGROK_URL
+
+  3. Create secret: C8S_API_URL
+     Value: http://YOUR_API_NGROK_URL
+
+  Example:
+  ────────
+  C8S_WEBHOOK_URL = https://abc123.ngrok.io
+  C8S_API_URL = http://def456.ngrok.io
+
+
+STEP 4: TRIGGER WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Option A: Automatic (Push/PR)
+  ─────────────────────────────
+  git push origin main
+  → Workflow automatically triggers on code changes
+
+  Option B: Manual
+  ───────────────
+  1. Go to GitHub repo → Actions
+  2. Select "C8S Dog-Fooding" workflow
+  3. Click "Run workflow"
+
+
+STEP 5: MONITOR PIPELINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  C8S Dashboard
+  ─────────────
+  http://localhost:8080
+  → View pipeline status, logs, artifacts
+
+  Tilt Dashboard
+  ──────────────
+  http://localhost:10350
+  → Watch controller scheduling jobs
+  → View webhook events
+
+  GitHub Actions
+  ──────────────
+  GitHub repo → Actions → "C8S Dog-Fooding"
+  → Check workflow status
+  → View PR comments
+
+
+TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✗ Workflow doesn't run
+  ──────────────────────
+  • Check secrets are configured
+  • Verify branch matches trigger (main, develop, release-*)
+  • Ensure changes touch: cmd/, pkg/, .c8s.yaml
+
+  ✗ Webhook timeout
+  ──────────────────
+  • Verify ngrok tunnel is active: http://localhost:4040
+  • Check webhook pod: kubectl get pod -n c8s-system
+  • Test connection: curl -v https://YOUR_WEBHOOK_URL/health
+
+  ✗ Pipeline doesn't start
+  ────────────────────────
+  • Check controller: kubectl get pod -n c8s-system
+  • Verify CRDs: kubectl api-resources | grep pipelinerun
+  • Check logs: kubectl logs -n c8s-system -l app=c8s-controller
+
+  ✗ Can't fetch logs
+  ──────────────────
+  • Verify API URL in secret is correct
+  • Check API server: curl http://YOUR_API_URL/api/v1/health
+  • View API logs: kubectl logs -n c8s-system -l app=c8s-api-server
+
+
+USEFUL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  # Check all C8S pods
+  kubectl get pods -n c8s-system
+
+  # View controller logs
+  kubectl logs -n c8s-system -l app=c8s-controller -f
+
+  # View webhook logs
+  kubectl logs -n c8s-system -l app=c8s-webhook -f
+
+  # View API server logs
+  kubectl logs -n c8s-system -l app=c8s-api-server -f
+
+  # List pipelines
+  kubectl get pipelinerun -n c8s-system
+
+  # Get pipeline details
+  kubectl describe pipelinerun <name> -n c8s-system
+
+  # Watch ngrok traffic
+  open http://localhost:4040
+
+  # Manual webhook trigger
+  curl -X POST "https://YOUR_WEBHOOK_URL" \
+    -H "Content-Type: application/json" \
+    -d '{"apiVersion":"c8s.dev/v1alpha1","kind":"PipelineRun"}'
+
+
+ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  GitHub Actions (internet)
+          ↓
+      ngrok tunnel (HTTPS)
+          ↓
+  Local Machine
+      ↓
+      c8s-webhook:9443 (receives push event)
+      ↓
+      Creates PipelineRun CRD
+      ↓
+      c8s-controller (watches for new PipelineRuns)
+      ↓
+      Schedules Kubernetes Jobs
+      ↓
+      Jobs run in isolated Pods
+      ↓
+      c8s-api-server (streams logs)
+      ↓
+      GitHub Actions polls status
+      ↓
+      Results appear in PR comments
+
+
+DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Full Guide:
+  docs/development/c8s-dogfooding.md
+
+  Tilt Setup:
+  docs/development/tilt-setup.md
+
+  Pipeline Definition:
+  .c8s.yaml
+
+  Workflow Definition:
+  .github/workflows/c8s-dogfood.yml
+
+
+NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. ✓ Set up local C8S (tilt up)
+  2. ✓ Create ngrok tunnels
+  3. ✓ Add GitHub secrets
+  4. → Trigger first workflow
+  5. → Monitor pipeline execution
+  6. → Iterate on pipeline definition
+
+
+FOR MORE HELP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  See docs/development/c8s-dogfooding.md for:
+  • Detailed step-by-step guide
+  • Troubleshooting 12 common issues
+  • Advanced configuration
+  • Best practices
+  • Security considerations
+
+╚══════════════════════════════════════════════════════════════════════════════╝
