@@ -1,12 +1,9 @@
-# Development environment overrides for C8S Helm chart
-# Use with: helm install c8s ./chart/c8s -f values-dev.yaml
+# Development environment overrides
+# Minimal resources, single replicas, local storage
 
-global:
-  environment: dev
+environment:
+  type: dev
   logLevel: debug
-
-images:
-  pullPolicy: IfNotPresent
 
 components:
   apiServer:
@@ -33,25 +30,23 @@ components:
     replicas: 1
     resources:
       requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        cpu: 100m
+        cpu: 50m
         memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
 
   frontend:
     replicas: 1
+    service:
+      type: NodePort  # Use NodePort for local development
     resources:
       requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        cpu: 100m
+        cpu: 50m
         memory: 128Mi
-    serviceType: NodePort
+      limits:
+        cpu: 250m
+        memory: 256Mi
 
 storage:
   type: local
-
-postInstall:
-  timeout: 300

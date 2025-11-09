@@ -1,29 +1,26 @@
-# Staging environment overrides for C8S Helm chart
-# Use with: helm install c8s ./chart/c8s -f values-staging.yaml
+# Staging environment overrides
+# Moderate resources, single replicas, persistent storage
 
-global:
-  environment: staging
+environment:
+  type: staging
   logLevel: info
-
-images:
-  pullPolicy: IfNotPresent
 
 components:
   apiServer:
-    replicas: 2
+    replicas: 1
     resources:
       requests:
-        cpu: 200m
+        cpu: 250m
         memory: 512Mi
       limits:
         cpu: 1000m
         memory: 1Gi
 
   controller:
-    replicas: 2
+    replicas: 1
     resources:
       requests:
-        cpu: 200m
+        cpu: 250m
         memory: 512Mi
       limits:
         cpu: 1000m
@@ -33,27 +30,27 @@ components:
     replicas: 1
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
+        cpu: 250m
         memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
   frontend:
-    replicas: 2
+    replicas: 1
+    service:
+      type: LoadBalancer
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
+        cpu: 250m
         memory: 512Mi
-    serviceType: LoadBalancer
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
 storage:
-  type: s3-compatible
-  s3:
-    useSSL: true
-
-postInstall:
-  timeout: 600
+  type: pvc
+  pvc:
+    enabled: true
+    size: 50Gi
+    accessMode: ReadWriteOnce

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "c8s.fullname" . }}-config
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{ include "c8s.labels" . | nindent 4 }}
+data:
+  LOG_LEVEL: {{ .Values.environment.logLevel | quote }}
+  ENVIRONMENT: {{ .Values.environment.type | quote }}
+  NAMESPACE: {{ include "c8s.namespace" . | quote }}
+  {{- if eq .Values.storage.type "s3-compatible" }}
+  STORAGE_TYPE: "s3-compatible"
+  S3_ENDPOINT: {{ .Values.storage.s3.endpoint | quote }}
+  S3_BUCKET: {{ .Values.storage.s3.bucket | quote }}
+  S3_REGION: {{ .Values.storage.s3.region | quote }}
+  S3_USE_SSL: {{ .Values.storage.s3.useSSL | quote }}
+  {{- else if eq .Values.storage.type "pvc" }}
+  STORAGE_TYPE: "pvc"
+  PVC_SIZE: {{ .Values.storage.pvc.size | quote }}
+  {{- else }}
+  STORAGE_TYPE: "local"
+  {{- end }}

@@ -1,0 +1,13 @@
+{{- if .Values.components.apiServer.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "c8s.fullname" . }}-api-server-config
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-server
+data:
+  API_SERVER_PORT: {{ .Values.components.apiServer.port.containerPort | quote }}
+  LOG_LEVEL: {{ .Values.environment.logLevel | quote }}
+{{- end }}

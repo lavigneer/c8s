@@ -1,12 +1,9 @@
-# Production environment overrides for C8S Helm chart
-# Use with: helm install c8s ./chart/c8s -f values-prod.yaml
+# Production environment overrides
+# High resources, multiple replicas, S3 storage for HA
 
-global:
-  environment: production
+environment:
+  type: production
   logLevel: warn
-
-images:
-  pullPolicy: IfNotPresent
 
 components:
   apiServer:
@@ -14,7 +11,7 @@ components:
     resources:
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
       limits:
         cpu: 2000m
         memory: 2Gi
@@ -24,7 +21,7 @@ components:
     resources:
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
       limits:
         cpu: 2000m
         memory: 2Gi
@@ -33,35 +30,33 @@ components:
     replicas: 2
     resources:
       requests:
-        cpu: 250m
+        cpu: 500m
         memory: 512Mi
       limits:
-        cpu: 1000m
-        memory: 1Gi
+        cpu: 2000m
+        memory: 2Gi
 
   frontend:
-    replicas: 3
+    replicas: 2
+    service:
+      type: LoadBalancer
     resources:
       requests:
-        cpu: 250m
+        cpu: 500m
         memory: 512Mi
       limits:
-        cpu: 1000m
-        memory: 1Gi
-    serviceType: LoadBalancer
+        cpu: 2000m
+        memory: 2Gi
 
 storage:
   type: s3-compatible
   s3:
-    useSSL: true
+    enabled: true
     endpoint: s3.amazonaws.com
-
-postInstall:
-  timeout: 900
-
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
+    bucket: c8s-logs-prod
+    region: us-west-2
+    useSSL: true
+    insecureSkipVerify: false
+    # accessKey and secretKey should be provided via --set or secret reference in production
+    accessKey: ""
+    secretKey: ""

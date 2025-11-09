@@ -1,0 +1,33 @@
+1. Get the status of your deployment:
+  kubectl rollout status deployment/{{ include "c8s.fullname" . }}-api-server -n {{ include "c8s.namespace" . }}
+  kubectl rollout status deployment/{{ include "c8s.fullname" . }}-controller -n {{ include "c8s.namespace" . }}
+  kubectl rollout status deployment/{{ include "c8s.fullname" . }}-webhook -n {{ include "c8s.namespace" . }}
+  kubectl rollout status deployment/{{ include "c8s.fullname" . }}-frontend -n {{ include "c8s.namespace" . }}
+
+2. Access the C8S Dashboard:
+{{- if eq .Values.components.frontend.service.type "LoadBalancer" }}
+  Get the external IP (may take a few minutes):
+  kubectl get svc {{ include "c8s.fullname" . }}-frontend -n {{ include "c8s.namespace" . }}
+  
+  Then access the dashboard at: http://<EXTERNAL-IP>
+{{- else if eq .Values.components.frontend.service.type "NodePort" }}
+  Get the node port:
+  kubectl get svc {{ include "c8s.fullname" . }}-frontend -n {{ include "c8s.namespace" . }}
+  
+  Then access the dashboard at: http://localhost:<NODE-PORT>
+  Or port-forward: kubectl port-forward svc/{{ include "c8s.fullname" . }}-frontend -n {{ include "c8s.namespace" . }} 3000:80
+{{- end }}
+
+3. View logs from any component:
+  kubectl logs deployment/{{ include "c8s.fullname" . }}-api-server -n {{ include "c8s.namespace" . }}
+  kubectl logs deployment/{{ include "c8s.fullname" . }}-controller -n {{ include "c8s.namespace" . }}
+  kubectl logs deployment/{{ include "c8s.fullname" . }}-webhook -n {{ include "c8s.namespace" . }}
+  kubectl logs deployment/{{ include "c8s.fullname" . }}-frontend -n {{ include "c8s.namespace" . }}
+
+4. Check the health of the deployment:
+  kubectl describe deployment -n {{ include "c8s.namespace" . }}
+
+5. For more information, visit the C8S documentation:
+  https://github.com/anthropics/c8s
+
+Happy CI/CD!

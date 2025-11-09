@@ -1,28 +1,17 @@
 apiVersion: v2
 name: c8s
-description: A Helm chart for deploying C8S (Continuous Integration/Continuous Deployment) stack on Kubernetes
+description: A Helm chart for deploying the C8S continuous integration stack to Kubernetes
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-
-# Chart metadata
-home: https://github.com/org/c8s
-sources:
-  - https://github.com/org/c8s
-maintainers:
-  - name: C8S Team
-    email: team@c8s.io
-
-# Keywords for discovery
 keywords:
-  - ci
-  - cd
-  - pipeline
+  - continuous-integration
+  - ci-cd
   - kubernetes
   - deployment
-
-# Chart dependencies (currently none, but structure for future)
-dependencies: []
-
-# Chart type
-icon: https://example.com/c8s-icon.png
+home: https://github.com/anthropics/c8s
+sources:
+  - https://github.com/anthropics/c8s
+maintainers:
+  - name: C8S Contributors
+    email: support@c8s.io

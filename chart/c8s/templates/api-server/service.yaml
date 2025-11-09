@@ -1,0 +1,20 @@
+{{- if .Values.components.apiServer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "c8s.fullname" . }}-api-server
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-server
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.components.apiServer.port.servicePort }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "c8s.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api-server
+{{- end }}

@@ -1,0 +1,80 @@
+{{- if .Values.components.apiServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "c8s.fullname" . }}-api-server
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-server
+spec:
+  replicas: {{ .Values.components.apiServer.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      {{- include "c8s.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api-server
+  template:
+    metadata:
+      labels:
+        {{- include "c8s.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api-server
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/common/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "c8s.serviceAccountName" . }}
+      containers:
+      - name: api-server
+        image: "{{ .Values.components.apiServer.image.registry }}/{{ .Values.components.apiServer.image.repository }}:{{ .Values.components.apiServer.image.tag }}"
+        imagePullPolicy: {{ .Values.components.apiServer.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.components.apiServer.port.containerPort }}
+          protocol: TCP
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "c8s.fullname" . }}-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "c8s.fullname" . }}-config
+              key: ENVIRONMENT
+        - name: NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "c8s.fullname" . }}-config
+              key: NAMESPACE
+        {{- with .Values.components.apiServer.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if and (eq .Values.storage.type "s3-compatible") .Values.storage.s3.accessKey }}
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "c8s.fullname" . }}-s3-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "c8s.fullname" . }}-s3-secret
+              key: AWS_SECRET_ACCESS_KEY
+        {{- end }}
+        resources:
+          {{- toYaml .Values.components.apiServer.resources | nindent 10 }}
+        {{- if .Values.components.apiServer.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.components.apiServer.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.components.apiServer.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.components.apiServer.readinessProbe | nindent 10 }}
+        {{- end }}
+{{- end }}

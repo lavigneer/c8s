@@ -1,0 +1,26 @@
+{{- if .Values.components.webhook.enabled }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "c8s.fullname" . }}-validating-webhook
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+webhooks:
+- name: pipeline.c8s.anthropic.com
+  clientConfig:
+    service:
+      name: {{ include "c8s.fullname" . }}-webhook
+      namespace: {{ include "c8s.namespace" . }}
+      path: "/validate"
+    caBundle: ""  # TODO: Update with actual CA bundle for production
+  rules:
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: ["c8s.anthropic.com"]
+    apiVersions: ["v1alpha1"]
+    resources: ["pipelines", "pipelineconfigs"]
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  timeoutSeconds: 5
+  failurePolicy: Fail
+{{- end }}

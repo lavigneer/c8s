@@ -1,0 +1,76 @@
+#!/bin/bash
+set -e
+
+NAMESPACE="{{ include "c8s.namespace" . }}"
+TIMEOUT="{{ .Values.postInstallHook.timeout }}"
+RELEASE_NAME="{{ .Release.Name }}"
+
+echo "=================================================="
+echo "C8S Post-Install Health Check"
+echo "=================================================="
+echo "Release: $RELEASE_NAME"
+echo "Namespace: $NAMESPACE"
+echo "Timeout: ${TIMEOUT}s"
+echo ""
+
+# Array of deployments to check
+DEPLOYMENTS=(
+  "{{ include "c8s.fullname" . }}-api-server"
+  "{{ include "c8s.fullname" . }}-controller"
+  "{{ include "c8s.fullname" . }}-webhook"
+  "{{ include "c8s.fullname" . }}-frontend"
+)
+
+FAILED=0
+SUCCESS=0
+
+echo "Checking deployment status..."
+echo ""
+
+for deployment in "${DEPLOYMENTS[@]}"; do
+  echo "Waiting for $deployment to be ready..."
+  
+  if kubectl rollout status deployment/$deployment -n $NAMESPACE --timeout=${TIMEOUT}s 2>/dev/null; then
+    echo "✓ $deployment is ready"
+    ((SUCCESS++))
+  else
+    echo "✗ $deployment failed to become ready"
+    kubectl describe deployment/$deployment -n $NAMESPACE
+    ((FAILED++))
+  fi
+  echo ""
+done
+
+echo "=================================================="
+echo "Deployment Status Summary"
+echo "=================================================="
+echo "Successfully deployed: $SUCCESS/4"
+echo "Failed: $FAILED/4"
+echo ""
+
+if [ $FAILED -eq 0 ]; then
+  echo "✓ All C8S components are ready!"
+  echo ""
+  echo "Next steps:"
+  echo "1. Check the service status:"
+  echo "   kubectl get svc -n $NAMESPACE"
+  echo ""
+  echo "2. Access the dashboard:"
+  echo "   kubectl port-forward svc/{{ include "c8s.fullname" . }}-frontend -n $NAMESPACE 3000:80"
+  echo ""
+  exit 0
+else
+  echo "✗ Some components failed to become ready."
+  echo ""
+  echo "Troubleshooting:"
+  echo "1. Check pod status:"
+  echo "   kubectl get pods -n $NAMESPACE"
+  echo ""
+  echo "2. Check logs:"
+  echo "   kubectl logs -n $NAMESPACE -l app.kubernetes.io/name=c8s --tail=50"
+  echo ""
+  echo "3. Check events:"
+  echo "   kubectl describe pods -n $NAMESPACE"
+  echo ""
+  exit 1
+fi

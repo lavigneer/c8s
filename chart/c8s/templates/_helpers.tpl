@@ -25,7 +25,7 @@ Create a default fully qualified app name.
 Create chart name and version as used by the chart label.
 */}}
 {{- define "c8s.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Chart.Name .Chart.AppVersion | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -60,33 +60,29 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Get the namespace
+Return the namespace
 */}}
 {{- define "c8s.namespace" -}}
 {{- default .Release.Namespace .Values.global.namespace }}
 {{- end }}
 
 {{/*
-Get component selector labels
+Component selector labels
 */}}
-{{- define "c8s.componentLabels" -}}
-{{ include "c8s.selectorLabels" . }}
+{{- define "c8s.componentSelectorLabels" -}}
+app.kubernetes.io/name: {{ include "c8s.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{/*
-Create image name
+Component labels
 */}}
-{{- define "c8s.image" -}}
-{{- $registry := .Values.images.registry }}
-{{- $repository := .image.repository }}
-{{- $tag := .image.tag }}
-{{- printf "%s/%s:%s" $registry $repository $tag }}
+{{- define "c8s.componentLabels" -}}
+helm.sh/chart: {{ include "c8s.chart" . }}
+{{ include "c8s.componentSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-
-{{/*
-Create image pull policy
-*/}}
-{{- define "c8s.imagePullPolicy" -}}
-{{- default .Values.images.pullPolicy .imagePullPolicy }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}

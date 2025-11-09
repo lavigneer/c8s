@@ -1,0 +1,13 @@
+{{- if .Values.components.controller.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "c8s.fullname" . }}-controller-config
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller
+data:
+  CONTROLLER_PORT: {{ .Values.components.controller.port.containerPort | quote }}
+  LOG_LEVEL: {{ .Values.environment.logLevel | quote }}
+{{- end }}

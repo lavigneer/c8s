@@ -1,38 +1,30 @@
 # Default values for C8S Helm chart
-# This is a YAML-formatted file with default values for the C8S deployment
+# This is a YAML-formatted file declaring variables to be passed into templates
 
-# Global configuration
+# Global settings
 global:
   # Kubernetes namespace where C8S will be deployed
   namespace: c8s-system
-  # Environment type: dev, staging, or production
-  environment: dev
-  # Log level: debug, info, warn, error
+
+# Environment type (dev/staging/production)
+environment:
+  type: dev  # Can be overridden in values-dev.yaml, values-staging.yaml, values-prod.yaml
   logLevel: info
 
-# Container image configuration
-images:
-  # Container image registry (Docker Hub, ECR, GCR, private registry, etc.)
-  registry: docker.io
-  # Image pull policy: Always, IfNotPresent, Never
-  pullPolicy: IfNotPresent
-
-# C8S API Server component
+# Components configuration
 components:
+  # API Server component
   apiServer:
-    # Enable/disable API server
     enabled: true
-    # Container image repository
     image:
-      repository: org/c8s-api-server
-      tag: latest
-    # Number of replicas
+      registry: docker.io
+      repository: anthropics/c8s-api-server
+      tag: "latest"
+      pullPolicy: IfNotPresent
     replicas: 1
-    # Container port
     port:
       containerPort: 8080
       servicePort: 8080
-    # Resource requests and limits
     resources:
       requests:
         cpu: 100m
@@ -40,7 +32,7 @@ components:
       limits:
         cpu: 500m
         memory: 512Mi
-    # Liveness probe (restart if fails)
+    env: []
     livenessProbe:
       httpGet:
         path: /healthz
@@ -49,7 +41,6 @@ components:
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3
-    # Readiness probe (ready for traffic)
     readinessProbe:
       httpGet:
         path: /readyz
@@ -59,16 +50,18 @@ components:
       timeoutSeconds: 3
       failureThreshold: 2
 
-  # C8S Controller component
+  # Controller component
   controller:
     enabled: true
     image:
-      repository: org/c8s-controller
-      tag: latest
+      registry: docker.io
+      repository: anthropics/c8s-controller
+      tag: "latest"
+      pullPolicy: IfNotPresent
     replicas: 1
     port:
-      containerPort: 8080
-      servicePort: 8080
+      containerPort: 8081
+      servicePort: 8081
     resources:
       requests:
         cpu: 100m
@@ -76,10 +69,11 @@ components:
       limits:
         cpu: 500m
         memory: 512Mi
+    env: []
     livenessProbe:
       httpGet:
         path: /healthz
-        port: 8080
+        port: 8081
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
@@ -87,140 +81,118 @@ components:
     readinessProbe:
       httpGet:
         path: /readyz
-        port: 8080
+        port: 8081
       initialDelaySeconds: 10
       periodSeconds: 5
       timeoutSeconds: 3
       failureThreshold: 2
 
-  # C8S Webhook component
+  # Webhook component
   webhook:
     enabled: true
     image:
-      repository: org/c8s-webhook
-      tag: latest
+      registry: docker.io
+      repository: anthropics/c8s-webhook
+      tag: "latest"
+      pullPolicy: IfNotPresent
     replicas: 1
     port:
       containerPort: 8443
       servicePort: 443
     resources:
       requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 250m
+        cpu: 100m
         memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env: []
     livenessProbe:
       httpGet:
-        path: /health
+        path: /healthz
         port: 8443
         scheme: HTTPS
-      initialDelaySeconds: 10
+      initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3
     readinessProbe:
       httpGet:
-        path: /health
+        path: /readyz
         port: 8443
         scheme: HTTPS
-      initialDelaySeconds: 5
+      initialDelaySeconds: 10
       periodSeconds: 5
       timeoutSeconds: 3
       failureThreshold: 2
 
-  # C8S Frontend component
+  # Frontend component
   frontend:
     enabled: true
     image:
-      repository: org/c8s-frontend
-      tag: latest
+      registry: docker.io
+      repository: anthropics/c8s-frontend
+      tag: "latest"
+      pullPolicy: IfNotPresent
     replicas: 1
     port:
-      containerPort: 80
+      containerPort: 3000
       servicePort: 80
+    service:
+      type: LoadBalancer  # Can be NodePort for local clusters
     resources:
       requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 250m
+        cpu: 100m
         memory: 256Mi
-    # Service type: ClusterIP, NodePort, LoadBalancer
-    serviceType: LoadBalancer
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env: []
 
 # Storage configuration
 storage:
-  # Storage type: s3-compatible, pvc, local
-  type: s3-compatible
-  # For S3-compatible storage
+  # Type of storage: s3-compatible, pvc, or local
+  type: local
+  
+  # S3-compatible storage configuration (used if type: s3-compatible)
   s3:
-    # S3 endpoint (e.g., minio.c8s-system.svc.cluster.local:9000 or s3.amazonaws.com)
-    endpoint: ""
-    # Bucket name for logs and artifacts
+    enabled: false
+    endpoint: minio.c8s-system.svc.cluster.local:9000
     bucket: c8s-logs
-    # AWS region
     region: us-east-1
-    # Use SSL for S3 connection
     useSSL: false
-    # Access key (from Kubernetes secret)
-    accessKeySecretRef:
-      name: s3-credentials
-      key: access-key
-    # Secret key (from Kubernetes secret)
-    secretKeySecretRef:
-      name: s3-credentials
-      key: secret-key
-  # For PersistentVolumeClaim storage
+    insecureSkipVerify: false
+    # accessKey and secretKey should be provided via --set or secret reference
+    accessKey: ""
+    secretKey: ""
+  
+  # PersistentVolumeClaim configuration (used if type: pvc)
   pvc:
-    # StorageClass name
-    storageClass: ""
-    # PVC size
+    enabled: false
+    storageClass: ""  # Use default if empty
     size: 10Gi
-    # Access mode
     accessMode: ReadWriteOnce
 
-# Kubernetes cluster configuration
-cluster:
-  # Kubernetes version constraint
-  kubeVersion: ">=1.24.0"
+# Service account configuration
+serviceAccount:
+  create: true
+  name: c8s-controller
 
-# RBAC (Role-Based Access Control) configuration
+# RBAC configuration
 rbac:
-  # Create service accounts
   create: true
 
-# Post-install hook configuration
-postInstall:
-  # Enable post-install health verification hook
+# Post-install hook settings
+postInstallHook:
   enabled: true
-  # Timeout for health check in seconds
-  timeout: 300
+  timeout: 300  # seconds to wait for components to become ready
 
-# Security configuration (future use)
-security:
-  # Pod security policy
-  podSecurityPolicy: ""
-  # Network policies
-  networkPolicy:
-    enabled: false
+# Labels and annotations
+labels:
+  app.kubernetes.io/name: c8s
+  app.kubernetes.io/instance: c8s
+  app.kubernetes.io/version: "0.1.0"
+  app.kubernetes.io/component: pipeline-orchestration
 
-# Ingress configuration (future use)
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-  hosts:
-    - host: c8s.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
-
-# Autoscaling configuration (future use, optional)
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
+annotations:
+  description: "C8S - Continuous Integration Stack"

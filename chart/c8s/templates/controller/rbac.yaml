@@ -1,0 +1,46 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "c8s.fullname" . }}-controller
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller
+rules:
+# Required for watching CRDs
+- apiGroups: ["c8s.anthropic.com"]
+  resources: ["pipelines", "pipelineconfigs", "pipelinehistories"]
+  verbs: ["get", "list", "watch"]
+# Required for managing pods
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/status"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+# Required for managing jobs
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+# Required for secrets and configmaps
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list", "watch"]
+# Required for events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "c8s.fullname" . }}-controller
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "c8s.fullname" . }}-controller
+subjects:
+- kind: ServiceAccount
+  name: {{ include "c8s.serviceAccountName" . }}
+  namespace: {{ include "c8s.namespace" . }}
+{{- end }}

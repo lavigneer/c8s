@@ -1,0 +1,23 @@
+{{- if .Values.components.frontend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "c8s.fullname" . }}-frontend
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: {{ .Values.components.frontend.service.type }}
+  {{- if eq .Values.components.frontend.service.type "LoadBalancer" }}
+  loadBalancerSourceRanges: []
+  {{- end }}
+  ports:
+  - port: {{ .Values.components.frontend.port.servicePort }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "c8s.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+{{- end }}
