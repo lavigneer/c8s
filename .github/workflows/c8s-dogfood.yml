@@ -10,16 +10,30 @@ jobs:
   trigger-c8s-pipeline:
     name: Trigger C8S Pipeline
     runs-on: ubuntu-latest
-    if: secrets.C8S_WEBHOOK_URL != '' && secrets.C8S_API_URL != ''
     timeout-minutes: 45
     permissions:
       contents: read
 
     steps:
+      - name: Check if secrets are configured
+        id: check-secrets
+        env:
+          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
+          API_URL: ${{ secrets.C8S_API_URL }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ] || [ -z "$API_URL" ]; then
+            echo "⚠️ Skipping: C8S_WEBHOOK_URL or C8S_API_URL secret not configured"
+            echo "configured=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "configured=true" >> $GITHUB_OUTPUT
+
       - name: Checkout code
+        if: steps.check-secrets.outputs.configured == 'true'
         uses: actions/checkout@v4
 
       - name: Create PipelineRun payload
+        if: steps.check-secrets.outputs.configured == 'true'
         id: payload
         run: |
           cat > pipeline-payload.json << 'EOF'
@@ -47,6 +61,7 @@ jobs:
           cat pipeline-payload.json
 
       - name: Trigger C8S Pipeline via webhook
+        if: steps.check-secrets.outputs.configured == 'true'
         id: trigger
         env:
           WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
@@ -79,6 +94,7 @@ jobs:
           fi
 
       - name: Get Pipeline Status
+        if: steps.check-secrets.outputs.configured == 'true'
         id: status
         env:
           API_URL: ${{ secrets.C8S_API_URL }}
@@ -125,7 +141,7 @@ jobs:
           exit 1
 
       - name: Fetch Pipeline Logs
-        if: always()
+        if: always() && steps.check-secrets.outputs.configured == 'true'
         continue-on-error: true
         env:
           API_URL: ${{ secrets.C8S_API_URL }}
@@ -140,7 +156,7 @@ jobs:
             echo "Could not retrieve logs from C8S API"
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check-secrets.outputs.configured == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -170,6 +186,7 @@ jobs:
             });
 
       - name: Report Results
+        if: always() && steps.check-secrets.outputs.configured == 'true'
         env:
           API_URL: ${{ secrets.C8S_API_URL }}
         run: |
