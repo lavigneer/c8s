@@ -113,63 +113,17 @@ docker_build(
 # You can add a separate build when the frontend Dockerfile is available
 
 # ============================================================================
-# Install Cert-Manager (Required for Webhook TLS)
-# ============================================================================
-
-# Create cert-manager namespace
-namespace_create('cert-manager')
-
-# Install cert-manager using Helm
-helm_resource(
-  name='cert-manager',
-  chart='cert-manager',
-  repo_name='jetstack',
-  repo_url='https://charts.jetstack.io',
-  namespace='cert-manager',
-  flags=[
-    '--set', 'installCRDs=true',
-  ],
-  labels=['infrastructure'],
-)
-
-# ============================================================================
 # Create Namespace
 # ============================================================================
 
 namespace_create('c8s-system')
 
 # ============================================================================
-# Deploy Helm Chart
+# Deploy Helm Chart with Cert-Manager
 # ============================================================================
 
-# Create values file with local image references
-local_values = {
-  'components': {
-    'apiServer': {
-      'image': {
-        'registry': 'localhost:5000',  # Local Docker registry
-        'repository': 'c8s-api-server',
-        'tag': IMAGE_TAG,
-      }
-    },
-    'controller': {
-      'image': {
-        'registry': 'localhost:5000',
-        'repository': 'c8s-controller',
-        'tag': IMAGE_TAG,
-      }
-    },
-    'webhook': {
-      'image': {
-        'registry': 'localhost:5000',
-        'repository': 'c8s-webhook',
-        'tag': IMAGE_TAG,
-      }
-    },
-  }
-}
-
 # Deploy C8S using Helm chart
+# The chart includes cert-manager as a dependency and handles ordering via pre-install hooks
 helm_resource(
   name='c8s',
   chart='./chart/c8s',
@@ -190,7 +144,6 @@ helm_resource(
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
   ],
   namespace='c8s-system',
-  resource_deps=['cert-manager'],  # Ensure cert-manager is installed first
 )
 
 # ============================================================================
