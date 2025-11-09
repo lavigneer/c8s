@@ -172,6 +172,7 @@ helm_resource(
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
     '--create-namespace',
+    '--dependency-update',
   ],
   image_deps=[
     'c8s-api-server',
