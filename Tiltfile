@@ -15,6 +15,9 @@
 # Load Tilt extensions for recommended Go development workflow
 load('ext://restart_process', 'docker_build_with_restart')
 
+# Load ngrok extension for exposing local services to GitHub Actions
+load('ext://ngrok', 'ngrok_tunnel')
+
 # Configuration with defaults - use simple assignments instead of config API
 with_samples = True
 verbose_logs = False
@@ -217,6 +220,14 @@ k8s_resource(
     resource_deps=['webhook-compile']  # Ensure local compilation happens first
 )
 
+# Expose webhook via ngrok tunnel for receiving GitHub webhooks
+ngrok_tunnel(
+    'c8s-webhook-tunnel',
+    9443,
+    name='c8s-webhook-tunnel',
+    proto='https'
+)
+
 # ============================================================================
 # API Server Component (HTMX Frontend) - Recommended Go Pattern
 # ============================================================================
@@ -261,7 +272,16 @@ k8s_resource(
     labels=['api-server'],
     trigger_mode=TRIGGER_MODE_AUTO,
     pod_readiness='wait',
-    resource_deps=['api-server-compile']  # Ensure local compilation happens first
+    resource_deps=['api-server-compile'],  # Ensure local compilation happens first
+    links=[link('http://localhost:8080', 'Local Dashboard')]
+)
+
+# Expose API server via ngrok tunnel for GitHub Actions testing
+ngrok_tunnel(
+    'c8s-api-server-tunnel',
+    8080,
+    name='c8s-api-server-tunnel',
+    proto='http'
 )
 
 # ============================================================================
@@ -395,11 +415,13 @@ print("""
 │   - C8S Dashboard:     http://localhost:8080                   │
 │   - Controller Pprof:  http://localhost:6060                   │
 │   - Webhook:           https://localhost:9443                  │
+│   - ngrok UI:          http://localhost:4040                   │
 │                                                                  │
 │ Components Running:                                              │
 │   ✓ Controller:        Manages C8S Kubernetes resources        │
 │   ✓ API Server:        HTMX-based web dashboard                │
 │   ✓ Webhook:           Git webhook event receiver              │
+│   ✓ ngrok:             Public tunnels for GitHub Actions       │
 │                                                                  │
 │ Development Workflow:                                            │
 │   1. Edit Go files in cmd/api-server or pkg/dashboard         │
@@ -407,6 +429,14 @@ print("""
 │   3. Tilt automatically detects changes and rebuilds           │
 │   4. Browser auto-refresh shows updates                        │
 │   5. View logs and metrics in Tilt dashboard                   │
+│                                                                  │
+│ GitHub Actions Testing:                                          │
+│   ngrok creates public URLs for testing with GitHub Actions:     │
+│   - Click 'ngrok' button next to c8s-api-server in Tilt UI      │
+│   - Click 'ngrok' button next to c8s-webhook in Tilt UI         │
+│   - View all tunnels at http://localhost:4040                   │
+│   - Use public URLs in GitHub webhook configuration            │
+│   - Tests can reach your local services from GitHub Actions    │
 │                                                                  │
 │ E2E Testing:                                                     │
 │   Run all tests (auto-reruns on file change):                    │
@@ -425,6 +455,7 @@ print("""
 │ Documentation:                                                   │
 │   - See docs/tilt-setup.md for detailed guide                  │
 │   - See DASHBOARD_README.md for frontend development           │
+│   - See ngrok setup section below for public tunnel info       │
 │                                                                  │
 ╰──────────────────────────────────────────────────────────────────╯
 """)
