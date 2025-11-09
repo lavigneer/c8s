@@ -5,19 +5,15 @@
 # Usage:
 #   tilt up              # Start Tilt with C8S deployment
 #   tilt down            # Stop Tilt and remove resources
-#   tilt logs <service>  # View logs for a service
+#   tilt logs c8s        # View logs for C8S
 #   tilt trigger c8s     # Manually trigger C8S update
 #
 
-# Load Helm resource extension
+# Load Helm resource extension for Helm chart support
 load('ext://helm_resource', 'helm_resource')
 
-# Configure kubectl context
-allow_k8s_context('kind-kind')
-allow_k8s_context('docker-desktop')
-allow_k8s_context('minikube')
-
-# Deploy C8S using Helm chart
+# Deploy C8S using Helm chart from ./chart/c8s
+# Uses development values with Tilt overrides for faster iteration
 helm_resource(
   name='c8s',
   chart_dir='./chart/c8s',
@@ -25,13 +21,9 @@ helm_resource(
     '-f', './chart/c8s/values-dev.yaml',
     '-f', './tilt/c8s-values.yaml',
   ],
-  namespace='c8s-system',
-  labels=['backend']
+  namespace='c8s-system'
 )
 
-# Watch Helm chart files for changes
+# Watch Helm chart files for automatic redeployment on changes
 watch_file('./chart/c8s')
-watch_file('./tilt')
-
-# Set default port forwards (optional)
-k8s_resource('c8s-frontend', port_forwards='3000:80')
+watch_file('./tilt/c8s-values.yaml')
