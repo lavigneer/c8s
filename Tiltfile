@@ -28,13 +28,14 @@ load('ext://helm_resource', 'helm_resource')
 # ============================================================================
 
 # Get the repository owner/name from git remote
-# Falls back to environment variable or default
+# This will be used to construct the GHCR registry path: ghcr.io/{owner}/{repo}
 def get_github_repo():
+  # First check environment variable (set in GitHub Actions)
   repo = os.getenv('GITHUB_REPOSITORY', '')
   if repo:
     return repo
 
-  # Try to get from git remote
+  # Try to get from git remote (local development)
   result = local('git config --get remote.origin.url', quiet=True)
   if result:
     url = result.strip()
@@ -49,7 +50,21 @@ def get_github_repo():
       if len(parts) >= 2:
         return f"{parts[-2]}/{parts[-1]}"
 
-  return 'anthropics/c8s'
+  # If we can't detect, fail with a helpful error message
+  fail("""
+  ❌ Could not detect GitHub repository from git remote.
+
+  Please ensure your git remote is configured correctly:
+    git remote -v
+
+  Expected format:
+    - git@github.com:username/repo.git (SSH)
+    - https://github.com/username/repo (HTTPS)
+
+  Or set the GITHUB_REPOSITORY environment variable:
+    export GITHUB_REPOSITORY=username/repo
+    tilt up
+  """)
 
 GITHUB_REPO = get_github_repo()
 GHCR_REGISTRY = f"ghcr.io/{GITHUB_REPO.lower()}"
