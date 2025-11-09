@@ -102,16 +102,16 @@ As an operator, I need to upgrade, downgrade, and uninstall C8S cleanly so that 
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide a deployment mechanism that installs all C8S components (API server, controller, frontend, dependencies) as a cohesive unit
-- **FR-002**: System MUST provide a way to verify deployment success and component health status
-- **FR-003**: System MUST allow customization of deployment parameters (image versions, replicas, resource limits, storage configuration) through a configuration interface or file
-- **FR-004**: System MUST support deployment to different Kubernetes distributions (k3s, kind, EKS, GKE, AKS) without requiring manual adjustments
-- **FR-005**: System MUST provide clear, actionable error messages when deployment fails
-- **FR-006**: System MUST display the dashboard URL and access instructions after successful deployment
-- **FR-007**: System MUST support upgrading C8S to new versions with backward compatibility
-- **FR-008**: System MUST cleanly uninstall C8S and remove all associated resources from the cluster
-- **FR-009**: System MUST validate Kubernetes cluster prerequisites before deployment and report any missing requirements
-- **FR-010**: System MUST provide idempotent deployment (running the deploy command twice should be safe)
+- **FR-001**: System MUST provide a Helm chart that deploys all C8S components (API server, controller, frontend, dependencies) as a cohesive unit
+- **FR-002**: System MUST provide a way to verify deployment success and component health status (via Helm hooks or post-install scripts)
+- **FR-003**: Helm chart MUST allow customization of deployment parameters (image versions, replicas, resource limits, storage configuration) through values.yaml and values overrides
+- **FR-004**: Helm chart MUST support deployment to different Kubernetes distributions (k3s, kind, EKS, GKE, AKS) without requiring manual adjustments
+- **FR-005**: System MUST provide clear, actionable deployment feedback and error messages when Helm deployment fails
+- **FR-006**: Deployment MUST display the dashboard URL and access instructions after successful Helm install
+- **FR-007**: System MUST support upgrading C8S to new versions via `helm upgrade` with backward compatibility
+- **FR-008**: System MUST cleanly uninstall C8S via `helm uninstall` and remove all associated resources from the cluster
+- **FR-009**: Helm chart MUST validate Kubernetes cluster prerequisites before deployment and report any missing requirements
+- **FR-010**: System MUST provide idempotent deployments (running `helm install` or `helm upgrade` multiple times should be safe)
 
 ### Key Entities *(include if feature involves data)*
 
@@ -138,9 +138,15 @@ As an operator, I need to upgrade, downgrade, and uninstall C8S cleanly so that 
 - **SC-007**: Redeploying the same configuration twice produces identical results (idempotency)
 - **SC-008**: Users can upgrade C8S to a new version while maintaining data integrity and service availability
 
+## Clarifications
+
+### Session 2025-11-09
+- Q: Should we use Helm or plain YAML + kubectl for deployment? → A: Helm as primary mechanism (single chart for both direct deployments and Tilt integration)
+
 ## Assumptions
 
 - Kubernetes cluster (1.24+) is already available with kubectl configured
+- Helm 3.x is installed on user's machine (added to prerequisites for Helm adoption)
 - Users have appropriate RBAC permissions to create resources in their target namespace
 - S3-compatible object storage is available or will be configured as part of deployment
 - Users have basic familiarity with Kubernetes and kubectl
@@ -152,11 +158,13 @@ As an operator, I need to upgrade, downgrade, and uninstall C8S cleanly so that 
 
 **External Dependencies**:
 - Kubernetes cluster (1.24 or later)
+- Helm 3.x CLI tool installed
 - Container registry access (Docker Hub, ECR, GCR, or private registry)
 - Kubectl CLI tool installed
 
 **Constraints**:
 - Deployment approach must remain vendor-agnostic (work across K3s, kind, EKS, GKE, AKS)
-- Solution should not require additional tooling beyond kubectl (no requirement for Helm, Kustomize, etc. by default)
+- Helm chart must be reusable in both direct deployments and Tilt development workflows
+- Single Helm chart source of truth (no YAML duplication)
 - Deployment must complete within reasonable time on typical Kubernetes clusters
-- Configuration must be portable (can be version-controlled and shared across teams)
+- Configuration must be portable and version-controlled (Helm values files in Git)

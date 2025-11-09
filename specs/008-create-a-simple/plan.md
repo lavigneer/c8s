@@ -17,15 +17,15 @@ Provide a simple, vendor-agnostic way to deploy the entire C8S stack (API server
   the iteration process.
 -->
 
-**Language/Version**: Go 1.25.0 (CLI tool), existing C8S backend/frontend (no changes required)
-**Primary Dependencies**: kubectl (Kubernetes client), existing C8S components (API server, controller, frontend)
+**Language/Version**: Helm 3.x (chart templating), existing C8S backend/frontend (no changes required)
+**Primary Dependencies**: Helm 3.x CLI, kubectl (Kubernetes client), existing C8S components (API server, controller, frontend)
 **Storage**: Kubernetes persistent volumes, S3-compatible object storage (already integrated in C8S)
-**Testing**: Go testing for deployment validation, Kubernetes integration tests, E2E deployment tests
-**Target Platform**: Kubernetes 1.24+ (k3s, kind, EKS, GKE, AKS), Linux/macOS for deployment CLI
-**Project Type**: Go CLI tool + Kubernetes manifests (single project focus)
-**Performance Goals**: Deploy complete stack in under 5 minutes, health check response <1 second, idempotent re-deployments
-**Constraints**: No external dependencies beyond kubectl, vendor-agnostic (single set of manifests works across distributions), support configuration customization with minimal learning curve
-**Scale/Scope**: Single namespace deployments, support 3 environment presets (dev/staging/prod), health check monitors 6+ components
+**Testing**: Helm chart lint, Kubernetes integration tests, E2E deployment tests, Tilt integration validation
+**Target Platform**: Kubernetes 1.24+ (k3s, kind, EKS, GKE, AKS), compatible with Tilt development workflows
+**Project Type**: Helm chart + Kubernetes manifests (single chart source of truth)
+**Performance Goals**: Deploy complete stack in under 5 minutes via `helm install`, health check response <1 second, idempotent re-deployments via `helm upgrade`
+**Constraints**: Helm 3.x required, vendor-agnostic (single chart works across distributions), reusable in both direct deployments and Tilt workflows, configuration via values.yaml
+**Scale/Scope**: Single namespace deployments, support 3 environment presets (dev/staging/prod) via values files, health check monitors 6+ components
 
 ## Constitution Check
 
@@ -80,47 +80,51 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```
-cmd/c8s-deploy/              # CLI tool for deployment operations
-├── main.go                  # Entry point
-├── cmd/
-│   ├── deploy.go            # Deploy command implementation
-│   ├── health.go            # Health check command
-│   ├── upgrade.go           # Upgrade command
-│   ├── uninstall.go         # Uninstall command
-│   └── config.go            # Configuration management commands
-└── types.go                 # Shared types (Config, DeploymentResult, etc)
-
-pkg/deployment/              # Deployment orchestration logic
-├── deployer.go              # Main deployment orchestrator
-├── validator.go             # Kubernetes prerequisites validation
-├── health_checker.go        # Component health verification
-└── config_applier.go        # Configuration loading and validation
-
-pkg/k8s/                     # Kubernetes interaction helpers
-├── client.go                # Kubernetes client wrapper
-├── manifest.go              # Manifest loading and templating
-└── status.go                # Resource status checking
-
-k8s/                         # Kubernetes manifests
-├── api-server.yaml          # API server deployment
-├── controller.yaml          # Controller deployment
-├── frontend.yaml            # Frontend deployment
-├── database.yaml            # Database (if needed)
-├── storage.yaml             # Storage configuration
-├── kustomization.yaml       # Kustomize base for customization
-└── overlays/                # Environment-specific overlays
-    ├── dev/
-    ├── staging/
-    └── prod/
+chart/c8s/                   # Helm chart for C8S deployment
+├── Chart.yaml              # Chart metadata and version
+├── values.yaml             # Default values
+├── values-dev.yaml         # Dev environment overrides
+├── values-staging.yaml     # Staging environment overrides
+├── values-prod.yaml        # Production environment overrides
+├── templates/
+│   ├── namespace.yaml      # Kubernetes namespace
+│   ├── api-server/
+│   │   ├── deployment.yaml # API server deployment
+│   │   ├── service.yaml    # API server service
+│   │   └── configmap.yaml  # API server configuration
+│   ├── controller/
+│   │   ├── deployment.yaml # Controller deployment
+│   │   ├── service.yaml    # Controller service
+│   │   └── rbac.yaml       # RBAC for controller
+│   ├── webhook/
+│   │   ├── deployment.yaml # Webhook deployment
+│   │   ├── service.yaml    # Webhook service
+│   │   └── validating-webhook.yaml
+│   ├── frontend/
+│   │   ├── deployment.yaml # Frontend deployment
+│   │   └── service.yaml    # Frontend service
+│   ├── storage.yaml        # Storage configuration
+│   ├── _helpers.tpl        # Template helpers
+│   └── NOTES.txt           # Post-install notes
+├── tests/
+│   ├── unit/               # Helm template unit tests
+│   └── integration/        # K8s integration tests
+└── README.md               # Chart documentation
 
 tests/
-├── unit/                    # Unit tests for deployment logic
-├── integration/             # Integration tests with k3d/kind
-├── e2e/                     # End-to-end deployment tests
-└── fixtures/                # Test fixtures (sample configs)
+├── helm/                   # Helm chart testing
+│   ├── lint/              # Chart lint tests
+│   └── template/          # Template rendering tests
+├── integration/           # Integration tests with actual K8s
+├── e2e/                   # End-to-end deployment tests
+└── fixtures/              # Test fixtures and sample values
+
+Tiltfile                    # Tilt configuration
+tilt/
+└── c8s-values.yaml        # Tilt-specific values overrides
 ```
 
-**Structure Decision**: Single Go project with CLI tool (`cmd/c8s-deploy/`) and supporting packages. Kubernetes manifests stored in `k8s/` directory with Kustomize overlays for environment customization. This keeps deployment logic co-located with C8S codebase while maintaining clear separation of concerns.
+**Structure Decision**: Standard Helm chart structure in `/chart/c8s/` with single source of truth for all Kubernetes manifests. Environment-specific overrides via separate values files (values-dev.yaml, values-staging.yaml, values-prod.yaml). Chart is directly reusable in Tiltfile for development workflows and by users via `helm install`. This eliminates duplication and maintains consistency across all deployment modes.
 
 ## Complexity Tracking
 

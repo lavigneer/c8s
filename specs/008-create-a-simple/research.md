@@ -8,26 +8,33 @@
 
 ## Research Findings Summary
 
-### Decision 1: Plain YAML vs. Templating Tools for Manifest Management
+### Decision 1: Helm as Primary Deployment Mechanism
 
-**Decision**: Use plain YAML + `kubectl apply` (no Helm or Kustomize required)
+**Decision**: Use Helm 3.x as the primary deployment mechanism with a single Helm chart reusable across direct deployments and Tilt workflows
 
 **Rationale**:
-- C8S has only 3 main components (controller, webhook, API server) + MinIO for local dev
-- Current `/deploy/install.yaml` already consolidates all resources effectively
-- Team is small with straightforward deployment requirements
-- No immediate need for packaging/distribution as a third-party product
-- Plain YAML is most accessible to non-Kubernetes experts
-- Reduces learning curve and tool dependencies
+- Provides better user experience for deployment (`helm install` is simple and familiar)
+- Single Helm chart can be reused in both direct user deployments AND in Tilt development workflows
+- Eliminates duplication between plain YAML and Helm definitions
+- Helm handles templating, values overrides, and environment presets (dev/staging/prod)
+- Built-in upgrade/rollback capabilities via `helm upgrade` and `helm rollback`
+- Helm hooks can be used for health verification post-install
+- Packaging and distribution benefits for production users
 
 **Alternatives Considered**:
-1. **Helm**: Package manager with Go templating - ideal for packaged products but adds significant complexity for current scale
-2. **Kustomize**: Native to kubectl with overlay-based customization - suitable if multi-environment config complexity grows (reserved for future if needed)
-3. **Jsonnet**: More powerful templating - too complex for current requirements
+1. **Plain YAML + kubectl**: Simpler initial implementation but doesn't address Tilt reusability or distribution
+2. **Plain YAML + optional Helm**: Maintains simplicity but creates duplication and maintenance burden
+3. **CLI wrapper around Helm**: Adds abstraction layer but unnecessary since Helm CLI is already user-friendly
 
-**Current State Analysis**: Existing `/deploy/install.yaml` already consolidates resources and is idempotent via `kubectl apply` - no major changes needed
+**Implementation Approach**:
+- Create `/chart/c8s/` directory with standard Helm chart structure
+- `values.yaml` with defaults for all deployment parameters
+- `values-dev.yaml`, `values-staging.yaml`, `values-prod.yaml` for environment presets
+- Helm templates for all Kubernetes manifests (Deployment, Service, ConfigMap, etc.)
+- Helm hooks for post-install health verification
+- Chart is integrated into Tilt's Tiltfile for development workflows
 
-**When to Revisit**: Only if supporting 3+ environments with significantly different configs or distributing C8S as a packaged product
+**Added Dependency**: Helm 3.x must be installed (added to prerequisites)
 
 ---
 
@@ -197,12 +204,13 @@ storage:
 ### Item 1: Deployment Tool Choice
 **Question**: Should the solution use plain YAML + kubectl, Helm, Kustomize, or another approach?
 
-**Resolution**: Plain YAML + kubectl apply
-- Simplest for current scale
-- Vendor-agnostic
-- No external tool dependencies
-- Existing manifests already follow this pattern
-- Kustomize reserved for future multi-environment needs
+**Resolution**: Helm 3.x as primary mechanism
+- Single Helm chart reusable in both direct deployments and Tilt workflows
+- Provides better user experience with familiar `helm install` workflow
+- Eliminates duplication between plain YAML and Helm
+- Built-in support for upgrades, templating, and environment presets
+- Helm hooks enable post-install health verification
+- Distribution and packaging benefits for production use
 
 ---
 
