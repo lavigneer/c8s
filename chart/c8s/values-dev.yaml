@@ -8,6 +8,8 @@ environment:
 components:
   apiServer:
     replicas: 1
+    readinessProbe: null  # Disable in dev until endpoint is implemented
+    livenessProbe: null
     resources:
       requests:
         cpu: 50m
@@ -18,6 +20,8 @@ components:
 
   controller:
     replicas: 1
+    readinessProbe: null  # Disable in dev until endpoint is implemented
+    livenessProbe: null
     resources:
       requests:
         cpu: 50m
@@ -28,6 +32,8 @@ components:
 
   webhook:
     replicas: 1
+    readinessProbe: null  # Disable in dev until endpoint is implemented
+    livenessProbe: null
     resources:
       requests:
         cpu: 50m
