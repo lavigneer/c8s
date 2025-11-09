@@ -59,7 +59,7 @@ components:
       # Container registry (docker.io, gcr.io, ecr.aws, etc.)
       registry: docker.io
       # Image repository path
-      repository: anthropics/c8s-api-server
+      repository: lavigneer/c8s-api-server
       # Image tag/version (use specific versions in production, not 'latest')
       tag: "latest"
       # Image pull policy: Always, IfNotPresent, or Never
@@ -100,7 +100,7 @@ components:
     enabled: true
     image:
       registry: docker.io
-      repository: anthropics/c8s-controller
+      repository: lavigneer/c8s-controller
       tag: "latest"
       pullPolicy: IfNotPresent
     replicas: 1
@@ -137,7 +137,7 @@ components:
     enabled: true
     image:
       registry: docker.io
-      repository: anthropics/c8s-webhook
+      repository: lavigneer/c8s-webhook
       tag: "latest"
       pullPolicy: IfNotPresent
     replicas: 1
@@ -185,7 +185,7 @@ components:
     enabled: true
     image:
       registry: docker.io
-      repository: anthropics/c8s-frontend
+      repository: lavigneer/c8s-frontend
       tag: "latest"
       pullPolicy: IfNotPresent
     replicas: 1

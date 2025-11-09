@@ -9,9 +9,9 @@ keywords:
   - ci-cd
   - kubernetes
   - deployment
-home: https://github.com/anthropics/c8s
+home: https://github.com/lavigneer/c8s
 sources:
-  - https://github.com/anthropics/c8s
+  - https://github.com/lavigneer/c8s
 maintainers:
   - name: C8S Contributors
     email: support@c8s.io

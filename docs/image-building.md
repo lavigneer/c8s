@@ -48,7 +48,7 @@ tilt down
 Configure the build process with environment variables:
 
 ```bash
-# Use custom registry (default: ghcr.io/anthropics)
+# Use custom registry (default: ghcr.io/lavigneer)
 export GHCR_REGISTRY=ghcr.io/myorg
 
 # Use custom image tag (default: latest)
@@ -111,11 +111,11 @@ on:
 The workflow creates multiple tags for flexibility:
 
 ```
-ghcr.io/anthropics/c8s-api-server:latest           # Latest on main
-ghcr.io/anthropics/c8s-api-server:main             # Latest on main branch
-ghcr.io/anthropics/c8s-api-server:develop         # Latest on develop branch
-ghcr.io/anthropics/c8s-api-server:<commit-sha>    # Specific commit
-ghcr.io/anthropics/c8s-api-server:v0.1.0          # Release version
+ghcr.io/lavigneer/c8s-api-server:latest           # Latest on main
+ghcr.io/lavigneer/c8s-api-server:main             # Latest on main branch
+ghcr.io/lavigneer/c8s-api-server:develop         # Latest on develop branch
+ghcr.io/lavigneer/c8s-api-server:<commit-sha>    # Specific commit
+ghcr.io/lavigneer/c8s-api-server:v0.1.0          # Release version
 ```
 
 ### Permissions Required
@@ -140,7 +140,7 @@ git push origin v0.1.0
 
 # GitHub Actions will:
 # 1. Build all component images
-# 2. Push to ghcr.io/anthropics/c8s-*:v0.1.0
+# 2. Push to ghcr.io/lavigneer/c8s-*:v0.1.0
 # 3. Publish Helm chart as OCI artifact
 # 4. Create GitHub Release
 ```
@@ -151,17 +151,17 @@ After building locally with Tilt:
 
 ```bash
 # Tag local images for GHCR
-docker tag c8s-api-server ghcr.io/anthropics/c8s-api-server:v0.1.0
-docker tag c8s-controller ghcr.io/anthropics/c8s-controller:v0.1.0
-docker tag c8s-webhook ghcr.io/anthropics/c8s-webhook:v0.1.0
+docker tag c8s-api-server ghcr.io/lavigneer/c8s-api-server:v0.1.0
+docker tag c8s-controller ghcr.io/lavigneer/c8s-controller:v0.1.0
+docker tag c8s-webhook ghcr.io/lavigneer/c8s-webhook:v0.1.0
 
 # Authenticate with GitHub (requires token with package write permissions)
 echo $GITHUB_TOKEN | docker login ghcr.io -u <username> --password-stdin
 
 # Push images
-docker push ghcr.io/anthropics/c8s-api-server:v0.1.0
-docker push ghcr.io/anthropics/c8s-controller:v0.1.0
-docker push ghcr.io/anthropics/c8s-webhook:v0.1.0
+docker push ghcr.io/lavigneer/c8s-api-server:v0.1.0
+docker push ghcr.io/lavigneer/c8s-controller:v0.1.0
+docker push ghcr.io/lavigneer/c8s-webhook:v0.1.0
 ```
 
 ### Option 3: Custom Registry
@@ -189,13 +189,13 @@ To use published images from GHCR:
 ```bash
 helm install c8s ./chart/c8s \
   --set components.apiServer.image.registry=ghcr.io \
-  --set components.apiServer.image.repository=anthropics/c8s-api-server \
+  --set components.apiServer.image.repository=lavigneer/c8s-api-server \
   --set components.apiServer.image.tag=v0.1.0 \
   --set components.controller.image.registry=ghcr.io \
-  --set components.controller.image.repository=anthropics/c8s-controller \
+  --set components.controller.image.repository=lavigneer/c8s-controller \
   --set components.controller.image.tag=v0.1.0 \
   --set components.webhook.image.registry=ghcr.io \
-  --set components.webhook.image.repository=anthropics/c8s-webhook \
+  --set components.webhook.image.repository=lavigneer/c8s-webhook \
   --set components.webhook.image.tag=v0.1.0 \
   -n c8s-system --create-namespace
 ```
@@ -208,17 +208,17 @@ components:
   apiServer:
     image:
       registry: ghcr.io
-      repository: anthropics/c8s-api-server
+      repository: lavigneer/c8s-api-server
       tag: v0.1.0
   controller:
     image:
       registry: ghcr.io
-      repository: anthropics/c8s-controller
+      repository: lavigneer/c8s-controller
       tag: v0.1.0
   webhook:
     image:
       registry: ghcr.io
-      repository: anthropics/c8s-webhook
+      repository: lavigneer/c8s-webhook
       tag: v0.1.0
 ```
 
@@ -305,15 +305,15 @@ For production, consider signing images:
 
 ```bash
 # Build and sign with cosign
-docker build -t ghcr.io/anthropics/c8s-api-server:v0.1.0 .
-cosign sign ghcr.io/anthropics/c8s-api-server:v0.1.0
+docker build -t ghcr.io/lavigneer/c8s-api-server:v0.1.0 .
+cosign sign ghcr.io/lavigneer/c8s-api-server:v0.1.0
 ```
 
 ### Registry Permissions
 
 Set up GitHub Container Registry access controls:
 
-1. Go to package settings: https://github.com/anthropics/c8s/settings/packages
+1. Go to package settings: https://github.com/lavigneer/c8s/settings/packages
 2. Configure visibility: Private or Public
 3. Manage permissions for team members
 
@@ -335,10 +335,10 @@ Modify GitHub Actions workflow to push to multiple registries:
 
 ```yaml
 - name: Push to GHCR
-  run: docker push ghcr.io/anthropics/c8s-api-server:latest
+  run: docker push ghcr.io/lavigneer/c8s-api-server:latest
 
 - name: Push to Docker Hub
-  run: docker push docker.io/anthropics/c8s-api-server:latest
+  run: docker push docker.io/lavigneer/c8s-api-server:latest
 
 - name: Push to ECR
   run: docker push 123456789.dkr.ecr.us-east-1.amazonaws.com/c8s-api-server:latest
@@ -353,8 +353,8 @@ tilt down            # Stop & cleanup
 
 # Manual build
 docker build --target api-server .
-docker tag c8s-api-server ghcr.io/anthropics/c8s-api-server:v0.1.0
-docker push ghcr.io/anthropics/c8s-api-server:v0.1.0
+docker tag c8s-api-server ghcr.io/lavigneer/c8s-api-server:v0.1.0
+docker push ghcr.io/lavigneer/c8s-api-server:v0.1.0
 
 # CI/CD (GitHub)
 git tag v0.1.0 && git push --tags  # Triggers workflow

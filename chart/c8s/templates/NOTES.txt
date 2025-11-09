@@ -28,6 +28,6 @@
   kubectl describe deployment -n {{ include "c8s.namespace" . }}
 
 5. For more information, visit the C8S documentation:
-  https://github.com/anthropics/c8s
+  https://github.com/lavigneer/c8s
 
 Happy CI/CD!

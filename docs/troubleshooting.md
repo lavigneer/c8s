@@ -494,7 +494,7 @@ If you're stuck:
 1. **Check logs**: `kubectl logs <pod> -n c8s-system`
 2. **Describe resources**: `kubectl describe pod <pod> -n c8s-system`
 3. **Check events**: `kubectl get events -n c8s-system`
-4. **Check GitHub issues**: https://github.com/anthropics/c8s/issues
+4. **Check GitHub issues**: https://github.com/lavigneer/c8s/issues
 5. **Consult Kubernetes docs**: https://kubernetes.io/docs/
 
 ---

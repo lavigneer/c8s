@@ -198,7 +198,7 @@ helm rollback c8s 1 -n c8s-system
 ## Support
 
 For issues, questions, or contributions:
-- GitHub Issues: https://github.com/anthropics/c8s/issues
+- GitHub Issues: https://github.com/lavigneer/c8s/issues
 - Documentation: See [README.md](./README.md)
 - Troubleshooting: See [README.md#troubleshooting](./README.md#troubleshooting)
 

@@ -30,7 +30,7 @@ This Helm chart provides an easy way to deploy the complete C8S stack (API serve
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/c8s.git
+git clone https://github.com/lavigneer/c8s.git
 cd c8s
 
 # Install the chart with development values
@@ -452,7 +452,7 @@ kubectl get pod -n c8s-system -l job-name=c8s-post-install-hook
 
 ## Contributing
 
-To contribute improvements to this Helm chart, please submit a pull request to the [C8S repository](https://github.com/anthropics/c8s).
+To contribute improvements to this Helm chart, please submit a pull request to the [C8S repository](https://github.com/lavigneer/c8s).
 
 ## License
 
@@ -461,5 +461,5 @@ This Helm chart is part of the C8S project and is licensed under the same licens
 ## Support
 
 For issues, questions, or contributions, please visit:
-- [GitHub Issues](https://github.com/anthropics/c8s/issues)
-- [C8S Documentation](https://github.com/anthropics/c8s)
+- [GitHub Issues](https://github.com/lavigneer/c8s/issues)
+- [C8S Documentation](https://github.com/lavigneer/c8s)

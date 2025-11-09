@@ -202,9 +202,6 @@ run-webhook: ## Run webhook server locally
 .PHONY: tilt-up
 tilt-up: ## Start Tilt with local K8s development environment (creates cluster if needed)
 	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed. Install from https://docs.tilt.dev/install.html"; exit 1; }
-	@command -v k3d >/dev/null 2>&1 || { echo "⚠ k3d is not installed"; exit 1; }
-	@echo "Creating k3d cluster (if it doesn't exist)..."
-	@k3d cluster get c8s-dev > /dev/null 2>&1 || k3d cluster create c8s-dev --registry-create=registry:5000 -p "8080:80@loadbalancer" --servers 1 --agents 2
 	@echo "Starting Tilt..."
 	tilt up
 

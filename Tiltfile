@@ -16,7 +16,7 @@
 #   tilt logs controller # View controller logs
 #
 # Environment Variables (optional):
-#   GHCR_REGISTRY=ghcr.io/anthropics  # GitHub Container Registry path
+#   GHCR_REGISTRY=ghcr.io/lavigneer  # GitHub Container Registry path
 #   IMAGE_TAG=v0.1.0                   # Image tag (default: latest)
 
 # Load extensions
@@ -120,9 +120,7 @@ namespace_create('cert-manager')
 
 helm_resource(
   name='cert-manager',
-  chart='cert-manager',
-  repo_name='jetstack',
-  repo_url='https://charts.jetstack.io',
+  chart='oci://quay.io/jetstack/charts/cert-manager',
   namespace='cert-manager',
   flags=[
     '--set', 'installCRDs=true',
