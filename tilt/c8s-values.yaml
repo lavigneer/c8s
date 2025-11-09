@@ -12,7 +12,15 @@ components:
   controller:
     replicas: 1
 
+  # Webhook is disabled in Tilt for development
+  # The webhook requires TLS certificates (via cert-manager or manual caBundle)
+  # which are not needed for local development testing.
+  # To enable webhook in Tilt:
+  #   1. Install cert-manager: helm install cert-manager jetstack/cert-manager ...
+  #   2. Deploy with: helm install c8s ./chart/c8s -f values-certmanager.yaml
+  # OR provide a caBundle: --set components.webhook.tls.caBundle=<base64-cert>
   webhook:
+    enabled: false
     replicas: 1
 
   frontend:
