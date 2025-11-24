@@ -42,6 +42,9 @@
 load('ext://namespace', 'namespace_create')
 load('ext://helm_resource', 'helm_resource')
 
+# Increase Tilt's apply timeout for long-running operations like cert-manager
+update_settings(k8s_upsert_timeout_secs=600)
+
 # ============================================================================
 # Configuration
 # ============================================================================
