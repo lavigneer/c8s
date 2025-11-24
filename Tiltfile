@@ -204,7 +204,7 @@ local_resource(
 
 local_resource(
   name='c8s-ngrok-tunnels',
-  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --log=stdout',
+  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
   allow_parallel=True,
   resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
 )
