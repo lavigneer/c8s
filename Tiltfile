@@ -204,15 +204,23 @@ local_resource(
   resource_deps=['c8s'],
 )
 
-# ngrok tunnels for C8S services (optional)
-# Launches separate ngrok instances for API server and webhook
-# Each service gets its own public ngrok URL
-
+# nginx reverse proxy for consolidating API and webhook under one ngrok tunnel
 local_resource(
-  name='c8s-ngrok-tunnels',
-  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
+  name='c8s-nginx-proxy',
+  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
   allow_parallel=True,
   resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
+)
+
+# ngrok tunnel for C8S services (optional)
+# Routes through nginx reverse proxy on port 8888
+# nginx handles path-based routing to API server and webhook
+
+local_resource(
+  name='c8s-ngrok-tunnel',
+  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
+  allow_parallel=True,
+  resource_deps=['c8s-nginx-proxy'],
 )
 
 
