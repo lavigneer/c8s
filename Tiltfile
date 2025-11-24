@@ -143,6 +143,9 @@ helm_resource(
   namespace='cert-manager',
   flags=[
     '--set', 'installCRDs=true',
+    '--set', 'global.leaderElection.namespace=cert-manager',
+    '--wait',
+    '--timeout', '5m',
   ],
   labels=['infrastructure'],
 )
