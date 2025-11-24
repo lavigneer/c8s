@@ -1,10 +1,30 @@
 version: "3"
 
 tunnels:
-  c8s-api-server:
+  c8s:
     proto: http
     addr: localhost:8000
+    inspect: true
+
+    # Use endpoints to route traffic based on paths
+    endpoint_config:
+      edge: edgeCfg_c8s
+
+edges:
+  edgeCfg_c8s:
+    # Route /api/* to the API server
+    - path_begin: /api
+      backend:
+        service: c8s-api-server
+
+    # Route /webhook/* to the webhook
+    - path_begin: /webhook
+      backend:
+        service: c8s-webhook
+
+backends:
+  c8s-api-server:
+    address: localhost:8000
 
   c8s-webhook:
-    proto: http
-    addr: localhost:8080
+    address: localhost:8080

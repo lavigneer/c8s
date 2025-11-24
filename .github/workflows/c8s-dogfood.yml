@@ -18,11 +18,10 @@ jobs:
       - name: Check if secrets are configured
         id: check-secrets
         env:
-          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
-          API_URL: ${{ secrets.C8S_API_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
-          if [ -z "$WEBHOOK_URL" ] || [ -z "$API_URL" ]; then
-            echo "⚠️ Skipping: C8S_WEBHOOK_URL or C8S_API_URL secret not configured"
+          if [ -z "$C8S_BASE_URL" ]; then
+            echo "⚠️ Skipping: C8S_BASE_URL secret not configured"
             echo "configured=false" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -87,12 +86,9 @@ jobs:
       - name: Test webhook connectivity
         if: steps.check-secrets.outputs.configured == 'true'
         env:
-          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
-          # Append /webhooks/github to the webhook URL if not already present
-          if [[ "$WEBHOOK_URL" != *"/webhooks/github" ]]; then
-            WEBHOOK_URL="$WEBHOOK_URL/webhooks/github"
-          fi
+          WEBHOOK_URL="$C8S_BASE_URL/webhook/webhooks/github"
 
           echo "Testing connectivity to webhook: $WEBHOOK_URL"
           echo "Attempting to connect with 10 second timeout..."
@@ -113,14 +109,11 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
         env:
-          WEBHOOK_URL: ${{ secrets.C8S_WEBHOOK_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
           PAYLOAD=$(cat webhook-payload.json)
 
-          # Append /webhooks/github to the webhook URL if not already present
-          if [[ "$WEBHOOK_URL" != *"/webhooks/github" ]]; then
-            WEBHOOK_URL="$WEBHOOK_URL/webhooks/github"
-          fi
+          WEBHOOK_URL="$C8S_BASE_URL/webhook/webhooks/github"
 
           echo "=========================================="
           echo "Webhook Configuration"
@@ -156,7 +149,7 @@ jobs:
           echo "$RESPONSE_BODY"
           echo "=========================================="
 
-          if [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "202" ]; then
+          if [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
             echo "✓ Pipeline trigger sent (HTTP $HTTP_CODE)"
             echo "pipeline-run-id=${{ github.run_id }}" >> $GITHUB_OUTPUT
           else
@@ -168,8 +161,9 @@ jobs:
         if: steps.check-secrets.outputs.configured == 'true'
         id: status
         env:
-          API_URL: ${{ secrets.C8S_API_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
+          API_URL="$C8S_BASE_URL/api"
           PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
 
           echo "Polling pipeline status..."
@@ -215,8 +209,9 @@ jobs:
         if: always() && steps.check-secrets.outputs.configured == 'true'
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.C8S_API_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
+          API_URL="$C8S_BASE_URL/api"
           PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
 
           echo "=========================================="
@@ -234,7 +229,8 @@ jobs:
           script: |
             const status = '${{ steps.status.outputs.pipeline-status }}';
             const pipelineRun = 'c8s-gh-${{ github.run_id }}-${{ github.run_number }}';
-            const apiUrl = '${{ secrets.C8S_API_URL }}';
+            const baseUrl = '${{ secrets.C8S_BASE_URL }}';
+            const apiUrl = baseUrl + '/api';
 
             let body = '## C8S Dog-Fooding Pipeline\n\n';
 
@@ -259,17 +255,17 @@ jobs:
       - name: Report Results
         if: always() && steps.check-secrets.outputs.configured == 'true'
         env:
-          API_URL: ${{ secrets.C8S_API_URL }}
+          C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
           echo "=========================================="
           echo "C8S Dog-Fooding Summary"
           echo "=========================================="
           echo "Pipeline Status: ${{ steps.status.outputs.pipeline-status }}"
           echo "Pipeline Run: c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
-          echo "API URL: $API_URL"
+          echo "Base URL: $C8S_BASE_URL"
           echo ""
           echo "Next Steps:"
-          echo "1. View pipeline in C8S dashboard: $API_URL"
-          echo "2. Check pipeline logs: $API_URL/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          echo "1. View pipeline in C8S dashboard: $C8S_BASE_URL/api"
+          echo "2. Check pipeline logs: $C8S_BASE_URL/api/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
           echo "3. Monitor in Tilt: http://localhost:10350"
           echo "=========================================="
