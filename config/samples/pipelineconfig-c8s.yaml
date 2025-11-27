@@ -1,0 +1,41 @@
+apiVersion: c8s.dev/v1alpha1
+kind: PipelineConfig
+metadata:
+  name: c8s-main
+  namespace: default
+spec:
+  repository: https://github.com/lavigneer/c8s.git
+  branches: ["main", "develop"]
+  steps:
+    - name: build
+      image: golang:1.25
+      commands:
+        - go build -o bin/controller ./cmd/controller
+        - go build -o bin/webhook ./cmd/webhook
+      resources:
+        cpu: 1000m
+        memory: 2Gi
+      timeout: 10m
+
+    - name: test
+      image: golang:1.25
+      commands:
+        - go test -v -race ./...
+      resources:
+        cpu: 1000m
+        memory: 2Gi
+      timeout: 15m
+
+    - name: lint
+      image: golangci/golangci-lint:latest
+      commands:
+        - golangci-lint run
+      resources:
+        cpu: 500m
+        memory: 1Gi
+      timeout: 5m
+
+  timeout: 30m
+  retryPolicy:
+    maxRetries: 2
+    backoffSeconds: 60

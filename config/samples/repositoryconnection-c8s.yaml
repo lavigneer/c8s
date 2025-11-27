@@ -8,9 +8,8 @@ spec:
   repository: https://github.com/lavigneer/c8s.git
   provider: github
 
-  # Optional: Reference to a PipelineConfig to run on webhook events
-  # If not specified, webhooks will still be received but won't auto-trigger pipelines
-  # pipelineConfigRef: c8s-main
+  # Reference to a PipelineConfig to run on webhook events
+  pipelineConfigRef: c8s-main
 
   # Optional: Filter which events trigger pipelines
   events:

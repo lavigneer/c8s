@@ -192,9 +192,15 @@ helm_resource(
 # Deployed via local_resource that depends on the helm chart
 
 local_resource(
+  name='deploy-pipelineconfig',
+  cmd='kubectl apply -f ./config/samples/pipelineconfig-c8s.yaml',
+  resource_deps=['c8s'],
+)
+
+local_resource(
   name='deploy-repository-connection',
   cmd='kubectl apply -f ./config/samples/repositoryconnection-c8s.yaml',
-  resource_deps=['c8s'],
+  resource_deps=['c8s', 'deploy-pipelineconfig'],
 )
 
 # Port-forwards for ngrok integration

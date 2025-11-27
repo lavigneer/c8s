@@ -11,6 +11,10 @@ rules:
 - apiGroups: ["c8s.dev"]
   resources: ["pipelineruns"]
   verbs: ["get", "list", "watch", "create", "update", "patch"]
+# Required for updating PipelineRun status
+- apiGroups: ["c8s.dev"]
+  resources: ["pipelineruns/status"]
+  verbs: ["get", "update", "patch"]
 # For pipelineconfig (if used)
 - apiGroups: ["c8s.dev"]
   resources: ["pipelineconfigs"]
