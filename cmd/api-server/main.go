@@ -92,6 +92,12 @@ func main() {
 	router.HandleFunc("GET /logout", handlers.LogoutHandler)
 	router.HandleFunc("GET /", redirectToLogin)
 
+	// Public v1 API endpoints (no auth required - for external integrations like GitHub Actions)
+	router.Get("/api/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
+	router.Get("/api/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+	router.Get("/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
+	router.Get("/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+
 	// Dashboard routes (protected by auth)
 	router.Group(func(r chi.Router) {
 		r.Use(handlers.AuthMiddleware)
@@ -117,10 +123,6 @@ func main() {
 
 		// API endpoints - Pipeline Run Details (US2)
 		r.Get("/api/runs/{runId}", handlers.GetPipelineRunHandler)
-
-		// API endpoints - Pipeline Status (for webhook integration)
-		r.Get("/api/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
-		r.Get("/api/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
 
 		// Log Streaming endpoints (US2)
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs", handlers.LogStreamHandler)
