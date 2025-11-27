@@ -117,68 +117,91 @@ print("Registry: " + GHCR_REGISTRY)
 print("Tag: " + IMAGE_TAG)
 print("=" * 80)
 
-# Build API Server with fast restart
-# Cross-compile locally, sync binary and templates/static into container, restart
-custom_build_with_restart(
-  ref='c8s-api-server',
-  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server && docker build -f Dockerfile --target api-server -t $EXPECTED_REF .',
+# ============================================================================
+# Compile Go Binaries (local resources that watch for source changes)
+# ============================================================================
+
+# Compile API Server binary for Linux arm64
+local_resource(
+  name='compile-api-server',
+  cmd='mkdir -p bin && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server',
   deps=[
     'cmd/api-server/',
     'pkg/',
     'go.mod',
     'go.sum',
     'Makefile',
-    'Dockerfile',
-    'hack/',
-    'PROJECT',
-  ],
-  entrypoint=['/app/api-server', '-base-dir', '/app'],
-  live_update=[
-    sync('bin/api-server', '/app/api-server'),
-    sync('cmd/api-server/templates', '/app/templates'),
-    sync('cmd/api-server/static', '/app/static'),
   ],
 )
 
-# Build Controller with fast restart
-# Cross-compile locally, sync binary into container, restart
-custom_build_with_restart(
-  ref='c8s-controller',
-  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/controller ./cmd/controller && docker build -f Dockerfile --target controller -t $EXPECTED_REF .',
+# Compile Controller binary for Linux arm64
+local_resource(
+  name='compile-controller',
+  cmd='mkdir -p bin && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/controller ./cmd/controller',
   deps=[
     'cmd/controller/',
     'pkg/',
     'go.mod',
     'go.sum',
     'Makefile',
-    'Dockerfile',
-    'hack/',
-    'PROJECT',
-  ],
-  entrypoint=['/controller'],
-  live_update=[
-    sync('bin/controller', '/controller'),
   ],
 )
 
-# Build Webhook with fast restart
-# Cross-compile locally, sync binary into container, restart
-custom_build_with_restart(
-  ref='c8s-webhook',
-  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cmd/webhook && docker build -f Dockerfile --target webhook -t $EXPECTED_REF .',
+# Compile Webhook binary for Linux arm64
+local_resource(
+  name='compile-webhook',
+  cmd='mkdir -p bin && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cmd/webhook',
   deps=[
     'cmd/webhook/',
     'pkg/',
     'go.mod',
     'go.sum',
     'Makefile',
-    'Dockerfile',
-    'hack/',
-    'PROJECT',
   ],
-  entrypoint=['/webhook'],
-  live_update=[
-    sync('bin/webhook', '/webhook'),
+)
+
+# ============================================================================
+# Build Container Images (depend on compiled binaries)
+# ============================================================================
+
+# Build API Server with fast restart
+# Docker just packages the pre-compiled binary, live sync updates it, restart process
+docker_build(
+  ref='c8s-api-server',
+  context='.',
+  dockerfile='./Dockerfile',
+  target='api-server',
+  only=[
+    'bin/api-server',
+    'cmd/api-server/templates',
+    'cmd/api-server/static',
+    'Dockerfile',
+  ],
+)
+
+# Build Controller with fast restart
+# Docker just packages the pre-compiled binary
+docker_build(
+  ref='c8s-controller',
+  context='.',
+  dockerfile='./Dockerfile',
+  target='controller',
+  only=[
+    'bin/controller',
+    'Dockerfile',
+  ],
+)
+
+# Build Webhook with fast restart
+# Docker just packages the pre-compiled binary
+docker_build(
+  ref='c8s-webhook',
+  context='.',
+  dockerfile='./Dockerfile',
+  target='webhook',
+  only=[
+    'bin/webhook',
+    'Dockerfile',
   ],
 )
 
