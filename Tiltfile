@@ -193,13 +193,13 @@ helm_resource(
 
 local_resource(
   name='deploy-pipelineconfig',
-  cmd='kubectl apply -f ./config/samples/pipelineconfig-c8s.yaml',
+  cmd='bash -c "kubectl wait --for condition=established --timeout=60s crd/pipelineconfigs.c8s.dev && kubectl apply -f ./config/samples/pipelineconfig-c8s.yaml"',
   resource_deps=['c8s'],
 )
 
 local_resource(
   name='deploy-repository-connection',
-  cmd='kubectl apply -f ./config/samples/repositoryconnection-c8s.yaml',
+  cmd='bash -c "kubectl wait --for condition=established --timeout=60s crd/repositoryconnections.c8s.dev && kubectl apply -f ./config/samples/repositoryconnection-c8s.yaml"',
   resource_deps=['c8s', 'deploy-pipelineconfig'],
 )
 
