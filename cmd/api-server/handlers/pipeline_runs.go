@@ -181,6 +181,69 @@ func ParseFilters(r *http.Request) PipelineFilters {
 	return filters
 }
 
+// GetPipelineStatusHandler handles GET /api/v1/pipelines/{name}/status
+// Returns the status of a PipelineRun by name (for webhook integration)
+// This is called by the GitHub Actions dog-fooding workflow to check pipeline status
+func GetPipelineStatusHandler(w http.ResponseWriter, r *http.Request) {
+	pipelineName := chi.URLParam(r, "name")
+	if pipelineName == "" {
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
+		return
+	}
+
+	// Fetch PipelineRun from Kubernetes (search in default namespace for webhook-created runs)
+	run := FetchPipelineRunByID(r.Context(), "default", pipelineName)
+	if run == nil {
+		_ = dashboard.RespondNotFound(w, "pipeline")
+		return
+	}
+
+	// Convert to DTO and extract status
+	dto := dashboard.MapPipelineRunToDTO(run)
+
+	// Return simple status response
+	response := map[string]interface{}{
+		"name":   pipelineName,
+		"phase":  dto.Status,
+		"status": dto.Status,
+	}
+	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
+}
+
+// GetPipelineLogsHandler handles GET /api/v1/pipelines/{name}/logs
+// Returns aggregated logs from all steps of a PipelineRun
+func GetPipelineLogsHandler(w http.ResponseWriter, r *http.Request) {
+	pipelineName := chi.URLParam(r, "name")
+	if pipelineName == "" {
+		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
+		return
+	}
+
+	// Fetch PipelineRun from Kubernetes (search in default namespace for webhook-created runs)
+	run := FetchPipelineRunByID(r.Context(), "default", pipelineName)
+	if run == nil {
+		_ = dashboard.RespondNotFound(w, "pipeline")
+		return
+	}
+
+	// Convert to DTO
+	dto := dashboard.MapPipelineRunToDTO(run)
+
+	// Build aggregated logs from all steps
+	var logs []string
+	for _, step := range dto.Steps {
+		if step.LogContent != "" {
+			logs = append(logs, step.LogContent)
+		}
+	}
+
+	response := map[string]interface{}{
+		"name": pipelineName,
+		"logs": logs,
+	}
+	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
+}
+
 // ListBranchesHandler returns unique branch names for a project
 // GET /api/projects/{projectId}/branches
 func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {

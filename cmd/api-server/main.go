@@ -118,6 +118,10 @@ func main() {
 		// API endpoints - Pipeline Run Details (US2)
 		r.Get("/api/runs/{runId}", handlers.GetPipelineRunHandler)
 
+		// API endpoints - Pipeline Status (for webhook integration)
+		r.Get("/api/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
+		r.Get("/api/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+
 		// Log Streaming endpoints (US2)
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs", handlers.LogStreamHandler)
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs/text", handlers.GetLogsHandler)
