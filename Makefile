@@ -127,11 +127,9 @@ manifests: controller-gen ## Generate CRD manifests
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: sync-crds
-sync-crds: ## Sync CRDs from config/crd/bases to Helm chart templates
-	cp config/crd/bases/c8s.dev_pipelineconfigs.yaml chart/c8s/templates/crds/pipelineconfig.yaml
-	cp config/crd/bases/c8s.dev_pipelineruns.yaml chart/c8s/templates/crds/pipelinerun.yaml
-	cp config/crd/bases/c8s.dev_repositoryconnections.yaml chart/c8s/templates/crds/repositoryconnection.yaml
-	@echo "CRDs synced to Helm chart templates"
+sync-crds: ## Sync CRDs from config/crd/bases to Helm chart crds directory
+	cp config/crd/bases/*.yaml chart/c8s/crds/
+	@echo "CRDs synced to Helm chart crds directory"
 
 ##@ Deployment
 
