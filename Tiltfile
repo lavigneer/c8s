@@ -46,8 +46,14 @@ load('ext://helm_resource', 'helm_resource')
 update_settings(k8s_upsert_timeout_secs=600)
 
 # ============================================================================
-# Note: CRDs are managed by the Helm chart, not deployed separately
+# Install CRDs (must be before Helm chart deployment)
 # ============================================================================
+# CRDs are deployed directly from config/crd/bases/ before the Helm chart
+# This ensures they're available when the chart resources are created
+
+k8s_yaml('./config/crd/bases/c8s.dev_pipelineconfigs.yaml')
+k8s_yaml('./config/crd/bases/c8s.dev_pipelineruns.yaml')
+k8s_yaml('./config/crd/bases/c8s.dev_repositoryconnections.yaml')
 
 # ============================================================================
 # Configuration
@@ -193,13 +199,13 @@ helm_resource(
 
 local_resource(
   name='deploy-pipelineconfig',
-  cmd='bash -c "kubectl wait --for condition=established --timeout=60s crd/pipelineconfigs.c8s.dev && kubectl apply -f ./config/samples/pipelineconfig-c8s.yaml"',
+  cmd='kubectl apply -f ./config/samples/pipelineconfig-c8s.yaml',
   resource_deps=['c8s'],
 )
 
 local_resource(
   name='deploy-repository-connection',
-  cmd='bash -c "kubectl wait --for condition=established --timeout=60s crd/repositoryconnections.c8s.dev && kubectl apply -f ./config/samples/repositoryconnection-c8s.yaml"',
+  cmd='kubectl apply -f ./config/samples/repositoryconnection-c8s.yaml',
   resource_deps=['c8s', 'deploy-pipelineconfig'],
 )
 
