@@ -30,20 +30,34 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server .
 # Controller image
 FROM alpine:3.18 AS controller
 RUN apk add --no-cache ca-certificates
-WORKDIR /
-COPY --from=builder /workspace/bin/controller /controller
+WORKDIR /app
+
+# Create a writable directory for the controller binary
+# This allows Tilt live_update to work with non-root user (65532)
+RUN mkdir -p /app && chmod 777 /app
+
+COPY --from=builder /workspace/bin/controller /app/controller
+RUN chmod 755 /app/controller
+
 USER 65532:65532
 
-ENTRYPOINT ["/controller"]
+ENTRYPOINT ["/app/controller"]
 
 # Webhook image
 FROM alpine:3.18 AS webhook
 RUN apk add --no-cache ca-certificates
-WORKDIR /
-COPY --from=builder /workspace/bin/webhook /webhook
+WORKDIR /app
+
+# Create a writable directory for the webhook binary
+# This allows Tilt live_update to work with non-root user (65532)
+RUN mkdir -p /app && chmod 777 /app
+
+COPY --from=builder /workspace/bin/webhook /app/webhook
+RUN chmod 755 /app/webhook
+
 USER 65532:65532
 
-ENTRYPOINT ["/webhook"]
+ENTRYPOINT ["/app/webhook"]
 
 # API Server image
 # Supports both production builds (via Dockerfile) and Tilt development (via docker_build_with_restart)

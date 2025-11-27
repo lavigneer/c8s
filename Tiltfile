@@ -199,7 +199,7 @@ docker_build_with_restart(
   context='.',
   dockerfile='./Dockerfile',
   target='controller',
-  entrypoint=['/controller'],
+  entrypoint=['/app/controller'],
   only=[
     'bin/controller',
     'Dockerfile',
@@ -212,7 +212,7 @@ docker_build_with_restart(
     'PROJECT',
   ],
   live_update=[
-    sync('bin/controller', '/controller'),
+    sync('bin/controller', '/app/controller'),
   ],
 )
 
@@ -223,7 +223,7 @@ docker_build_with_restart(
   context='.',
   dockerfile='./Dockerfile',
   target='webhook',
-  entrypoint=['/webhook'],
+  entrypoint=['/app/webhook'],
   only=[
     'bin/webhook',
     'Dockerfile',
@@ -236,7 +236,7 @@ docker_build_with_restart(
     'PROJECT',
   ],
   live_update=[
-    sync('bin/webhook', '/webhook'),
+    sync('bin/webhook', '/app/webhook'),
   ],
 )
 
