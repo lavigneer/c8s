@@ -51,6 +51,11 @@ func main() {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
+	// Initialize authentication (development mode - accepts any token)
+	// In production, this would validate real JWT tokens
+	handlers.UseNoOpValidator()
+	log.Println("Auth validator initialized (development mode)")
+
 	// Initialize Kubernetes client
 	log.Println("Initializing Kubernetes client...")
 	cfg, err := config.GetConfig()
