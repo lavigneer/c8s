@@ -14,8 +14,15 @@ NC='\033[0m' # No Color
 
 CLUSTER_NAME="${CLUSTER_NAME:-c8s-ci}"
 TIMEOUT="${TIMEOUT:-600}"
+CLEANUP="${CLEANUP:-false}"
 
 echo -e "${YELLOW}=== Tilt CI Local Test ===${NC}"
+
+# Handle cleanup option
+if [ "$CLEANUP" = "true" ]; then
+  echo -e "${YELLOW}Cleaning up existing cluster: ${CLUSTER_NAME}${NC}"
+  kind delete cluster --name "${CLUSTER_NAME}" || true
+fi
 
 # Check if kind is installed
 if ! command -v kind &> /dev/null; then
@@ -49,13 +56,14 @@ nodes:
 - role: control-plane
   extraPortMappings:
   - containerPort: 80
-    hostPort: 8080
+    hostPort: 9080
     listenAddress: "127.0.0.1"
   - containerPort: 443
-    hostPort: 8443
+    hostPort: 9443
     listenAddress: "127.0.0.1"
 EOF
   echo -e "${GREEN}Created cluster${NC}"
+  echo -e "${YELLOW}Note: CI cluster uses ports 9080/9443 to avoid conflicts with local dev (8000/8080)${NC}"
 else
   echo -e "${YELLOW}Cluster already exists${NC}"
 fi
