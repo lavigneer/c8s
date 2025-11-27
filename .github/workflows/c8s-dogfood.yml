@@ -161,7 +161,8 @@ jobs:
         env:
           C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
-          API_URL="$C8S_BASE_URL"
+          # Remove trailing slash from base URL to avoid double slashes
+          API_URL="${C8S_BASE_URL%/}"
           # PipelineRun name is created by webhook as: {repoConnName}-{commit[:8]}
           # From RepositoryConnection sample: name is "c8s-repo"
           COMMIT_SHORT="${{ github.sha }}"
@@ -213,7 +214,8 @@ jobs:
         env:
           C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
-          API_URL="$C8S_BASE_URL"
+          # Remove trailing slash from base URL to avoid double slashes
+          API_URL="${C8S_BASE_URL%/}"
           PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
 
           echo "=========================================="
