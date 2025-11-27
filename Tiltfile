@@ -41,7 +41,7 @@
 # Load extensions
 load('ext://namespace', 'namespace_create')
 load('ext://helm_resource', 'helm_resource')
-load('ext://restart_process', 'docker_build_with_restart')
+load('ext://restart_process', 'docker_build_with_restart', 'custom_build_with_restart')
 
 # Increase Tilt's apply timeout for long-running operations like cert-manager
 update_settings(k8s_upsert_timeout_secs=600)
@@ -117,15 +117,12 @@ print("Registry: " + GHCR_REGISTRY)
 print("Tag: " + IMAGE_TAG)
 print("=" * 80)
 
-# Build API Server image with fast restart
-# When Go code changes, just rebuild binary and restart container (no full Docker rebuild)
-docker_build_with_restart(
+# Build API Server with fast restart
+# Cross-compile locally, sync binary and templates/static into container, restart
+custom_build_with_restart(
   ref='c8s-api-server',
-  context=BUILD_DIR,
-  dockerfile='./Dockerfile',
-  target='api-server',
-  entrypoint=['/app/api-server', '-base-dir', '/app'],
-  only=[
+  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server && docker build -f Dockerfile --target api-server -t $EXPECTED_REF .',
+  deps=[
     'cmd/api-server/',
     'pkg/',
     'go.mod',
@@ -135,20 +132,20 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
+  entrypoint=['/app/api-server', '-base-dir', '/app'],
   live_update=[
+    sync('bin/api-server', '/app/api-server'),
     sync('cmd/api-server/templates', '/app/templates'),
     sync('cmd/api-server/static', '/app/static'),
   ],
 )
 
-# Build Controller image with fast restart
-docker_build_with_restart(
+# Build Controller with fast restart
+# Cross-compile locally, sync binary into container, restart
+custom_build_with_restart(
   ref='c8s-controller',
-  context=BUILD_DIR,
-  dockerfile='./Dockerfile',
-  target='controller',
-  entrypoint=['/controller'],
-  only=[
+  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/controller ./cmd/controller && docker build -f Dockerfile --target controller -t $EXPECTED_REF .',
+  deps=[
     'cmd/controller/',
     'pkg/',
     'go.mod',
@@ -158,17 +155,18 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
-  live_update=[],
+  entrypoint=['/controller'],
+  live_update=[
+    sync('bin/controller', '/controller'),
+  ],
 )
 
-# Build Webhook image with fast restart
-docker_build_with_restart(
+# Build Webhook with fast restart
+# Cross-compile locally, sync binary into container, restart
+custom_build_with_restart(
   ref='c8s-webhook',
-  context=BUILD_DIR,
-  dockerfile='./Dockerfile',
-  target='webhook',
-  entrypoint=['/webhook'],
-  only=[
+  command='CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cmd/webhook && docker build -f Dockerfile --target webhook -t $EXPECTED_REF .',
+  deps=[
     'cmd/webhook/',
     'pkg/',
     'go.mod',
@@ -178,7 +176,10 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
-  live_update=[],
+  entrypoint=['/webhook'],
+  live_update=[
+    sync('bin/webhook', '/webhook'),
+  ],
 )
 
 # Build Frontend image (if Dockerfile exists for it)
