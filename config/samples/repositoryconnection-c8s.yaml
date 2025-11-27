@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   # Your C8S repository on GitHub
-  repository: https://github.com/lavigneer/c8s
+  repository: https://github.com/lavigneer/c8s.git
   provider: github
 
   # Optional: Reference to a PipelineConfig to run on webhook events

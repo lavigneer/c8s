@@ -46,13 +46,8 @@ load('ext://helm_resource', 'helm_resource')
 update_settings(k8s_upsert_timeout_secs=600)
 
 # ============================================================================
-# Install CRDs
+# Note: CRDs are managed by the Helm chart, not deployed separately
 # ============================================================================
-
-# Apply C8S Custom Resource Definitions
-k8s_yaml('./config/crd/bases/c8s.dev_pipelineconfigs.yaml')
-k8s_yaml('./config/crd/bases/c8s.dev_pipelineruns.yaml')
-k8s_yaml('./config/crd/bases/c8s.dev_repositoryconnections.yaml')
 
 # ============================================================================
 # Configuration
