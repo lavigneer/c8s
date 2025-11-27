@@ -27,7 +27,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/common/configmap.yaml") . | sha256sum }}
     spec:
-      serviceAccountName: {{ include "c8s.serviceAccountName" . }}
+      serviceAccountName: {{ include "c8s.fullname" . }}-webhook
       containers:
       - name: webhook
         image: "{{ .Values.components.webhook.image.registry }}/{{ .Values.components.webhook.image.repository }}:{{ .Values.components.webhook.image.tag }}"

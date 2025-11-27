@@ -1,0 +1,43 @@
+{{- if .Values.rbac.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook
+  namespace: {{ include "c8s.namespace" . }}
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+rules:
+# Required for listing and getting RepositoryConnections and PipelineConfigs
+- apiGroups: ["c8s.dev"]
+  resources: ["repositoryconnections", "pipelineconfigs", "pipelineruns"]
+  verbs: ["get", "list", "watch", "create"]
+# Required for accessing webhook secrets
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "c8s.fullname" . }}-webhook
+  labels:
+    {{- include "c8s.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "c8s.fullname" . }}-webhook
+subjects:
+- kind: ServiceAccount
+  name: {{ include "c8s.fullname" . }}-webhook
+  namespace: {{ include "c8s.namespace" . }}
+{{- end }}

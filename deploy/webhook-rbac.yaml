@@ -13,7 +13,7 @@ metadata:
     app: c8s-webhook
 rules:
 - apiGroups:
-  - c8s.io
+  - c8s.dev
   resources:
   - pipelineruns
   - pipelineconfigs
