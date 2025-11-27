@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -60,7 +61,8 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Render template
 	if err := dashboard.RenderTemplate(w, "pipeline_list", data); err != nil {
-		http.Error(w, "Failed to render dashboard", http.StatusInternalServerError)
+		log.Printf("ERROR: Failed to render dashboard: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to render dashboard: %v", err), http.StatusInternalServerError)
 		return
 	}
 }
