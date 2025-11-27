@@ -41,7 +41,7 @@
 # Load extensions
 load('ext://namespace', 'namespace_create')
 load('ext://helm_resource', 'helm_resource')
-load('ext://docker_build_with_restart', 'docker_build_with_restart')
+load('ext://restart_process', 'docker_build_with_restart')
 
 # Increase Tilt's apply timeout for long-running operations like cert-manager
 update_settings(k8s_upsert_timeout_secs=600)
@@ -117,14 +117,14 @@ print("Registry: " + GHCR_REGISTRY)
 print("Tag: " + IMAGE_TAG)
 print("=" * 80)
 
-# Build API Server image with fast restart capability
-# When Go code changes, just rebuild the binary and restart without full Docker rebuild
+# Build API Server image with fast restart
+# When Go code changes, just rebuild binary and restart container (no full Docker rebuild)
 docker_build_with_restart(
   ref='c8s-api-server',
   context=BUILD_DIR,
   dockerfile='./Dockerfile',
   target='api-server',
-  entrypoint=['/app/api-server'],
+  entrypoint=['/app/api-server', '-base-dir', '/app'],
   only=[
     'cmd/api-server/',
     'pkg/',
@@ -135,9 +135,13 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
+  live_update=[
+    sync('cmd/api-server/templates', '/app/templates'),
+    sync('cmd/api-server/static', '/app/static'),
+  ],
 )
 
-# Build Controller image with fast restart capability
+# Build Controller image with fast restart
 docker_build_with_restart(
   ref='c8s-controller',
   context=BUILD_DIR,
@@ -156,7 +160,7 @@ docker_build_with_restart(
   ],
 )
 
-# Build Webhook image with fast restart capability
+# Build Webhook image with fast restart
 docker_build_with_restart(
   ref='c8s-webhook',
   context=BUILD_DIR,
