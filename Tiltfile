@@ -185,6 +185,13 @@ helm_resource(
   resource_deps=['cert-manager'],
 )
 
+# ============================================================================
+# Deploy Sample RepositoryConnection for dog-fooding
+# ============================================================================
+# This enables the webhook to trigger pipelines when code is pushed to GitHub
+
+k8s_yaml('./config/samples/repositoryconnection-c8s.yaml')
+
 # Port-forwards for ngrok integration
 # These create port-forward tunnels and expose ngrok buttons in the Tilt UI
 local_resource(
