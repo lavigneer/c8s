@@ -50,7 +50,9 @@ update_settings(k8s_upsert_timeout_secs=600)
 # ============================================================================
 
 # Apply C8S Custom Resource Definitions
-k8s_yaml('./config/crd/bases/')
+k8s_yaml('./config/crd/bases/c8s.dev_pipelineconfigs.yaml')
+k8s_yaml('./config/crd/bases/c8s.dev_pipelineruns.yaml')
+k8s_yaml('./config/crd/bases/c8s.dev_repositoryconnections.yaml')
 
 # ============================================================================
 # Configuration
