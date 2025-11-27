@@ -158,6 +158,7 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
+  live_update=[],
 )
 
 # Build Webhook image with fast restart
@@ -177,6 +178,7 @@ docker_build_with_restart(
     'hack/',
     'PROJECT',
   ],
+  live_update=[],
 )
 
 # Build Frontend image (if Dockerfile exists for it)
