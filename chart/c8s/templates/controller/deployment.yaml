@@ -32,6 +32,7 @@ spec:
       - name: controller
         image: "{{ .Values.components.controller.image.registry }}/{{ .Values.components.controller.image.repository }}:{{ .Values.components.controller.image.tag }}"
         imagePullPolicy: {{ .Values.components.controller.image.pullPolicy }}
+        command: ["/app/controller"]
         ports:
         - name: http
           containerPort: {{ .Values.components.controller.port.containerPort }}

@@ -32,6 +32,7 @@ spec:
       - name: webhook
         image: "{{ .Values.components.webhook.image.registry }}/{{ .Values.components.webhook.image.repository }}:{{ .Values.components.webhook.image.tag }}"
         imagePullPolicy: {{ .Values.components.webhook.image.pullPolicy }}
+        command: ["/app/webhook"]
         ports:
         - name: https
           containerPort: {{ .Values.components.webhook.port.containerPort }}
