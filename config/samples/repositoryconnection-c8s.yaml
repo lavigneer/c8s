@@ -1,0 +1,24 @@
+apiVersion: c8s.dev/v1alpha1
+kind: RepositoryConnection
+metadata:
+  name: c8s-repo
+  namespace: default
+spec:
+  # Your C8S repository on GitHub
+  repository: https://github.com/lavigneer/c8s
+  provider: github
+
+  # Optional: Reference to a PipelineConfig to run on webhook events
+  # If not specified, webhooks will still be received but won't auto-trigger pipelines
+  # pipelineConfigRef: c8s-main
+
+  # Optional: Filter which events trigger pipelines
+  events:
+    - push
+    - pull_request
+
+  # Optional: Only trigger on specific branches
+  branches:
+    - main
+    - develop
+    - 'feature/*'
