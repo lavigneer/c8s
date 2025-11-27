@@ -126,11 +126,6 @@ generate: controller-gen ## Generate code (DeepCopy, client, etc.)
 manifests: controller-gen ## Generate CRD manifests
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-.PHONY: sync-crds
-sync-crds: ## Verify CRDs are in config/crd/bases (source of truth)
-	@echo "CRDs source of truth: config/crd/bases/"
-	@ls -1 config/crd/bases/*.yaml
-
 ##@ Deployment
 
 .PHONY: install-crds
