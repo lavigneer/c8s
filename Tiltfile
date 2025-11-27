@@ -164,13 +164,14 @@ local_resource(
 # Build Container Images (depend on compiled binaries)
 # ============================================================================
 
-# Build API Server with fast restart
-# Docker just packages the pre-compiled binary, live sync updates it, restart process
-docker_build(
+# Build API Server with auto-restart
+# Initial Docker build packages the pre-compiled binary, then live_sync updates it
+docker_build_with_restart(
   ref='c8s-api-server',
   context='.',
   dockerfile='./Dockerfile',
   target='api-server',
+  entrypoint=['/app/api-server', '-base-dir', '/app'],
   only=[
     'bin/api-server',
     'cmd/api-server/templates',
@@ -184,15 +185,21 @@ docker_build(
     'hack/',
     'PROJECT',
   ],
+  live_update=[
+    sync('bin/api-server', '/app/api-server'),
+    sync('cmd/api-server/templates', '/app/templates'),
+    sync('cmd/api-server/static', '/app/static'),
+  ],
 )
 
-# Build Controller with fast restart
-# Docker just packages the pre-compiled binary
-docker_build(
+# Build Controller with auto-restart
+# Initial Docker build packages the pre-compiled binary, then live_sync updates it
+docker_build_with_restart(
   ref='c8s-controller',
   context='.',
   dockerfile='./Dockerfile',
   target='controller',
+  entrypoint=['/controller'],
   only=[
     'bin/controller',
     'Dockerfile',
@@ -204,15 +211,19 @@ docker_build(
     'hack/',
     'PROJECT',
   ],
+  live_update=[
+    sync('bin/controller', '/controller'),
+  ],
 )
 
-# Build Webhook with fast restart
-# Docker just packages the pre-compiled binary
-docker_build(
+# Build Webhook with auto-restart
+# Initial Docker build packages the pre-compiled binary, then live_sync updates it
+docker_build_with_restart(
   ref='c8s-webhook',
   context='.',
   dockerfile='./Dockerfile',
   target='webhook',
+  entrypoint=['/webhook'],
   only=[
     'bin/webhook',
     'Dockerfile',
@@ -223,6 +234,9 @@ docker_build(
     'Makefile',
     'hack/',
     'PROJECT',
+  ],
+  live_update=[
+    sync('bin/webhook', '/webhook'),
   ],
 )
 
