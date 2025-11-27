@@ -189,8 +189,9 @@ helm_resource(
 # Deploy Sample RepositoryConnection for dog-fooding
 # ============================================================================
 # This enables the webhook to trigger pipelines when code is pushed to GitHub
+# Depends on the helm chart deployment to ensure C8S is ready first
 
-k8s_yaml('./config/samples/repositoryconnection-c8s.yaml')
+k8s_yaml('./config/samples/repositoryconnection-c8s.yaml', allow_duplicates=True, resource_deps=['c8s'])
 
 # Port-forwards for ngrok integration
 # These create port-forward tunnels and expose ngrok buttons in the Tilt UI
