@@ -120,13 +120,11 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		"commit", pushEvent.After[:8],
 	)
 
-	// Find RepositoryConnection for this repository
-	// Note: Using default namespace for now. In production, this would be configurable
-	namespace := defaultNamespace
-	repoConn, err := findRepositoryConnection(ctx, h.client, pushEvent.Repository.CloneURL, namespace)
+	// Find RepositoryConnection for this repository (always in default namespace)
+	repoConn, err := findRepositoryConnection(ctx, h.client, pushEvent.Repository.CloneURL)
 	if err != nil {
 		// Try SSH URL as well
-		repoConn, err = findRepositoryConnection(ctx, h.client, pushEvent.Repository.SSHURL, namespace)
+		repoConn, err = findRepositoryConnection(ctx, h.client, pushEvent.Repository.SSHURL)
 		if err != nil {
 			logger.Info("No RepositoryConnection found for repository",
 				"repository", pushEvent.Repository.FullName,

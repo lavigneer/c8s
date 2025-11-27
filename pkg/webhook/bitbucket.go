@@ -118,10 +118,9 @@ func (h *BitbucketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		"commit", commit[:8],
 	)
 
-	// Get clone URL and find repository connection
+	// Get clone URL and find repository connection (always in default namespace)
 	cloneURL := h.getCloneURL(pushEvent)
-	namespace := "default"
-	repoConn, err := findRepositoryConnection(ctx, h.client, cloneURL, namespace)
+	repoConn, err := findRepositoryConnection(ctx, h.client, cloneURL)
 	if err != nil {
 		logger.Info("No RepositoryConnection found for repository",
 			"repository", pushEvent.Repository.FullName,

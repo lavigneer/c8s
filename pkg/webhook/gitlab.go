@@ -110,11 +110,10 @@ func (h *GitLabHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		"commit", pushEvent.After[:8],
 	)
 
-	// Find RepositoryConnection for this repository
-	namespace := "default"
-	repoConn, err := findRepositoryConnection(ctx, h.client, pushEvent.Project.GitHTTPURL, namespace)
+	// Find RepositoryConnection for this repository (always in default namespace)
+	repoConn, err := findRepositoryConnection(ctx, h.client, pushEvent.Project.GitHTTPURL)
 	if err != nil {
-		repoConn, err = findRepositoryConnection(ctx, h.client, pushEvent.Project.GitSSHURL, namespace)
+		repoConn, err = findRepositoryConnection(ctx, h.client, pushEvent.Project.GitSSHURL)
 		if err != nil {
 			logger.Info("No RepositoryConnection found for project",
 				"project", pushEvent.Project.PathWithNamespace,
