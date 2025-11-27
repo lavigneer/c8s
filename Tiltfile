@@ -176,6 +176,13 @@ docker_build(
     'cmd/api-server/templates',
     'cmd/api-server/static',
     'Dockerfile',
+    'cmd/',
+    'pkg/',
+    'go.mod',
+    'go.sum',
+    'Makefile',
+    'hack/',
+    'PROJECT',
   ],
 )
 
@@ -189,6 +196,13 @@ docker_build(
   only=[
     'bin/controller',
     'Dockerfile',
+    'cmd/',
+    'pkg/',
+    'go.mod',
+    'go.sum',
+    'Makefile',
+    'hack/',
+    'PROJECT',
   ],
 )
 
@@ -202,6 +216,13 @@ docker_build(
   only=[
     'bin/webhook',
     'Dockerfile',
+    'cmd/',
+    'pkg/',
+    'go.mod',
+    'go.sum',
+    'Makefile',
+    'hack/',
+    'PROJECT',
   ],
 )
 
