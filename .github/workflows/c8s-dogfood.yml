@@ -162,7 +162,11 @@ jobs:
           C8S_BASE_URL: ${{ secrets.C8S_BASE_URL }}
         run: |
           API_URL="$C8S_BASE_URL"
-          PIPELINE_RUN="c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          # PipelineRun name is created by webhook as: {repoConnName}-{commit[:8]}
+          # From RepositoryConnection sample: name is "c8s-repo"
+          COMMIT_SHORT="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHORT:0:8}"
+          PIPELINE_RUN="c8s-repo-$COMMIT_SHORT"
 
           echo "Polling pipeline status..."
           echo "API URL: $API_URL"
@@ -226,7 +230,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const status = '${{ steps.status.outputs.pipeline-status }}';
-            const pipelineRun = 'c8s-gh-${{ github.run_id }}-${{ github.run_number }}';
+            const commitShort = '${{ github.sha }}'.substring(0, 8);
+            const pipelineRun = `c8s-repo-${commitShort}`;
             const apiUrl = '${{ secrets.C8S_BASE_URL }}';
 
             let body = '## C8S Dog-Fooding Pipeline\n\n';
@@ -258,12 +263,15 @@ jobs:
           echo "C8S Dog-Fooding Summary"
           echo "=========================================="
           echo "Pipeline Status: ${{ steps.status.outputs.pipeline-status }}"
-          echo "Pipeline Run: c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          COMMIT_SHORT="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHORT:0:8}"
+          PIPELINE_RUN="c8s-repo-$COMMIT_SHORT"
+          echo "Pipeline Run: $PIPELINE_RUN"
           echo "Base URL: $C8S_BASE_URL"
           echo ""
           echo "Next Steps:"
           echo "1. View pipeline in C8S dashboard: $C8S_BASE_URL/api"
-          echo "2. Check pipeline logs: $C8S_BASE_URL/api/pipelines/c8s-gh-${{ github.run_id }}-${{ github.run_number }}"
+          echo "2. Check pipeline logs: $C8S_BASE_URL/api/pipelines/$PIPELINE_RUN"
           echo "3. Monitor in Tilt: http://localhost:10350"
           echo ""
           echo "Local Development:"
