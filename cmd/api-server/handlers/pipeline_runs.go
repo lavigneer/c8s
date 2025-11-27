@@ -226,20 +226,11 @@ func GetPipelineLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert to DTO
-	dto := dashboard.MapPipelineRunToDTO(run)
-
-	// Build aggregated logs from all steps
-	var logs []string
-	for _, step := range dto.Steps {
-		if step.LogContent != "" {
-			logs = append(logs, step.LogContent)
-		}
-	}
-
+	// Return pipeline logs response
+	// TODO: Aggregate logs from all steps when detailed step logs are available
 	response := map[string]interface{}{
 		"name": pipelineName,
-		"logs": logs,
+		"logs": []string{},
 	}
 	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
 }
