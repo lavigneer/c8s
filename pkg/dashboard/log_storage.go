@@ -95,6 +95,7 @@ func (s *InMemoryLogStorage) GetStepLogs(_ context.Context, runID, stepID string
 }
 
 // StreamStepLogs streams logs line-by-line to channel
+// The caller is responsible for closing the linesChan when done reading
 func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID string, linesChan chan<- string) error {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
@@ -103,7 +104,6 @@ func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID s
 	}
 
 	go func() {
-		defer close(linesChan)
 		scanner := bufio.NewScanner(strings.NewReader(content))
 		for scanner.Scan() {
 			select {

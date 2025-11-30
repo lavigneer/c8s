@@ -44,7 +44,13 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		_, _ = w.Write([]byte(`{"status":"healthy"}`))
 	})
 
-	// Dashboard routes
+	// Login route (no auth required)
+	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("<h1>Login</h1>"))
+	})
+
+	// Dashboard routes (protected by auth)
 	router.Group(func(r chi.Router) {
 		r.Use(handlers.AuthMiddleware)
 		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
