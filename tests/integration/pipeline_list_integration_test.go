@@ -59,7 +59,12 @@ func TestDashboardPageReturnsOK(t *testing.T) {
 	server := setupPipelineTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/dashboard")
+	req, err := makeAuthRequest("GET", server.URL+"/dashboard", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request dashboard: %v", err)
 	}
@@ -81,7 +86,12 @@ func TestListPipelineRunsReturnsJSON(t *testing.T) {
 	server := setupPipelineTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request pipeline runs: %v", err)
 	}
@@ -113,7 +123,12 @@ func TestListPipelineRunsWithFilters(t *testing.T) {
 
 	// Test with filters
 	url := server.URL + "/api/projects/test-project/runs?status=Running&branch=main&page=1&per_page=20"
-	resp, err := http.Get(url)
+	req, err := makeAuthRequest("GET", url, http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request with filters: %v", err)
 	}
@@ -129,7 +144,12 @@ func TestSSEEndpointReturnsStream(t *testing.T) {
 	server := setupPipelineTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs/updates")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs/updates", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request SSE updates: %v", err)
 	}
