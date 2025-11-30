@@ -51,6 +51,11 @@ linters:
           - errcheck
           - staticcheck
 
+      # The types package uses a intentional generic name to group C8S shared types
+      - path: pkg/types
+        linters:
+          - revive  # Disable var-naming check for this intentionally named package
+
   settings:
     gocyclo:
       min-complexity: 15

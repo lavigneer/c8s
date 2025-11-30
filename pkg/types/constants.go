@@ -14,8 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package types contains common types, constants, and utilities for C8S
-package types //nolint:revive // the package name is intentional for grouping C8S shared types
+// Package types contains common types, constants, and utilities for C8S.
+//
+// Note: The package name "types" is intentional for grouping C8S shared types
+// and avoiding naming conflicts with other packages.
+package types
 
 const (
 	// LabelPipelineConfig is the label key for pipeline configuration name.
