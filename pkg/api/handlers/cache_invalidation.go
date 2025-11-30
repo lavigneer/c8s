@@ -8,15 +8,15 @@ import (
 )
 
 // Global cache instance - initialized at startup
-var globalCache *cache.CacheLayer
+var globalCache *cache.Layer
 
 // InitCache initializes the global cache layer
-func InitCache(c *cache.CacheLayer) {
+func InitCache(c *cache.Layer) {
 	globalCache = c
 }
 
 // GetCache returns the global cache instance
-func GetCache() *cache.CacheLayer {
+func GetCache() *cache.Layer {
 	return globalCache
 }
 
@@ -25,7 +25,7 @@ func InvalidatePipelineListCache(projectID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.PipelineListKey(projectID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -36,7 +36,7 @@ func InvalidatePipelineRunCache(runID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.PipelineRunKey(runID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -47,7 +47,7 @@ func InvalidateProjectListCache(userID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.ProjectListKey(userID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -58,7 +58,7 @@ func InvalidateProjectCache(projectID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.ProjectKey(projectID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -69,7 +69,7 @@ func InvalidateLogCache(runID, stepID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.LogSnapshotKey(runID, stepID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -80,7 +80,7 @@ func InvalidateUserPermissionsCache(userID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &cache.CacheKeyBuilder{}
+	keyBuilder := &cache.KeyBuilder{}
 	key := keyBuilder.UserPermissionsKey(userID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)

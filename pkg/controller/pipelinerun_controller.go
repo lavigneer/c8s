@@ -227,6 +227,7 @@ func (r *PipelineRunReconciler) isTerminalPhase(phase c8sv1alpha1.PipelineRunPha
 }
 
 // handleDeletion handles cleanup when a PipelineRun is being deleted
+//nolint:unparam // Result is always zero but kept for consistency with reconciler patterns
 func (r *PipelineRunReconciler) handleDeletion(ctx context.Context, pipelineRun *c8sv1alpha1.PipelineRun) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 

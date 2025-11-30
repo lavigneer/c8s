@@ -190,7 +190,7 @@ func TestCacheGetStats(t *testing.T) {
 
 // TestCacheKeyBuilder tests cache key construction
 func TestCacheKeyBuilder(t *testing.T) {
-	builder := &CacheKeyBuilder{}
+	builder := &KeyBuilder{}
 
 	tests := []struct {
 		name     string

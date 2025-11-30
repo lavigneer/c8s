@@ -9,14 +9,14 @@ import (
 	"github.com/org/c8s/pkg/api/responses"
 )
 
-// PaginationParams holds pagination parameters from query string
-type PaginationParams struct {
+// Params holds pagination parameters from query string
+type Params struct {
 	Page    int
 	PerPage int
 }
 
-// PaginationResult holds pagination result data
-type PaginationResult struct {
+// Result holds pagination result data
+type Result struct {
 	Items      interface{} `json:"items"`
 	Total      int         `json:"total"`
 	Page       int         `json:"page"`
@@ -27,7 +27,7 @@ type PaginationResult struct {
 }
 
 // ParsePaginationParams parses pagination parameters from query string
-func ParsePaginationParams(query url.Values) PaginationParams {
+func ParsePaginationParams(query url.Values) Params {
 	page := 1
 	perPage := 20
 
@@ -43,7 +43,7 @@ func ParsePaginationParams(query url.Values) PaginationParams {
 		}
 	}
 
-	return PaginationParams{
+	return Params{
 		Page:    page,
 		PerPage: perPage,
 	}
@@ -51,7 +51,7 @@ func ParsePaginationParams(query url.Values) PaginationParams {
 
 // Paginate slices a list based on pagination parameters
 // Returns sliced items and pagination metadata
-func Paginate(items interface{}, total int, params PaginationParams) *PaginationResult {
+func Paginate(items interface{}, total int, params Params) *Result {
 	// Validate parameters
 	if params.Page < 1 {
 		params.Page = 1
@@ -71,7 +71,7 @@ func Paginate(items interface{}, total int, params PaginationParams) *Pagination
 		params.Page = totalPages
 	}
 
-	return &PaginationResult{
+	return &Result{
 		Items:      items,
 		Total:      total,
 		Page:       params.Page,
@@ -84,7 +84,7 @@ func Paginate(items interface{}, total int, params PaginationParams) *Pagination
 
 // PaginateSlice slices a generic slice based on pagination parameters
 // This is a helper that actually performs the slicing
-func PaginateSlice(items interface{}, total int, params PaginationParams) (interface{}, *PaginationResult) {
+func PaginateSlice(items interface{}, total int, params Params) (interface{}, *Result) {
 	result := Paginate(items, total, params)
 
 	// For actual slicing, caller should use the indices
@@ -123,8 +123,8 @@ func CalculatePageCount(total, perPage int) int {
 	return pages
 }
 
-// PaginationLinks holds pagination navigation links.
-type PaginationLinks struct {
+// Links holds pagination navigation links.
+type Links struct {
 	First    string
 	Last     string
 	Next     string
@@ -132,8 +132,8 @@ type PaginationLinks struct {
 }
 
 // GeneratePaginationLinks creates pagination navigation links
-func GeneratePaginationLinks(baseURL string, result *PaginationResult) PaginationLinks {
-	links := PaginationLinks{}
+func GeneratePaginationLinks(baseURL string, result *Result) Links {
+	links := Links{}
 
 	// Add query parameters
 	separator := "?"

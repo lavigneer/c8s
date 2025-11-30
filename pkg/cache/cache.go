@@ -8,26 +8,26 @@ import (
 	"time"
 )
 
-// CacheEntry represents a cached value with expiration
-type CacheEntry struct {
+// Entry represents a cached value with expiration
+type Entry struct {
 	Value     interface{}
 	ExpiresAt time.Time
 	CreatedAt time.Time
 }
 
-// CacheLayer provides thread-safe caching with TTL support
-type CacheLayer struct {
+// Layer provides thread-safe caching with TTL support
+type Layer struct {
 	mu              sync.RWMutex
-	entries         map[string]*CacheEntry
+	entries         map[string]*Entry
 	defaultTTL      time.Duration
 	cleanupInterval time.Duration
 	stopCleanup     chan struct{}
 }
 
 // NewCacheLayer creates a new cache with default TTL and cleanup interval
-func NewCacheLayer(defaultTTL, cleanupInterval time.Duration) *CacheLayer {
-	return &CacheLayer{
-		entries:         make(map[string]*CacheEntry),
+func NewCacheLayer(defaultTTL, cleanupInterval time.Duration) *Layer {
+	return &Layer{
+		entries:         make(map[string]*Entry),
 		defaultTTL:      defaultTTL,
 		cleanupInterval: cleanupInterval,
 		stopCleanup:     make(chan struct{}),
@@ -35,7 +35,7 @@ func NewCacheLayer(defaultTTL, cleanupInterval time.Duration) *CacheLayer {
 }
 
 // Get retrieves a value from cache, returning false if not found or expired
-func (c *CacheLayer) Get(key string) (interface{}, bool) {
+func (c *Layer) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -53,16 +53,16 @@ func (c *CacheLayer) Get(key string) (interface{}, bool) {
 }
 
 // Set stores a value in cache with default TTL
-func (c *CacheLayer) Set(key string, value interface{}) {
+func (c *Layer) Set(key string, value interface{}) {
 	c.SetWithTTL(key, value, c.defaultTTL)
 }
 
 // SetWithTTL stores a value in cache with custom TTL
-func (c *CacheLayer) SetWithTTL(key string, value interface{}, ttl time.Duration) {
+func (c *Layer) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.entries[key] = &CacheEntry{
+	c.entries[key] = &Entry{
 		Value:     value,
 		ExpiresAt: time.Now().Add(ttl),
 		CreatedAt: time.Now(),
@@ -70,7 +70,7 @@ func (c *CacheLayer) SetWithTTL(key string, value interface{}, ttl time.Duration
 }
 
 // Invalidate removes a specific key from cache
-func (c *CacheLayer) Invalidate(key string) {
+func (c *Layer) Invalidate(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -78,7 +78,7 @@ func (c *CacheLayer) Invalidate(key string) {
 }
 
 // InvalidatePattern removes all keys matching a regex pattern
-func (c *CacheLayer) InvalidatePattern(pattern string) error {
+func (c *Layer) InvalidatePattern(pattern string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -97,15 +97,15 @@ func (c *CacheLayer) InvalidatePattern(pattern string) error {
 }
 
 // InvalidateAll clears the entire cache
-func (c *CacheLayer) InvalidateAll() {
+func (c *Layer) InvalidateAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.entries = make(map[string]*CacheEntry)
+	c.entries = make(map[string]*Entry)
 }
 
 // StartCleanup runs a background goroutine that periodically removes expired entries
-func (c *CacheLayer) StartCleanup(ctx context.Context) {
+func (c *Layer) StartCleanup(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(c.cleanupInterval)
 		defer ticker.Stop()
@@ -124,7 +124,7 @@ func (c *CacheLayer) StartCleanup(ctx context.Context) {
 }
 
 // cleanup removes expired entries from cache
-func (c *CacheLayer) cleanup() {
+func (c *Layer) cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -137,7 +137,7 @@ func (c *CacheLayer) cleanup() {
 }
 
 // StopCleanup stops the background cleanup goroutine
-func (c *CacheLayer) StopCleanup() {
+func (c *Layer) StopCleanup() {
 	select {
 	case c.stopCleanup <- struct{}{}:
 	default:
@@ -145,7 +145,7 @@ func (c *CacheLayer) StopCleanup() {
 }
 
 // GetStats returns cache statistics for monitoring
-func (c *CacheLayer) GetStats() map[string]interface{} {
+func (c *Layer) GetStats() map[string]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -163,35 +163,35 @@ func (c *CacheLayer) GetStats() map[string]interface{} {
 	}
 }
 
-// CacheKeyBuilder provides helper methods for constructing cache keys
-type CacheKeyBuilder struct{}
+// KeyBuilder provides helper methods for constructing cache keys
+type KeyBuilder struct{}
 
 // PipelineListKey returns cache key for pipeline list
-func (b *CacheKeyBuilder) PipelineListKey(projectID string) string {
+func (b *KeyBuilder) PipelineListKey(projectID string) string {
 	return "pipeline:list:" + projectID
 }
 
 // PipelineRunKey returns cache key for pipeline run
-func (b *CacheKeyBuilder) PipelineRunKey(runID string) string {
+func (b *KeyBuilder) PipelineRunKey(runID string) string {
 	return "pipeline:run:" + runID
 }
 
 // ProjectListKey returns cache key for project list
-func (b *CacheKeyBuilder) ProjectListKey(userID string) string {
+func (b *KeyBuilder) ProjectListKey(userID string) string {
 	return "project:list:" + userID
 }
 
 // ProjectKey returns cache key for project metadata
-func (b *CacheKeyBuilder) ProjectKey(projectID string) string {
+func (b *KeyBuilder) ProjectKey(projectID string) string {
 	return "project:" + projectID
 }
 
 // LogSnapshotKey returns cache key for log snapshot
-func (b *CacheKeyBuilder) LogSnapshotKey(runID, stepID string) string {
+func (b *KeyBuilder) LogSnapshotKey(runID, stepID string) string {
 	return "log:" + runID + ":" + stepID
 }
 
 // UserPermissionsKey returns cache key for user permissions
-func (b *CacheKeyBuilder) UserPermissionsKey(userID string) string {
+func (b *KeyBuilder) UserPermissionsKey(userID string) string {
 	return "user:perms:" + userID
 }

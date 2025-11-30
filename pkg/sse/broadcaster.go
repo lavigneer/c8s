@@ -6,15 +6,15 @@ import (
 	"sync"
 )
 
-// SSEEvent represents a Server-Sent Event
-type SSEEvent struct {
+// Event represents a Server-Sent Event
+type Event struct {
 	ID    string
 	Event string
 	Data  string
 }
 
 // String formats the event as SSE format
-func (e SSEEvent) String() string {
+func (e Event) String() string {
 	result := ""
 	if e.ID != "" {
 		result += fmt.Sprintf("id: %s\n", e.ID)
@@ -31,7 +31,7 @@ func (e SSEEvent) String() string {
 
 // Broadcaster implements pub/sub for broadcasting SSE events to multiple clients
 type Broadcaster struct {
-	clients map[chan SSEEvent]bool
+	clients map[chan Event]bool
 	mutex   sync.RWMutex
 	done    chan struct{}
 }
@@ -39,23 +39,23 @@ type Broadcaster struct {
 // NewBroadcaster creates a new SSE broadcaster
 func NewBroadcaster() *Broadcaster {
 	return &Broadcaster{
-		clients: make(map[chan SSEEvent]bool),
+		clients: make(map[chan Event]bool),
 		done:    make(chan struct{}),
 	}
 }
 
 // Subscribe adds a new subscriber channel
-func (b *Broadcaster) Subscribe() chan SSEEvent {
+func (b *Broadcaster) Subscribe() chan Event {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	ch := make(chan SSEEvent, 10) // Buffered channel to prevent blocking
+	ch := make(chan Event, 10) // Buffered channel to prevent blocking
 	b.clients[ch] = true
 	return ch
 }
 
 // Unsubscribe removes a subscriber channel
-func (b *Broadcaster) Unsubscribe(ch chan SSEEvent) {
+func (b *Broadcaster) Unsubscribe(ch chan Event) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -66,7 +66,7 @@ func (b *Broadcaster) Unsubscribe(ch chan SSEEvent) {
 }
 
 // Broadcast sends an event to all subscribers
-func (b *Broadcaster) Broadcast(event SSEEvent) {
+func (b *Broadcaster) Broadcast(event Event) {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 
@@ -82,7 +82,7 @@ func (b *Broadcaster) Broadcast(event SSEEvent) {
 }
 
 // BroadcastAsync broadcasts event asynchronously
-func (b *Broadcaster) BroadcastAsync(event SSEEvent) {
+func (b *Broadcaster) BroadcastAsync(event Event) {
 	go b.Broadcast(event)
 }
 
@@ -102,12 +102,12 @@ func (b *Broadcaster) Close() {
 	for ch := range b.clients {
 		close(ch)
 	}
-	b.clients = make(map[chan SSEEvent]bool)
+	b.clients = make(map[chan Event]bool)
 }
 
 // EventBuilder is a helper for building SSE events
 type EventBuilder struct {
-	event SSEEvent
+	event Event
 }
 
 // NewEventBuilder creates a new event builder
@@ -134,15 +134,15 @@ func (eb *EventBuilder) WithData(data string) *EventBuilder {
 }
 
 // Build returns the constructed event
-func (eb *EventBuilder) Build() SSEEvent {
+func (eb *EventBuilder) Build() Event {
 	return eb.event
 }
 
 // Helper functions for common event types
 
 // NewStatusUpdateEvent creates a status update event
-func NewStatusUpdateEvent(id, status, message string) SSEEvent {
-	return SSEEvent{
+func NewStatusUpdateEvent(id, status, message string) Event {
+	return Event{
 		ID:    id,
 		Event: "status",
 		Data:  fmt.Sprintf(`{"status":%q,"message":%q}`, status, message),
@@ -150,8 +150,8 @@ func NewStatusUpdateEvent(id, status, message string) SSEEvent {
 }
 
 // NewLogEvent creates a log event
-func NewLogEvent(id, message string) SSEEvent {
-	return SSEEvent{
+func NewLogEvent(id, message string) Event {
+	return Event{
 		ID:    id,
 		Event: "log",
 		Data:  fmt.Sprintf(`{"message":%q}`, message),
@@ -159,8 +159,8 @@ func NewLogEvent(id, message string) SSEEvent {
 }
 
 // NewProgressEvent creates a progress event
-func NewProgressEvent(id string, progress int) SSEEvent {
-	return SSEEvent{
+func NewProgressEvent(id string, progress int) Event {
+	return Event{
 		ID:    id,
 		Event: "progress",
 		Data:  fmt.Sprintf(`{"progress":%d}`, progress),
@@ -168,8 +168,8 @@ func NewProgressEvent(id string, progress int) SSEEvent {
 }
 
 // NewErrorEvent creates an error event
-func NewErrorEvent(id, errorMsg string) SSEEvent {
-	return SSEEvent{
+func NewErrorEvent(id, errorMsg string) Event {
+	return Event{
 		ID:    id,
 		Event: "error",
 		Data:  fmt.Sprintf(`{"error":%q}`, errorMsg),
