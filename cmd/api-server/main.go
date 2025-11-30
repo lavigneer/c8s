@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/org/c8s/pkg/api/handlers"
+	apimiddleware "github.com/org/c8s/pkg/api/middleware"
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
@@ -96,6 +97,11 @@ func main() {
 	handlers.InitK8sClient(k8sClient)
 	log.Println("Kubernetes client initialized successfully")
 
+	// Create rate limiter for public API endpoints
+	// 100 requests per second per IP, burst of 200 (for general API protection)
+	apiRateLimiter := apimiddleware.NewRateLimiter(100.0, 200)
+	log.Println("API rate limiter initialized (100 rps, burst 200)")
+
 	// Create router
 	router := chi.NewRouter()
 
@@ -116,10 +122,14 @@ func main() {
 	router.HandleFunc("GET /", redirectToLogin)
 
 	// Public v1 API endpoints (no auth required - for external integrations like GitHub Actions)
-	router.Get("/api/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
-	router.Get("/api/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
-	router.Get("/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
-	router.Get("/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+	// Apply rate limiting to protect against abuse
+	router.Group(func(r chi.Router) {
+		r.Use(apiRateLimiter.Middleware)
+		r.Get("/api/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
+		r.Get("/api/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+		r.Get("/v1/pipelines/{name}/status", handlers.GetPipelineStatusHandler)
+		r.Get("/v1/pipelines/{name}/logs", handlers.GetPipelineLogsHandler)
+	})
 
 	// Dashboard routes (protected by auth)
 	router.Group(func(r chi.Router) {

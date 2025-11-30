@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
+	apimiddleware "github.com/org/c8s/pkg/api/middleware"
 	"github.com/org/c8s/pkg/webhook"
 )
 
@@ -92,13 +93,18 @@ func main() {
 	gitlabHandler := webhook.NewGitLabHandler(k8sClient)
 	bitbucketHandler := webhook.NewBitbucketHandler(k8sClient)
 
+	// Create rate limiter for webhooks (10 req/s per IP, burst of 20)
+	// This protects against webhook storms from Git providers
+	webhookRateLimiter := apimiddleware.NewRateLimiter(10.0, 20)
+	setupLog.Info("Rate limiter initialized", "rps", 10.0, "burst", 20)
+
 	// Setup HTTP routes
 	mux := http.NewServeMux()
 
-	// Webhook endpoints
-	mux.HandleFunc("/webhooks/github", githubHandler.Handle)
-	mux.HandleFunc("/webhooks/gitlab", gitlabHandler.Handle)
-	mux.HandleFunc("/webhooks/bitbucket", bitbucketHandler.Handle)
+	// Webhook endpoints (with rate limiting)
+	mux.Handle("/webhooks/github", webhookRateLimiter.Middleware(http.HandlerFunc(githubHandler.Handle)))
+	mux.Handle("/webhooks/gitlab", webhookRateLimiter.Middleware(http.HandlerFunc(gitlabHandler.Handle)))
+	mux.Handle("/webhooks/bitbucket", webhookRateLimiter.Middleware(http.HandlerFunc(bitbucketHandler.Handle)))
 
 	// Health check endpoints
 	mux.HandleFunc("/health", handleHealth)
