@@ -47,16 +47,12 @@ func makeAuthRequest(method, url string, body io.Reader) (*http.Request, error) 
 func setupFilterTestServer(t *testing.T) *httptest.Server {
 	router := chi.NewRouter()
 
-	// Auth middleware
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+	// Protected filter endpoints with auth middleware
+	router.Group(func(r chi.Router) {
+		r.Use(handlers.AuthMiddleware)
+		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
+		r.Get("/api/projects/{projectId}/branches", handlers.ListBranchesHandler)
 	})
-
-	// Filter endpoints
-	router.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
-	router.Get("/api/projects/{projectId}/branches", handlers.ListBranchesHandler)
 
 	return httptest.NewServer(router)
 }

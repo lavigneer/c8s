@@ -32,24 +32,19 @@ import (
 func setupPipelineTestServer(t *testing.T) *httptest.Server {
 	router := chi.NewRouter()
 
-	// Auth middleware that attaches test user
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Create test user for authentication
-			_ = &handlers.User{
-				ID:       "test-user",
-				Username: "testuser",
-				Email:    "test@example.com",
-			}
-			// TODO: Implement context storage for authenticated user once handlers exports context helpers
-			next.ServeHTTP(w, r)
-		})
+	// Public routes (no auth required)
+	router.Get("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("<h1>Login</h1>"))
 	})
 
-	// Dashboard routes
-	router.Get("/dashboard", handlers.DashboardHandler)
-	router.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
-	router.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
+	// Protected dashboard routes with auth middleware
+	router.Group(func(r chi.Router) {
+		r.Use(handlers.AuthMiddleware)
+		r.Get("/dashboard", handlers.DashboardHandler)
+		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
+		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
+	})
 
 	return httptest.NewServer(router)
 }
