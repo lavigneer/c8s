@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -231,7 +232,7 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return

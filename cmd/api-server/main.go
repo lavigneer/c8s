@@ -31,6 +31,7 @@ import (
 
 	"github.com/org/c8s/cmd/api-server/handlers"
 	"github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -51,10 +52,27 @@ func main() {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
-	// Initialize authentication (development mode - accepts any token)
-	// In production, this would validate real JWT tokens
-	handlers.UseNoOpValidator()
-	log.Println("Auth validator initialized (development mode)")
+	// Initialize authentication
+	// Create validator based on configuration (NoOp for development)
+	var validator auth.ValidatorInterface
+	authConfig := auth.NewConfigFromEnv()
+
+	if authConfig.Mode == auth.ModeNone {
+		// Development mode - accepts any token
+		validator = auth.NewNoOpValidator()
+		log.Println("Auth validator initialized (development mode)")
+	} else {
+		// Production mode - validate JWT tokens
+		v, err := auth.NewValidator(authConfig)
+		if err != nil {
+			log.Fatalf("Failed to create auth validator: %v", err)
+		}
+		validator = v
+		log.Println("Auth validator initialized (JWT mode)")
+	}
+
+	// Create auth middleware with dependency injection
+	authMiddleware := auth.NewMiddleware(validator)
 
 	// Initialize Kubernetes client
 	log.Println("Initializing Kubernetes client...")
@@ -105,7 +123,7 @@ func main() {
 
 	// Dashboard routes (protected by auth)
 	router.Group(func(r chi.Router) {
-		r.Use(handlers.AuthMiddleware)
+		r.Use(authMiddleware.Handler)
 
 		// Dashboard pages (US1)
 		r.Get("/dashboard", handlers.DashboardHandler)

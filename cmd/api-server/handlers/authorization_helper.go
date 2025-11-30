@@ -20,6 +20,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -47,7 +48,7 @@ const (
 
 // CheckProjectAccess verifies user has required role for project
 // Returns true if allowed, sends error response and returns false otherwise
-func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *User, projectID string, requiredRole dashboard.Role) bool {
+func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *auth.User, projectID string, requiredRole dashboard.Role) bool {
 	if authzService == nil {
 		log.Printf("ERROR: Authorization service not initialized")
 		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Authorization service not available")
@@ -76,7 +77,7 @@ func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *User, proj
 
 // CheckProjectAccessAction verifies user can perform action on project
 // Maps actions to required roles: read→viewer, write→editor, delete→admin
-func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *User, projectID string, action AuthorizationAction) bool {
+func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *auth.User, projectID string, action AuthorizationAction) bool {
 	var requiredRole dashboard.Role
 
 	switch action {
@@ -95,8 +96,8 @@ func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *User
 }
 
 // CheckUserExists verifies user is in context
-func CheckUserExists(w http.ResponseWriter, r *http.Request) (*User, bool) {
-	user, ok := GetUserFromContext(r.Context())
+func CheckUserExists(w http.ResponseWriter, r *http.Request) (*auth.User, bool) {
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return nil, false
@@ -105,7 +106,7 @@ func CheckUserExists(w http.ResponseWriter, r *http.Request) (*User, bool) {
 }
 
 // LogAuthorizationCheck logs authorization decisions for audit trail
-func LogAuthorizationCheck(allowed bool, user *User, resource string, action AuthorizationAction, role dashboard.Role) {
+func LogAuthorizationCheck(allowed bool, user *auth.User, resource string, action AuthorizationAction, role dashboard.Role) {
 	status := "DENIED"
 	if allowed {
 		status = "ALLOWED"

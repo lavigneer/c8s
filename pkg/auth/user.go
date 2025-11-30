@@ -14,23 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package integration
+package auth
 
-import (
-	"testing"
-
-	"github.com/org/c8s/pkg/auth"
-)
-
-// Global test auth middleware for use in all integration tests
-var testAuthMiddleware *auth.Middleware
-
-// TestMain initializes the test environment before running tests
-func TestMain(m *testing.M) {
-	// Initialize auth validator in development mode (accepts any token)
-	validator := auth.NewNoOpValidator()
-	testAuthMiddleware = auth.NewMiddleware(validator)
-
-	// Run all tests
-	m.Run()
+// User represents an authenticated user
+// This is extracted from JWT claims by the validator
+type User struct {
+	ID        string
+	Username  string
+	Email     string
+	Namespace string
+	Roles     []string
 }

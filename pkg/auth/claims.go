@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package auth provides JWT authentication and user management for the C8S API server.
 package auth
 
 import (
@@ -74,14 +73,4 @@ func (c Claims) ToUser() *User {
 		Namespace: c.Namespace,
 		Roles:     roles,
 	}
-}
-
-// User represents an authenticated user
-// This is extracted from JWT claims by the validator
-type User struct {
-	ID        string
-	Username  string
-	Email     string
-	Namespace string
-	Roles     []string
 }

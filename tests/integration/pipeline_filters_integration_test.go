@@ -49,7 +49,7 @@ func setupFilterTestServer(t *testing.T) *httptest.Server {
 
 	// Protected filter endpoints with auth middleware
 	router.Group(func(r chi.Router) {
-		r.Use(handlers.AuthMiddleware)
+		r.Use(testAuthMiddleware.Handler)
 		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
 		r.Get("/api/projects/{projectId}/branches", handlers.ListBranchesHandler)
 	})

@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
 // DashboardHandler renders the main dashboard page with pipeline list
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 		return
@@ -69,7 +70,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 // ProjectsHandler renders the projects page
 func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 		return
@@ -92,7 +93,7 @@ func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 // PipelineRunDetailsHandler renders pipeline run detail page
 func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 		return

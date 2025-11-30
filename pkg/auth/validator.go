@@ -25,6 +25,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// ValidatorInterface defines the interface for token validation
+// This allows for dependency injection and easier testing
+type ValidatorInterface interface {
+	ValidateToken(tokenString string) (*Claims, error)
+	ValidateTokenAndGetUser(tokenString string) (*User, error)
+}
+
 // Validator handles JWT token validation
 type Validator struct {
 	config      *Config
@@ -187,47 +194,4 @@ func (v *Validator) formatError(err error) error {
 
 	// For any other error, return generic message to avoid leaking details
 	return fmt.Errorf("invalid token")
-}
-
-// NoOpValidator is a validator that accepts any token (dev-only)
-// Should never be used in production
-type NoOpValidator struct {
-	config *Config
-}
-
-// NewNoOpValidator creates a validator that accepts all tokens
-// WARNING: This is for development only!
-func NewNoOpValidator() *NoOpValidator {
-	return &NoOpValidator{
-		config: &Config{
-			Mode:             "none",
-			DefaultNamespace: "default",
-			DefaultRoles:     []string{"user"},
-		},
-	}
-}
-
-// ValidateToken accepts any non-empty token
-func (n *NoOpValidator) ValidateToken(tokenString string) (*Claims, error) {
-	if tokenString == "" {
-		return nil, fmt.Errorf("empty token")
-	}
-
-	// Return a default claims object - DO NOT USE IN PRODUCTION
-	return &Claims{
-		Subject:   "dev-user",
-		Name:      "Developer",
-		Email:     "dev@localhost",
-		Namespace: "default",
-		Roles:     []string{"admin"},
-	}, nil
-}
-
-// ValidateTokenAndGetUser returns a development user for any token
-func (n *NoOpValidator) ValidateTokenAndGetUser(tokenString string) (*User, error) {
-	claims, err := n.ValidateToken(tokenString)
-	if err != nil {
-		return nil, err
-	}
-	return claims.ToUser(), nil
 }

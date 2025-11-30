@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -24,7 +25,7 @@ const (
 // ExportPipelineRunsHandler exports pipeline runs in specified format
 // GET /api/exports/runs?format=json|csv
 func ExportPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserFromContext(r.Context())
+	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
 		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return

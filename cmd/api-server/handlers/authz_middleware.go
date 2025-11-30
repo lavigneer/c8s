@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
+
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
 
 // Context key constants
 const (
@@ -18,7 +22,7 @@ const (
 func ProjectAccessMiddleware(accessSvc dashboard.ProjectAccessService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, ok := GetUserFromContext(r.Context())
+			user, ok := auth.GetUserFromContext(r.Context())
 			if !ok {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -56,7 +60,7 @@ func ProjectAccessMiddleware(accessSvc dashboard.ProjectAccessService) func(http
 func RoleBasedContextMiddleware(accessSvc dashboard.ProjectAccessService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, ok := GetUserFromContext(r.Context())
+			user, ok := auth.GetUserFromContext(r.Context())
 			if !ok {
 				next.ServeHTTP(w, r)
 				return

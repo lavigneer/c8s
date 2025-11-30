@@ -52,7 +52,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 
 	// Dashboard routes (protected by auth)
 	router.Group(func(r chi.Router) {
-		r.Use(handlers.AuthMiddleware)
+		r.Use(testAuthMiddleware.Handler)
 		r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("<h1>Dashboard</h1>"))

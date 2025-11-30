@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	handlerspkg "github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
@@ -74,7 +75,7 @@ func TestCheckProjectAccessWithAdminRole(t *testing.T) {
 	// Create request and user
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+	user := &auth.User{ID: "user-123", Username: "admin"}
 
 	// Check access with admin role required
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleAdmin)
@@ -97,7 +98,7 @@ func TestCheckProjectAccessWithViewerDeniedAdmin(t *testing.T) {
 	// Create request and user
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
+	user := &auth.User{ID: "user-123", Username: "viewer"}
 
 	// Check access with admin role required
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleAdmin)
@@ -119,7 +120,7 @@ func TestCheckProjectAccessServiceError(t *testing.T) {
 	// Create request and user
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+	user := &auth.User{ID: "user-123", Username: "test"}
 
 	// Check access
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
@@ -136,7 +137,7 @@ func TestCheckProjectAccessServiceNotInitialized(t *testing.T) {
 	// Create request and user
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+	user := &auth.User{ID: "user-123", Username: "test"}
 
 	// Check access
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
@@ -158,7 +159,7 @@ func TestCheckProjectAccessActionReadMapsToViewer(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "viewer"}
+	user := &auth.User{ID: "user-123", Username: "viewer"}
 
 	// ActionRead should map to RoleViewer
 	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionRead)
@@ -179,7 +180,7 @@ func TestCheckProjectAccessActionWriteMapsToEditor(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "editor"}
+	user := &auth.User{ID: "user-123", Username: "editor"}
 
 	// ActionWrite should map to RoleEditor
 	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionWrite)
@@ -200,7 +201,7 @@ func TestCheckProjectAccessActionDeleteMapsToAdmin(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("DELETE", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+	user := &auth.User{ID: "user-123", Username: "admin"}
 
 	// ActionDelete should map to RoleAdmin
 	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionDelete)
@@ -221,7 +222,7 @@ func TestCheckProjectAccessActionAdminMapsToAdmin(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "admin"}
+	user := &auth.User{ID: "user-123", Username: "admin"}
 
 	// ActionAdmin should map to RoleAdmin
 	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.ActionAdmin)
@@ -235,7 +236,7 @@ func TestCheckProjectAccessActionInvalidAction(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+	user := &auth.User{ID: "user-123", Username: "test"}
 
 	// Invalid action should return error
 	allowed := handlerspkg.CheckProjectAccessAction(w, r, user, "proj-1", handlerspkg.AuthorizationAction("invalid"))
@@ -246,7 +247,7 @@ func TestCheckProjectAccessActionInvalidAction(t *testing.T) {
 
 // TestCheckUserExistsWithValidUser verifies user extraction succeeds
 func TestCheckUserExistsWithValidUser(t *testing.T) {
-	user := &handlerspkg.User{ID: "user-123", Username: "testuser", Email: "test@example.com"}
+	user := &auth.User{ID: "user-123", Username: "testuser", Email: "test@example.com"}
 
 	// We can't directly set UserContextKey since it's private,
 	// so we'll test through the actual middleware
@@ -303,7 +304,7 @@ func TestRoleHierarchyComparison(t *testing.T) {
 
 // TestAuthorizationLoggingFormat verifies log output format
 func TestAuthorizationLoggingFormat(t *testing.T) {
-	user := &handlerspkg.User{ID: "user-123", Username: "testuser"}
+	user := &auth.User{ID: "user-123", Username: "testuser"}
 	resource := "project:proj-1"
 	action := handlerspkg.ActionRead
 	role := dashboard.RoleViewer
@@ -368,7 +369,7 @@ func TestMultipleProjectAccessControl(t *testing.T) {
 	}
 	handlerspkg.InitAuthorizationService(mockSvc)
 
-	user := &handlerspkg.User{ID: "user-123", Username: "testuser"}
+	user := &auth.User{ID: "user-123", Username: "testuser"}
 
 	// Test alpha project (admin access)
 	w := httptest.NewRecorder()
@@ -401,7 +402,7 @@ func TestAuthorizationErrorResponseFormat(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", http.NoBody)
-	user := &handlerspkg.User{ID: "user-123", Username: "test"}
+	user := &auth.User{ID: "user-123", Username: "test"}
 
 	// Check access
 	allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
@@ -462,7 +463,7 @@ func TestConcurrentAuthorizationChecks(t *testing.T) {
 		go func(index int) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest("GET", "/", http.NoBody)
-			user := &handlerspkg.User{ID: "user-123", Username: "test"}
+			user := &auth.User{ID: "user-123", Username: "test"}
 
 			allowed := handlerspkg.CheckProjectAccess(w, r, user, "proj-1", dashboard.RoleViewer)
 			assert.True(t, allowed)

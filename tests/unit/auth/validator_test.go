@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authpkg "github.com/org/c8s/cmd/api-server/auth"
+	authpkg "github.com/org/c8s/pkg/auth"
 )
 
 // TestHS256TokenValidation tests basic HS256 token validation

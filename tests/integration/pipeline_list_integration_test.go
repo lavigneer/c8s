@@ -40,7 +40,7 @@ func setupPipelineTestServer(t *testing.T) *httptest.Server {
 
 	// Protected dashboard routes with auth middleware
 	router.Group(func(r chi.Router) {
-		r.Use(handlers.AuthMiddleware)
+		r.Use(testAuthMiddleware.Handler)
 		r.Get("/dashboard", handlers.DashboardHandler)
 		r.Get("/api/projects/{projectId}/runs", handlers.ListPipelineRunsHandler)
 		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)
