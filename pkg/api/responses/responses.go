@@ -1,3 +1,4 @@
+// Package responses provides standard HTTP response utilities for the C8S API.
 package responses
 
 import (

@@ -1,3 +1,4 @@
+// Package logstorage provides log storage interfaces and implementations for pipeline runs.
 package logstorage
 
 import (

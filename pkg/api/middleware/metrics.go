@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for the C8S API server.
 package middleware
 
 import (
@@ -81,7 +82,7 @@ func normalizePath(path string) string {
 		if len(path) > len(prefix) && path[:len(prefix)] == prefix {
 			// Check if this looks like an ID path
 			remaining := path[len(prefix):]
-			if len(remaining) > 0 && (remaining[0] >= '0' && remaining[0] <= '9' || remaining[0] >= 'a' && remaining[0] <= 'z') {
+			if remaining != "" && (remaining[0] >= '0' && remaining[0] <= '9' || remaining[0] >= 'a' && remaining[0] <= 'z') {
 				// Find next slash or end
 				for i, c := range remaining {
 					if c == '/' {

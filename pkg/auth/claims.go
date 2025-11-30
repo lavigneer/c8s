@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package auth provides authentication and authorization for the C8S API server.
 package auth
 
 import (

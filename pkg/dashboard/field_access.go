@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package dashboard provides data transfer objects and utilities for the C8S web dashboard.
 package dashboard
 
 // FieldAccessFilter provides field-level access control for DTOs

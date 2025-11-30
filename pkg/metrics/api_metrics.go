@@ -1,3 +1,4 @@
+// Package metrics provides Prometheus metrics for the C8S API server and controller.
 package metrics
 
 import (
