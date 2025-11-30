@@ -114,21 +114,34 @@ func TestDashboardRequiresAuth(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
 
-	// Request without auth token should fail
+	// Create a client that doesn't follow redirects
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	// Request without auth token should redirect to login
 	req, err := http.NewRequest("GET", server.URL+"/dashboard", http.NoBody)
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Should get 401 Unauthorized
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", resp.StatusCode)
+	// Should redirect (303 or 307) to login when not authenticated
+	if resp.StatusCode != http.StatusSeeOther && resp.StatusCode != http.StatusTemporaryRedirect {
+		t.Errorf("Expected redirect status (303 or 307), got %d", resp.StatusCode)
+	}
+
+	// Verify it redirects to login
+	location := resp.Header.Get("Location")
+	if location != "/login" {
+		t.Errorf("Expected redirect to /login, got %s", location)
 	}
 }
 

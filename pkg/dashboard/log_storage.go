@@ -95,7 +95,8 @@ func (s *InMemoryLogStorage) GetStepLogs(_ context.Context, runID, stepID string
 }
 
 // StreamStepLogs streams logs line-by-line to channel
-// The caller is responsible for closing the linesChan when done reading
+// The caller is responsible for closing the linesChan when done reading.
+// If the channel is closed or context is cancelled, the goroutine will exit gracefully.
 func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID string, linesChan chan<- string) error {
 	key := fmt.Sprintf("%s/%s", runID, stepID)
 	content, ok := s.logs[key]
@@ -104,6 +105,11 @@ func (s *InMemoryLogStorage) StreamStepLogs(ctx context.Context, runID, stepID s
 	}
 
 	go func() {
+		defer func() {
+			// Recover from panic if we try to send on closed channel
+			_ = recover()
+		}()
+
 		scanner := bufio.NewScanner(strings.NewReader(content))
 		for scanner.Scan() {
 			select {
