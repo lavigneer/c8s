@@ -105,7 +105,7 @@ spec:
             properties:
               completionTime:
                 description: CompletionTime is when the run completed (succeeded,
-                  failed, or cancelled)
+                  failed, or canceled)
                 format: date-time
                 type: string
               conditions:
@@ -173,7 +173,7 @@ spec:
                 - Running
                 - Succeeded
                 - Failed
-                - Cancelled
+                - Canceled
                 type: string
               resourceUsage:
                 description: ResourceUsage tracks actual resource consumption for
