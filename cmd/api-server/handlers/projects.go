@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,8 +32,11 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Query Kubernetes for PipelineConfigs (projects)
-	configs, err := k8sClient.ListPipelineConfigs(r.Context(), user.Namespace)
+	// Query Kubernetes for PipelineConfigs (projects) with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), k8sQueryTimeout)
+	defer cancel()
+
+	configs, err := k8sClient.ListPipelineConfigs(ctx, user.Namespace)
 	if err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to fetch projects for user %s: %v\n", user.ID, err)
@@ -114,7 +118,11 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := k8sClient.CreatePipelineConfig(r.Context(), config); err != nil {
+	// Create with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), k8sQueryTimeout)
+	defer cancel()
+
+	if err := k8sClient.CreatePipelineConfig(ctx, config); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to create project %s for user %s: %v\n", req.Name, user.ID, err)
 		_ = dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
@@ -153,8 +161,11 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch project
-	config, err := k8sClient.GetPipelineConfig(r.Context(), user.Namespace, projectID)
+	// Fetch project with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), k8sQueryTimeout)
+	defer cancel()
+
+	config, err := k8sClient.GetPipelineConfig(ctx, user.Namespace, projectID)
 	if err != nil {
 		_ = dashboard.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
 		return
@@ -192,8 +203,11 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete from Kubernetes
-	if err := k8sClient.DeletePipelineConfig(r.Context(), user.Namespace, projectID); err != nil {
+	// Delete from Kubernetes with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), k8sQueryTimeout)
+	defer cancel()
+
+	if err := k8sClient.DeletePipelineConfig(ctx, user.Namespace, projectID); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to delete project %s for user %s: %v\n", projectID, user.ID, err)
 		_ = dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")

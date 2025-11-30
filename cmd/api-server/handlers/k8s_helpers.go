@@ -18,14 +18,24 @@ package handlers
 
 import (
 	"context"
+	"time"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
 )
 
+const (
+	// k8sQueryTimeout is the default timeout for Kubernetes queries
+	k8sQueryTimeout = 30 * time.Second
+)
+
 // FetchPipelineRunsForUser retrieves all pipeline runs for a specific user namespace
 // Returns a slice of PipelineRunDTO objects or an empty slice if none found
 func FetchPipelineRunsForUser(ctx context.Context, namespace string) []*dashboard.PipelineRunDTO {
+	// Add timeout to prevent hanging operations
+	ctx, cancel := context.WithTimeout(ctx, k8sQueryTimeout)
+	defer cancel()
+
 	var runs []*v1alpha1.PipelineRun
 
 	if k8sClient != nil {
@@ -48,6 +58,10 @@ func FetchPipelineRunsForUser(ctx context.Context, namespace string) []*dashboar
 // FetchPipelineConfigsForUser retrieves all pipeline configs for a specific user namespace
 // Returns a slice of ProjectDTO objects or an empty slice if none found
 func FetchPipelineConfigsForUser(ctx context.Context, namespace string) []*dashboard.ProjectDTO {
+	// Add timeout to prevent hanging operations
+	ctx, cancel := context.WithTimeout(ctx, k8sQueryTimeout)
+	defer cancel()
+
 	var projects []*dashboard.ProjectDTO
 
 	if k8sClient != nil {
@@ -65,6 +79,10 @@ func FetchPipelineConfigsForUser(ctx context.Context, namespace string) []*dashb
 // FetchPipelineRunByID retrieves a specific pipeline run from a user's namespace
 // Returns nil if not found or error occurs
 func FetchPipelineRunByID(ctx context.Context, namespace, runID string) *v1alpha1.PipelineRun {
+	// Add timeout to prevent hanging operations
+	ctx, cancel := context.WithTimeout(ctx, k8sQueryTimeout)
+	defer cancel()
+
 	if k8sClient == nil {
 		return nil
 	}

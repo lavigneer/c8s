@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )
@@ -143,18 +141,6 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	// Convert to DTO
 	dto := dashboard.MapPipelineRunToDTO(run)
 	_ = dashboard.RespondSuccess(w, http.StatusOK, dto)
-}
-
-// FetchPipelineRuns queries Kubernetes for pipeline runs with optional filters
-// This is a placeholder - actual implementation would use the K8s client
-func FetchPipelineRuns(_ context.Context, projectID, status, branch, search string) ([]*v1alpha1.PipelineRun, error) {
-	// TODO: Implement actual K8s query using client-go
-	// This would query PipelineRun resources from the cluster
-	_ = projectID
-	_ = status
-	_ = branch
-	_ = search
-	return []*v1alpha1.PipelineRun{}, nil
 }
 
 // ParseFilters extracts filter parameters from query string
