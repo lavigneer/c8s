@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -35,24 +34,27 @@ import (
 	apimiddleware "github.com/org/c8s/pkg/api/middleware"
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/auth"
+	appconfig "github.com/org/c8s/pkg/config"
 	"github.com/org/c8s/pkg/dashboard"
 	_ "github.com/org/c8s/pkg/metrics" // Import for side effects (metric registration)
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func main() {
-	var (
-		port      = flag.String("port", ":8080", "Port to listen on")
-		baseDir   = flag.String("base-dir", ".", "Base directory for templates and static files")
-		tlsCert   = flag.String("tls-cert", os.Getenv("TLS_CERT_PATH"), "Path to TLS certificate")
-		tlsKey    = flag.String("tls-key", os.Getenv("TLS_KEY_PATH"), "Path to TLS key")
-		tlsPort   = flag.String("tls-port", ":8443", "TLS port to listen on")
-		enableTLS = flag.Bool("enable-tls", false, "Enable HTTPS/TLS")
-	)
+	// Load structured configuration
+	cfg := appconfig.NewAPIServerConfig()
 	flag.Parse()
 
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
+	}
+
+	// Log configuration
+	cfg.LogConfig()
+
 	// Load dashboard templates
-	if err := dashboard.LoadTemplates(*baseDir); err != nil {
+	if err := dashboard.LoadTemplates(cfg.BaseDir); err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
@@ -80,7 +82,7 @@ func main() {
 
 	// Initialize Kubernetes client
 	log.Println("Initializing Kubernetes client...")
-	cfg, err := config.GetConfig()
+	k8sCfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatalf("Failed to get Kubernetes config: %v", err)
 	}
@@ -91,7 +93,7 @@ func main() {
 		log.Fatalf("Failed to add v1alpha1 types to scheme: %v", err)
 	}
 
-	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	c, err := client.New(k8sCfg, client.Options{Scheme: scheme})
 	if err != nil {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
@@ -100,10 +102,8 @@ func main() {
 	handlers.InitK8sClient(k8sClient)
 	log.Println("Kubernetes client initialized successfully")
 
-	// Create rate limiter for public API endpoints
-	// 100 requests per second per IP, burst of 200 (for general API protection)
-	apiRateLimiter := apimiddleware.NewRateLimiter(100.0, 200)
-	log.Println("API rate limiter initialized (100 rps, burst 200)")
+	// Create rate limiter for public API endpoints from config
+	apiRateLimiter := apimiddleware.NewRateLimiter(cfg.APIRateLimit, cfg.APIRateLimitBurst)
 
 	// Create router
 	router := chi.NewRouter()
@@ -114,12 +114,17 @@ func main() {
 	router.Use(apimiddleware.MetricsMiddleware) // Track HTTP metrics
 	router.Use(middleware.RequestID)
 	router.Use(SecurityHeadersMiddleware)
-	router.Use(RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
+	router.Use(RequestSizeLimitMiddleware(cfg.MaxRequestSize))
 
 	// Static files (no auth required)
-	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir+"/static"))
+	router.Handle("/static/*", handlers.StaticWithCacheControl(cfg.BaseDir+"/static"))
 	router.HandleFunc("/health", healthHandler)
-	router.Handle("/metrics", promhttp.Handler()) // Prometheus metrics endpoint
+
+	// Metrics endpoint (if enabled)
+	if cfg.EnableMetrics {
+		router.Handle("/metrics", promhttp.Handler())
+		log.Println("Metrics endpoint enabled at /metrics")
+	}
 
 	// Login route (no auth required)
 	router.HandleFunc("/login", handlers.LoginHandler)
@@ -185,17 +190,17 @@ func main() {
 	router.NotFound(http.HandlerFunc(handlers.NotFoundMiddleware))
 
 	// Start HTTP server
-	log.Printf("Starting API server on %s", *port)
+	log.Printf("Starting API server on %s", cfg.Port)
 	go func() {
-		if err := http.ListenAndServe(*port, router); err != nil && err != http.ErrServerClosed {
+		if err := http.ListenAndServe(cfg.Port, router); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
 
 	// Start HTTPS server if enabled
-	if *enableTLS && *tlsCert != "" && *tlsKey != "" {
-		log.Printf("Starting HTTPS server on %s", *tlsPort)
-		if err := http.ListenAndServeTLS(*tlsPort, *tlsCert, *tlsKey, router); err != nil && err != http.ErrServerClosed {
+	if cfg.EnableTLS {
+		log.Printf("Starting HTTPS server on %s", cfg.TLSPort)
+		if err := http.ListenAndServeTLS(cfg.TLSPort, cfg.TLSCert, cfg.TLSKey, router); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTPS server error: %v", err)
 		}
 	}
