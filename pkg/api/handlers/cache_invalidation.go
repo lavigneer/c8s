@@ -11,8 +11,8 @@ import (
 var globalCache *cache.CacheLayer
 
 // InitCache initializes the global cache layer
-func InitCache(cache *cache.CacheLayer) {
-	globalCache = cache
+func InitCache(c *cache.CacheLayer) {
+	globalCache = c
 }
 
 // GetCache returns the global cache instance

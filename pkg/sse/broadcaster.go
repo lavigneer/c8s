@@ -1,3 +1,4 @@
+// Package sse provides Server-Sent Events broadcasting functionality.
 package sse
 
 import (

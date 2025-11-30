@@ -1,3 +1,4 @@
+// Package apierrors provides centralized error codes and messages for API responses.
 package apierrors
 
 // Error codes used in API responses

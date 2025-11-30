@@ -1,3 +1,4 @@
+// Package config provides structured configuration for C8S components.
 package config
 
 import (
