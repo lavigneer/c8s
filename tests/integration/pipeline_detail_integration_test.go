@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/api/handlers"
 )
 
 // setupDetailTestServer creates a test server with pipeline detail routes

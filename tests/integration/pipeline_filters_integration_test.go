@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/api/handlers"
 )
 
 // Helper function to make authenticated request

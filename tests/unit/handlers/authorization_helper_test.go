@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	handlerspkg "github.com/org/c8s/cmd/api-server/handlers"
+	handlerspkg "github.com/org/c8s/pkg/api/handlers"
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
 )

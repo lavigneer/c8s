@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/api/handlers"
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"

@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/org/c8s/cmd/api-server/handlers"
+	"github.com/org/c8s/pkg/api/handlers"
 )
 
 // TestParseFilters_ParsesAllParameters verifies all filter parameters are parsed
