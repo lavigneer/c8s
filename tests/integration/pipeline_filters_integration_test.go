@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,6 +26,22 @@ import (
 
 	"github.com/org/c8s/cmd/api-server/handlers"
 )
+
+// Helper function to make authenticated request
+func makeAuthRequest(method, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add auth cookie for development mode
+	req.AddCookie(&http.Cookie{
+		Name:  "auth_token",
+		Value: "test-token",
+	})
+
+	return req, nil
+}
 
 // setupFilterTestServer creates a test server with filter routes
 func setupFilterTestServer(t *testing.T) *httptest.Server {
@@ -49,7 +66,12 @@ func TestFilteredPipelineList_ByStatus(t *testing.T) {
 	server := setupFilterTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs?status=Succeeded")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs?status=Succeeded", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list: %v", err)
 	}
@@ -65,7 +87,12 @@ func TestFilteredPipelineList_ByBranch(t *testing.T) {
 	server := setupFilterTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs?branch=main")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs?branch=main", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list: %v", err)
 	}
@@ -81,7 +108,12 @@ func TestFilteredPipelineList_ByCommitSHA(t *testing.T) {
 	server := setupFilterTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs?search=abc123def")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs?search=abc123def", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list: %v", err)
 	}
@@ -97,7 +129,12 @@ func TestFilteredPipelineList_ByDateRange(t *testing.T) {
 	server := setupFilterTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/runs?from_date=2025-01-01&to_date=2025-01-31")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/runs?from_date=2025-01-01&to_date=2025-01-31", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list: %v", err)
 	}
@@ -114,7 +151,12 @@ func TestFilteredPipelineList_CombinedFilters(t *testing.T) {
 	defer server.Close()
 
 	url := server.URL + "/api/projects/test-project/runs?status=Running&branch=develop&search=feature"
-	resp, err := http.Get(url)
+	req, err := makeAuthRequest("GET", url, http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list: %v", err)
 	}
@@ -130,7 +172,12 @@ func TestBranchListEndpoint(t *testing.T) {
 	server := setupFilterTestServer(t)
 	defer server.Close()
 
-	resp, err := http.Get(server.URL + "/api/projects/test-project/branches")
+	req, err := makeAuthRequest("GET", server.URL+"/api/projects/test-project/branches", http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request branches: %v", err)
 	}
@@ -152,7 +199,12 @@ func TestFilteredPipelineList_WithPagination(t *testing.T) {
 	defer server.Close()
 
 	url := server.URL + "/api/projects/test-project/runs?status=Failed&page=2&per_page=50"
-	resp, err := http.Get(url)
+	req, err := makeAuthRequest("GET", url, http.NoBody)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request filtered list with pagination: %v", err)
 	}
