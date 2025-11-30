@@ -60,6 +60,10 @@ test-unit: ## Run unit tests only
 envtest: ## Download envtest binaries
 	$(GO) run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest use
 
+.PHONY: controller-gen
+controller-gen: ## Download controller-gen tool
+	$(GO) run sigs.k8s.io/controller-tools/cmd/controller-gen@latest
+
 .PHONY: test-integration
 test-integration: envtest ## Run integration tests with envtest
 	KUBEBUILDER_ASSETS="$(shell $(GO) run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
