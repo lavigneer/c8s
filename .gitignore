@@ -84,3 +84,4 @@ tests/e2e/**/*.log
 # Node.js build/dist
 npm-debug.log
 npm-debug.log.*
+api-server
