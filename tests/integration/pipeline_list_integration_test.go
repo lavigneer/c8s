@@ -25,7 +25,8 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/org/c8s/pkg/api/handlers"
-	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
+	"github.com/org/c8s/pkg/pagination"
 )
 
 // setupPipelineTestServer creates a test server with pipeline routes
@@ -117,7 +118,7 @@ func TestListPipelineRunsReturnsJSON(t *testing.T) {
 	}
 
 	// Parse response
-	var apiResp dashboard.APIResponse
+	var apiResp responses.APIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err == nil {
 		if !apiResp.Success {
 			t.Errorf("Expected success=true in response")
@@ -189,7 +190,7 @@ func TestPipelineFilteringByStatus(t *testing.T) {
 
 // TestPaginationDefaultValues verifies default pagination works
 func TestPaginationDefaultValues(t *testing.T) {
-	params := dashboard.ParsePaginationParams(make(map[string][]string))
+	params := pagination.ParsePaginationParams(make(map[string][]string))
 
 	if params.Page != 1 {
 		t.Errorf("Expected default page=1, got %d", params.Page)

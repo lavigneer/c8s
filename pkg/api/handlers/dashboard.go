@@ -9,6 +9,7 @@ import (
 
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/pagination"
 )
 
 // DashboardHandler renders the main dashboard page with pipeline list
@@ -35,11 +36,11 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	runs = filterPipelineRuns(runs, filters)
 
 	// Parse pagination parameters
-	params := dashboard.ParsePaginationParams(r.URL.Query())
+	params := pagination.ParsePaginationParams(r.URL.Query())
 
 	// Calculate pagination metadata
 	total := len(runs)
-	paginationMeta := dashboard.CalculatePagination(total, params.Page, params.PerPage)
+	paginationMeta := pagination.CalculatePagination(total, params.Page, params.PerPage)
 
 	// Get branches for filter
 	var branches []string

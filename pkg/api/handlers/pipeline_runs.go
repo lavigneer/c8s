@@ -9,6 +9,8 @@ import (
 
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
+	"github.com/org/c8s/pkg/pagination"
 )
 
 // PipelineFilters holds filter parameters for pipeline runs
@@ -25,18 +27,18 @@ type PipelineFilters struct {
 func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
 	// Parse pagination parameters
-	params := dashboard.ParsePaginationParams(r.URL.Query())
+	params := pagination.ParsePaginationParams(r.URL.Query())
 
 	// Parse filter parameters
 	filters := ParseFilters(r)
@@ -49,7 +51,7 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Paginate results
 	total := len(dtos)
-	start, end := dashboard.GetPaginationIndices(params.Page, params.PerPage)
+	start, end := pagination.GetPaginationIndices(params.Page, params.PerPage)
 	if start > total {
 		start = total
 	}
@@ -58,7 +60,7 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pagedRuns := dtos[start:end]
-	paginationMeta := dashboard.CalculatePagination(total, params.Page, params.PerPage)
+	paginationMeta := pagination.CalculatePagination(total, params.Page, params.PerPage)
 
 	// Check if HTMX request
 	if dashboard.IsHTMXRequest(r) {
@@ -70,7 +72,7 @@ func ListPipelineRunsHandler(w http.ResponseWriter, r *http.Request) {
 		_ = dashboard.RenderTemplate(w, "pipeline_list_rows", data)
 	} else {
 		// Return JSON API response
-		_ = dashboard.RespondSuccessWithMeta(w, http.StatusOK, pagedRuns, paginationMeta)
+		_ = responses.RespondSuccessWithMeta(w, http.StatusOK, pagedRuns, paginationMeta)
 	}
 }
 
@@ -120,13 +122,13 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	runID := chi.URLParam(r, "runId")
 
 	if runID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -134,13 +136,13 @@ func GetPipelineRunHandler(w http.ResponseWriter, r *http.Request) {
 	run := FetchPipelineRunByID(r.Context(), user.Namespace, runID)
 
 	if run == nil {
-		_ = dashboard.RespondNotFound(w, "run")
+		_ = responses.RespondNotFound(w, "run")
 		return
 	}
 
 	// Convert to DTO
 	dto := dashboard.MapPipelineRunToDTO(run)
-	_ = dashboard.RespondSuccess(w, http.StatusOK, dto)
+	_ = responses.RespondSuccess(w, http.StatusOK, dto)
 }
 
 // ParseFilters extracts filter parameters from query string
@@ -174,14 +176,14 @@ func ParseFilters(r *http.Request) PipelineFilters {
 func GetPipelineStatusHandler(w http.ResponseWriter, r *http.Request) {
 	pipelineName := chi.URLParam(r, "name")
 	if pipelineName == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
 		return
 	}
 
 	// Fetch PipelineRun from Kubernetes (search in default namespace for webhook-created runs)
 	run := FetchPipelineRunByID(r.Context(), "default", pipelineName)
 	if run == nil {
-		_ = dashboard.RespondNotFound(w, "pipeline")
+		_ = responses.RespondNotFound(w, "pipeline")
 		return
 	}
 
@@ -194,7 +196,7 @@ func GetPipelineStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"phase":  dto.Status,
 		"status": dto.Status,
 	}
-	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
+	_ = responses.RespondSuccess(w, http.StatusOK, response)
 }
 
 // GetPipelineLogsHandler handles GET /api/v1/pipelines/{name}/logs
@@ -202,14 +204,14 @@ func GetPipelineStatusHandler(w http.ResponseWriter, r *http.Request) {
 func GetPipelineLogsHandler(w http.ResponseWriter, r *http.Request) {
 	pipelineName := chi.URLParam(r, "name")
 	if pipelineName == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "pipeline name required")
 		return
 	}
 
 	// Fetch PipelineRun from Kubernetes (search in default namespace for webhook-created runs)
 	run := FetchPipelineRunByID(r.Context(), "default", pipelineName)
 	if run == nil {
-		_ = dashboard.RespondNotFound(w, "pipeline")
+		_ = responses.RespondNotFound(w, "pipeline")
 		return
 	}
 
@@ -219,7 +221,7 @@ func GetPipelineLogsHandler(w http.ResponseWriter, r *http.Request) {
 		"name": pipelineName,
 		"logs": []string{},
 	}
-	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
+	_ = responses.RespondSuccess(w, http.StatusOK, response)
 }
 
 // ListBranchesHandler returns unique branch names for a project
@@ -227,13 +229,13 @@ func GetPipelineLogsHandler(w http.ResponseWriter, r *http.Request) {
 func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -251,5 +253,5 @@ func ListBranchesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = dashboard.RespondSuccess(w, http.StatusOK, branches)
+	_ = responses.RespondSuccess(w, http.StatusOK, branches)
 }

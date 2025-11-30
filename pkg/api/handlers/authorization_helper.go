@@ -22,6 +22,7 @@ import (
 
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // Global authorization service - initialized by main package
@@ -51,7 +52,7 @@ const (
 func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *auth.User, projectID string, requiredRole dashboard.Role) bool {
 	if authzService == nil {
 		log.Printf("ERROR: Authorization service not initialized")
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Authorization service not available")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Authorization service not available")
 		return false
 	}
 
@@ -61,14 +62,14 @@ func CheckProjectAccess(w http.ResponseWriter, r *http.Request, user *auth.User,
 		// Log error but don't leak details to client
 		log.Printf("ERROR: Failed to check authorization: user=%s project=%s role=%s err=%v",
 			user.ID, projectID, requiredRole, err)
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Failed to verify permissions")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Failed to verify permissions")
 		return false
 	}
 
 	if !hasRole {
 		// User doesn't have required role
 		log.Printf("AUTHZ_DENIED: user=%s project=%s required_role=%s", user.ID, projectID, requiredRole)
-		_ = dashboard.RespondError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
+		_ = responses.RespondError(w, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
 		return false
 	}
 
@@ -88,7 +89,7 @@ func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *auth
 	case ActionDelete, ActionAdmin:
 		requiredRole = dashboard.RoleAdmin
 	default:
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Invalid authorization action")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "SERVER_ERROR", "Invalid authorization action")
 		return false
 	}
 
@@ -99,7 +100,7 @@ func CheckProjectAccessAction(w http.ResponseWriter, r *http.Request, user *auth
 func CheckUserExists(w http.ResponseWriter, r *http.Request) (*auth.User, bool) {
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return nil, false
 	}
 	return user, true

@@ -3,19 +3,20 @@ package handlers
 import (
 	"log"
 
-	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/cache"
+	"github.com/org/c8s/pkg/sse"
 )
 
 // Global cache instance - initialized at startup
-var globalCache *dashboard.CacheLayer
+var globalCache *cache.CacheLayer
 
 // InitCache initializes the global cache layer
-func InitCache(cache *dashboard.CacheLayer) {
+func InitCache(cache *cache.CacheLayer) {
 	globalCache = cache
 }
 
 // GetCache returns the global cache instance
-func GetCache() *dashboard.CacheLayer {
+func GetCache() *cache.CacheLayer {
 	return globalCache
 }
 
@@ -24,7 +25,7 @@ func InvalidatePipelineListCache(projectID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.PipelineListKey(projectID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -35,7 +36,7 @@ func InvalidatePipelineRunCache(runID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.PipelineRunKey(runID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -46,7 +47,7 @@ func InvalidateProjectListCache(userID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.ProjectListKey(userID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -57,7 +58,7 @@ func InvalidateProjectCache(projectID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.ProjectKey(projectID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -68,7 +69,7 @@ func InvalidateLogCache(runID, stepID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.LogSnapshotKey(runID, stepID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -79,7 +80,7 @@ func InvalidateUserPermissionsCache(userID string) {
 	if globalCache == nil {
 		return
 	}
-	keyBuilder := &dashboard.CacheKeyBuilder{}
+	keyBuilder := &cache.CacheKeyBuilder{}
 	key := keyBuilder.UserPermissionsKey(userID)
 	globalCache.Invalidate(key)
 	log.Printf("Invalidated cache: %s", key)
@@ -91,7 +92,7 @@ func BroadcastCacheInvalidation(projectID, cachePattern string) {
 	broadcaster := getOrCreateBroadcaster(projectID)
 
 	// Create SSE event for cache invalidation
-	event := dashboard.NewEventBuilder().
+	event := sse.NewEventBuilder().
 		WithEvent("cache_invalidated").
 		WithData("{\"pattern\":\"" + cachePattern + "\"}").
 		Build()

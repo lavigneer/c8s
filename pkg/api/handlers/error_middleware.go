@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // ErrorRecoveryMiddleware catches panics and returns 500
@@ -14,7 +14,7 @@ func ErrorRecoveryMiddleware(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("ERROR: Panic recovered in %s %s: %v", r.Method, r.URL.Path, err)
-				_ = dashboard.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "An unexpected error occurred")
+				_ = responses.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "An unexpected error occurred")
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -70,5 +70,5 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 // NotFoundMiddleware provides a friendly 404 handler
 func NotFoundMiddleware(w http.ResponseWriter, r *http.Request) {
 	log.Printf("404: %s %s not found", r.Method, r.URL.Path)
-	_ = dashboard.RespondError(w, http.StatusNotFound, "NOT_FOUND", "The requested resource was not found")
+	_ = responses.RespondError(w, http.StatusNotFound, "NOT_FOUND", "The requested resource was not found")
 }

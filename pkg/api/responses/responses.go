@@ -1,4 +1,4 @@
-package dashboard
+package responses
 
 import (
 	"encoding/json"

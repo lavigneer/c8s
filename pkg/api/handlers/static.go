@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // ServeStatic serves static files from the specified directory
@@ -72,5 +72,5 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 
 // RespondSuccess is a convenience wrapper for dashboard response helper
 func RespondSuccess(w http.ResponseWriter, statusCode int, data interface{}) error {
-	return dashboard.RespondSuccess(w, statusCode, data)
+	return responses.RespondSuccess(w, statusCode, data)
 }

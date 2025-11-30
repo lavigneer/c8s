@@ -1,5 +1,5 @@
 // Package dashboard provides caching, pagination, and data transfer objects for the C8S web dashboard.
-package dashboard
+package cache
 
 import (
 	"context"

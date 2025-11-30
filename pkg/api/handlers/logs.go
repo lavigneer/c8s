@@ -12,6 +12,8 @@ import (
 
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
+	"github.com/org/c8s/pkg/logstorage"
 )
 
 // LogStreamHandler streams step logs via Server-Sent Events
@@ -39,7 +41,7 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Get actual log storage implementation
 	// For now, use in-memory storage for testing - include demo logs for this run
-	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
+	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
 
 	// Create channels and start streaming
 	logChan := make(chan string, 100)
@@ -157,12 +159,12 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Get actual log storage
-	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
+	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
 
 	// Get logs
 	reader, err := logStorage.GetStepLogs(r.Context(), runID, stepID)
 	if err != nil {
-		_ = dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
+		_ = responses.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
 		return
 	}
 	defer func() { _ = reader.Close() }()
@@ -198,23 +200,23 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	lines := 100
 	if linesParam := r.URL.Query().Get("lines"); linesParam != "" {
 		if _, err := fmt.Sscanf(linesParam, "%d", &lines); err != nil {
-			_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_PARAM", "Invalid lines parameter")
+			_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_PARAM", "Invalid lines parameter")
 			return
 		}
 	}
 
 	// TODO: Get actual log storage
-	logStorage := dashboard.NewInMemoryLogStorageWithRun(runID)
+	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
 
 	// Get log snapshot
 	logLines, err := logStorage.GetLogSnapshot(r.Context(), runID, stepID, lines)
 	if err != nil {
-		_ = dashboard.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
+		_ = responses.RespondError(w, http.StatusNotFound, "LOGS_NOT_FOUND", "Logs not found for step")
 		return
 	}
 
 	// Return as JSON
-	_ = dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
+	_ = responses.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"runId":  runID,
 		"stepId": stepID,
 		"lines":  logLines,
@@ -228,13 +230,13 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 	runID := chi.URLParam(r, "runId")
 
 	if runID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
 	}
 
@@ -245,7 +247,7 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if run == nil {
-		_ = dashboard.RespondNotFound(w, "run")
+		_ = responses.RespondNotFound(w, "run")
 		return
 	}
 
@@ -277,5 +279,5 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	_ = dashboard.RespondSuccess(w, http.StatusOK, steps)
+	_ = responses.RespondSuccess(w, http.StatusOK, steps)
 }

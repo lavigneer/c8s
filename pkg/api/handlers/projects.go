@@ -13,6 +13,7 @@ import (
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // k8sClient is initialized by the main package
@@ -40,7 +41,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to fetch projects for user %s: %v\n", user.ID, err)
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
 		return
 	}
 
@@ -70,7 +71,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = dashboard.RespondSuccess(w, http.StatusOK, dtos)
+	_ = responses.RespondSuccess(w, http.StatusOK, dtos)
 }
 
 // CreateProjectHandler creates new project (PipelineConfig)
@@ -90,13 +91,13 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
 	}
 
 	// Validate inputs
 	if err := validateProjectRequest(req.Name, req.RepoURL); err != nil {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error())
+		_ = responses.RespondError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error())
 		return
 	}
 
@@ -125,7 +126,7 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.CreatePipelineConfig(ctx, config); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to create project %s for user %s: %v\n", req.Name, user.ID, err)
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
 		return
 	}
 
@@ -152,7 +153,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
@@ -167,7 +168,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	config, err := k8sClient.GetPipelineConfig(ctx, user.Namespace, projectID)
 	if err != nil {
-		_ = dashboard.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
+		_ = responses.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
 		return
 	}
 
@@ -180,7 +181,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 		"git_platform": "github",
 	}
 
-	_ = dashboard.RespondSuccess(w, http.StatusOK, response)
+	_ = responses.RespondSuccess(w, http.StatusOK, response)
 }
 
 // DeleteProjectHandler deletes a project
@@ -194,7 +195,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
 		return
 	}
 
@@ -210,7 +211,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.DeletePipelineConfig(ctx, user.Namespace, projectID); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to delete project %s for user %s: %v\n", projectID, user.ID, err)
-		_ = dashboard.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
+		_ = responses.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
 		return
 	}
 

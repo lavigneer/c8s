@@ -1,4 +1,4 @@
-package dashboard
+package sse
 
 import (
 	"fmt"
@@ -28,23 +28,23 @@ func (e SSEEvent) String() string {
 	return result
 }
 
-// SSEBroadcaster implements pub/sub for broadcasting SSE events to multiple clients
-type SSEBroadcaster struct {
+// Broadcaster implements pub/sub for broadcasting SSE events to multiple clients
+type Broadcaster struct {
 	clients map[chan SSEEvent]bool
 	mutex   sync.RWMutex
 	done    chan struct{}
 }
 
-// NewSSEBroadcaster creates a new SSE broadcaster
-func NewSSEBroadcaster() *SSEBroadcaster {
-	return &SSEBroadcaster{
+// NewBroadcaster creates a new SSE broadcaster
+func NewBroadcaster() *Broadcaster {
+	return &Broadcaster{
 		clients: make(map[chan SSEEvent]bool),
 		done:    make(chan struct{}),
 	}
 }
 
 // Subscribe adds a new subscriber channel
-func (b *SSEBroadcaster) Subscribe() chan SSEEvent {
+func (b *Broadcaster) Subscribe() chan SSEEvent {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -54,7 +54,7 @@ func (b *SSEBroadcaster) Subscribe() chan SSEEvent {
 }
 
 // Unsubscribe removes a subscriber channel
-func (b *SSEBroadcaster) Unsubscribe(ch chan SSEEvent) {
+func (b *Broadcaster) Unsubscribe(ch chan SSEEvent) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -65,7 +65,7 @@ func (b *SSEBroadcaster) Unsubscribe(ch chan SSEEvent) {
 }
 
 // Broadcast sends an event to all subscribers
-func (b *SSEBroadcaster) Broadcast(event SSEEvent) {
+func (b *Broadcaster) Broadcast(event SSEEvent) {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 
@@ -81,19 +81,19 @@ func (b *SSEBroadcaster) Broadcast(event SSEEvent) {
 }
 
 // BroadcastAsync broadcasts event asynchronously
-func (b *SSEBroadcaster) BroadcastAsync(event SSEEvent) {
+func (b *Broadcaster) BroadcastAsync(event SSEEvent) {
 	go b.Broadcast(event)
 }
 
 // ClientCount returns number of connected clients
-func (b *SSEBroadcaster) ClientCount() int {
+func (b *Broadcaster) ClientCount() int {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 	return len(b.clients)
 }
 
 // Close closes the broadcaster and all client channels
-func (b *SSEBroadcaster) Close() {
+func (b *Broadcaster) Close() {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 

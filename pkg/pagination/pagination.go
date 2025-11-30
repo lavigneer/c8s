@@ -1,9 +1,11 @@
-package dashboard
+package pagination
 
 import (
 	"math"
 	"net/url"
 	"strconv"
+
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // PaginationParams holds pagination parameters from query string
@@ -164,7 +166,7 @@ func GeneratePaginationLinks(baseURL string, result *PaginationResult) Paginatio
 }
 
 // CalculatePagination is a helper that returns metadata based on total count
-func CalculatePagination(total, page, perPage int) *Metadata {
+func CalculatePagination(total, page, perPage int) *responses.Metadata {
 	if page < 1 {
 		page = 1
 	}
@@ -181,7 +183,7 @@ func CalculatePagination(total, page, perPage int) *Metadata {
 		page = totalPages
 	}
 
-	return &Metadata{
+	return &responses.Metadata{
 		Total:      total,
 		Page:       page,
 		PerPage:    perPage,

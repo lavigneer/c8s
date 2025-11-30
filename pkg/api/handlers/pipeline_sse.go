@@ -10,11 +10,12 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/sse"
 )
 
 // Global broadcaster for pipeline updates per project
 var (
-	pipelineBroadcasters = make(map[string]*dashboard.SSEBroadcaster)
+	pipelineBroadcasters = make(map[string]*sse.Broadcaster)
 	broadcasterMutex     sync.RWMutex
 )
 
@@ -93,7 +94,7 @@ func BroadcastPipelineUpdate(projectID string, run *dashboard.PipelineRunDTO) {
 		log.Printf("ERROR: Failed to marshal pipeline run for broadcast: %v", err)
 		return
 	}
-	event := dashboard.NewEventBuilder().
+	event := sse.NewEventBuilder().
 		WithID(run.ID).
 		WithEvent("run_status_changed").
 		WithData(string(data)).
@@ -103,7 +104,7 @@ func BroadcastPipelineUpdate(projectID string, run *dashboard.PipelineRunDTO) {
 }
 
 // getOrCreateBroadcaster gets or creates a broadcaster for a project
-func getOrCreateBroadcaster(projectID string) *dashboard.SSEBroadcaster {
+func getOrCreateBroadcaster(projectID string) *sse.Broadcaster {
 	broadcasterMutex.Lock()
 	defer broadcasterMutex.Unlock()
 
@@ -112,7 +113,7 @@ func getOrCreateBroadcaster(projectID string) *dashboard.SSEBroadcaster {
 	}
 
 	// Create new broadcaster
-	broadcaster := dashboard.NewSSEBroadcaster()
+	broadcaster := sse.NewBroadcaster()
 	pipelineBroadcasters[projectID] = broadcaster
 
 	return broadcaster

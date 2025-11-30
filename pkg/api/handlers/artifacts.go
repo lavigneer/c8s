@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/org/c8s/pkg/dashboard"
+	"github.com/org/c8s/pkg/api/responses"
 )
 
 // ListArtifactsHandler returns artifacts for a pipeline run
@@ -22,7 +23,7 @@ func ListArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 
 	runID := chi.URLParam(r, "runId")
 	if runID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "runId required")
 		return
 	}
 
@@ -44,7 +45,7 @@ func ListArtifactsHandler(w http.ResponseWriter, r *http.Request) {
 	_ = artifactType // Will be used when filtering is implemented
 	artifacts := []*dashboard.ArtifactDTO{}
 
-	_ = dashboard.RespondSuccess(w, http.StatusOK, artifacts)
+	_ = responses.RespondSuccess(w, http.StatusOK, artifacts)
 }
 
 // DownloadArtifactHandler downloads an artifact from object storage
@@ -58,7 +59,7 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -76,7 +77,7 @@ func DownloadArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename, ok := demoArtifacts[artifactID]
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		_ = responses.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 		return
 	}
 
@@ -118,7 +119,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -136,7 +137,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename, ok := demoArtifacts[artifactID]
 	if !ok {
-		_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+		_ = responses.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 		return
 	}
 
@@ -167,7 +168,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return JSON preview metadata
-	_ = dashboard.RespondSuccess(w, http.StatusOK, map[string]interface{}{
+	_ = responses.RespondSuccess(w, http.StatusOK, map[string]interface{}{
 		"artifact_id": artifactID,
 		"filename":    filename,
 		"preview":     "Use HTMX request to get HTML preview",
@@ -179,7 +180,7 @@ func PreviewArtifactHandler(w http.ResponseWriter, r *http.Request) {
 func GetArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -187,7 +188,7 @@ func GetArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Fetch artifact metadata
 	// Placeholder: return 404 for now
-	_ = dashboard.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
+	_ = responses.RespondError(w, http.StatusNotFound, "ARTIFACT_NOT_FOUND", "Artifact not found")
 }
 
 // DeleteArtifactHandler deletes an artifact
@@ -201,7 +202,7 @@ func DeleteArtifactHandler(w http.ResponseWriter, r *http.Request) {
 
 	artifactID := chi.URLParam(r, "artifactId")
 	if artifactID == "" {
-		_ = dashboard.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "artifactId required")
 		return
 	}
 
@@ -290,6 +291,7 @@ func generateCoverageReportJSON() []byte {
       },
       {
         "name": "github.com/org/c8s/pkg/dashboard",
+	"github.com/org/c8s/pkg/api/responses"
         "coverage": 75.3,
         "lines_covered": 421,
         "lines_total": 559
