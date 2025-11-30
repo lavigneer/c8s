@@ -29,11 +29,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/org/c8s/pkg/api/handlers"
 	apimiddleware "github.com/org/c8s/pkg/api/middleware"
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/auth"
 	"github.com/org/c8s/pkg/dashboard"
+	_ "github.com/org/c8s/pkg/metrics" // Import for side effects (metric registration)
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -108,6 +111,7 @@ func main() {
 	// Global middleware
 	router.Use(handlers.ErrorRecoveryMiddleware)
 	router.Use(handlers.RequestLoggerMiddleware)
+	router.Use(apimiddleware.MetricsMiddleware) // Track HTTP metrics
 	router.Use(middleware.RequestID)
 	router.Use(SecurityHeadersMiddleware)
 	router.Use(RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
@@ -115,6 +119,7 @@ func main() {
 	// Static files (no auth required)
 	router.Handle("/static/*", handlers.StaticWithCacheControl(*baseDir+"/static"))
 	router.HandleFunc("/health", healthHandler)
+	router.Handle("/metrics", promhttp.Handler()) // Prometheus metrics endpoint
 
 	// Login route (no auth required)
 	router.HandleFunc("/login", handlers.LoginHandler)

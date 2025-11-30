@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/metrics"
 	"github.com/org/c8s/pkg/scheduler"
 	ctypes "github.com/org/c8s/pkg/types"
 )
@@ -55,6 +56,10 @@ type PipelineRunReconciler struct {
 // move the current state of the cluster closer to the desired state.
 func (r *PipelineRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	start := time.Now()
+	defer func() {
+		metrics.ReconcileDuration.WithLabelValues("pipelinerun").Observe(time.Since(start).Seconds())
+	}()
 
 	// Fetch the PipelineRun instance
 	pipelineRun := &c8sv1alpha1.PipelineRun{}
