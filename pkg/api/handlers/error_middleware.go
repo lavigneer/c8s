@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/org/c8s/pkg/apierrors"
 	"github.com/org/c8s/pkg/api/responses"
 )
 
@@ -14,7 +15,7 @@ func ErrorRecoveryMiddleware(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("ERROR: Panic recovered in %s %s: %v", r.Method, r.URL.Path, err)
-				_ = responses.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "An unexpected error occurred")
+				_ = responses.RespondError(w, http.StatusInternalServerError, apierrors.CodeInternalError, apierrors.MsgInternalError)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -70,5 +71,5 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 // NotFoundMiddleware provides a friendly 404 handler
 func NotFoundMiddleware(w http.ResponseWriter, r *http.Request) {
 	log.Printf("404: %s %s not found", r.Method, r.URL.Path)
-	_ = responses.RespondError(w, http.StatusNotFound, "NOT_FOUND", "The requested resource was not found")
+	_ = responses.RespondError(w, http.StatusNotFound, apierrors.CodeNotFound, apierrors.MsgNotFound)
 }

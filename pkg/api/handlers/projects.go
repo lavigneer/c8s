@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
+	"github.com/org/c8s/pkg/apierrors"
 	"github.com/org/c8s/pkg/dashboard"
 	"github.com/org/c8s/pkg/api/responses"
 )
@@ -41,7 +42,7 @@ func ListProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to fetch projects for user %s: %v\n", user.ID, err)
-		_ = responses.RespondError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to fetch projects")
+		_ = responses.RespondError(w, http.StatusInternalServerError, apierrors.CodeFetchFailed, apierrors.MsgFetchFailed)
 		return
 	}
 
@@ -91,13 +92,13 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		_ = responses.RespondError(w, http.StatusBadRequest, apierrors.CodeInvalidRequest, apierrors.MsgInvalidRequest)
 		return
 	}
 
 	// Validate inputs
 	if err := validateProjectRequest(req.Name, req.RepoURL); err != nil {
-		_ = responses.RespondError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error())
+		_ = responses.RespondError(w, http.StatusBadRequest, apierrors.CodeValidationFailed, err.Error())
 		return
 	}
 
@@ -126,7 +127,7 @@ func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.CreatePipelineConfig(ctx, config); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to create project %s for user %s: %v\n", req.Name, user.ID, err)
-		_ = responses.RespondError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create project")
+		_ = responses.RespondError(w, http.StatusInternalServerError, apierrors.CodeCreateFailed, apierrors.MsgCreateFailed)
 		return
 	}
 
@@ -153,7 +154,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, apierrors.CodeInvalidRequest, apierrors.MsgProjectIDRequired)
 		return
 	}
 
@@ -168,7 +169,7 @@ func GetWebhookConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	config, err := k8sClient.GetPipelineConfig(ctx, user.Namespace, projectID)
 	if err != nil {
-		_ = responses.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "Project not found")
+		_ = responses.RespondError(w, http.StatusNotFound, apierrors.CodeProjectNotFound, apierrors.MsgProjectNotFound)
 		return
 	}
 
@@ -195,7 +196,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID := chi.URLParam(r, "projectId")
 	if projectID == "" {
-		_ = responses.RespondError(w, http.StatusBadRequest, "INVALID_REQUEST", "projectId required")
+		_ = responses.RespondError(w, http.StatusBadRequest, apierrors.CodeInvalidRequest, apierrors.MsgProjectIDRequired)
 		return
 	}
 
@@ -211,7 +212,7 @@ func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if err := k8sClient.DeletePipelineConfig(ctx, user.Namespace, projectID); err != nil {
 		// Log error internally but don't expose details to client
 		fmt.Printf("ERROR: Failed to delete project %s for user %s: %v\n", projectID, user.ID, err)
-		_ = responses.RespondError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete project")
+		_ = responses.RespondError(w, http.StatusInternalServerError, apierrors.CodeDeleteFailed, apierrors.MsgDeleteFailed)
 		return
 	}
 
