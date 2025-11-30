@@ -24,7 +24,7 @@ GOFLAGS := -v
 LDFLAGS := -ldflags "-X $(MODULE)/pkg/version.Version=$(VERSION)"
 
 # CRD and code generation
-CONTROLLER_GEN := go tool controller-gen
+CONTROLLER_GEN := $(GO) run sigs.k8s.io/controller-tools/cmd/controller-gen@latest
 CRD_OPTIONS ?= crd:allowDangerousTypes=true
 
 # Test configuration
@@ -59,10 +59,6 @@ test-unit: ## Run unit tests only
 .PHONY: envtest
 envtest: ## Download envtest binaries
 	$(GO) run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest use
-
-.PHONY: controller-gen
-controller-gen: ## Download controller-gen tool
-	$(GO) run sigs.k8s.io/controller-tools/cmd/controller-gen@latest
 
 .PHONY: test-integration
 test-integration: envtest ## Run integration tests with envtest
@@ -127,11 +123,11 @@ docker-push: ## Push Docker images to registry
 ##@ Code Generation
 
 .PHONY: generate
-generate: controller-gen ## Generate code (DeepCopy, client, etc.)
+generate: ## Generate code (DeepCopy, client, etc.)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: manifests
-manifests: controller-gen ## Generate CRD manifests
+manifests: ## Generate CRD manifests
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 ##@ Deployment
