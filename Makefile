@@ -56,9 +56,13 @@ test: ## Run unit tests
 test-unit: ## Run unit tests only
 	CGO_ENABLED=1 $(GO) test -timeout $(TEST_TIMEOUT) -race ./tests/unit/...
 
+.PHONY: envtest
+envtest: ## Download envtest binaries
+	$(GO) run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest use
+
 .PHONY: test-integration
 test-integration: envtest ## Run integration tests with envtest
-	KUBEBUILDER_ASSETS="$(shell go tool setup-envtest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
+	KUBEBUILDER_ASSETS="$(shell $(GO) run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest use -p path)" $(GO) test -timeout $(TEST_TIMEOUT) ./tests/integration/...
 
 .PHONY: coverage
 coverage: test ## Generate coverage report
