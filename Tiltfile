@@ -269,22 +269,11 @@ helm_resource(
 
 namespace_create('c8s-system')
 
-helm_resource(
+# Deploy MinIO using the manifest (simpler than Helm, no registry auth needed)
+local_resource(
   name='minio',
-  chart='oci://registry.min.io/minio/minio',
-  namespace='c8s-system',
-  flags=[
-    '--set', 'rootUser=minioadmin',
-    '--set', 'rootPassword=minioadmin',
-    '--set', 'replicas=1',
-    '--set', 'persistence.enabled=true',
-    '--set', 'persistence.size=10Gi',
-    '--set', 'persistence.storageClassName=',
-    '--set', 'service.type=ClusterIP',
-    '--set', 's3.bucketName=c8s-logs,c8s-artifacts',
-    '--wait',
-    '--timeout', '5m',
-  ],
+  cmd='kubectl apply -f ./deploy/minio.yaml',
+  resource_deps=[],
   labels=['infrastructure'],
 )
 
