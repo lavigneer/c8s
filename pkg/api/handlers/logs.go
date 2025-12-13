@@ -43,15 +43,16 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	// For now, use in-memory storage for testing - include demo logs for this run
 	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
 
-	// Create channels and start streaming
+	// Create channels for log streaming
 	logChan := make(chan string, 100)
 	errChan := make(chan error, 1)
 
+	// Stream logs in a goroutine (StreamStepLogs blocks until all logs are sent)
 	go func() {
+		defer close(logChan) // Close channel when done streaming
 		if err := logStorage.StreamStepLogs(r.Context(), runID, stepID, logChan); err != nil {
 			errChan <- err
 		}
-		close(logChan)
 	}()
 
 	// Stream logs to client
@@ -65,12 +66,11 @@ func setupSSEConnection(w http.ResponseWriter, flusher http.Flusher) bool {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	// CORS headers should be handled by middleware, not set per-request
-	// Removed hardcoded "Access-Control-Allow-Origin: *" as it's insecure and violates CORS spec with credentials
 
-	// Send initial connection message
+	// Write the response status and initial connection message
+	w.WriteHeader(http.StatusOK)
 	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"message\":\"Connected to log stream\"}\n\n"); err != nil {
 		log.Printf("ERROR: Failed to send SSE connection message: %v", err)
-		http.Error(w, "Failed to establish stream", http.StatusInternalServerError)
 		return false
 	}
 	flusher.Flush()
@@ -91,6 +91,7 @@ func streamLogsToClient(w http.ResponseWriter, r *http.Request, flusher http.Flu
 
 		case line, ok := <-logChan:
 			if !ok {
+				// Channel closed, all logs sent
 				sendCompleteEvent(w, flusher)
 				return
 			}

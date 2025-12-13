@@ -77,6 +77,15 @@ func main() {
 		log.Println("Auth validator initialized (JWT mode)")
 	}
 
+	// Create token generator for login handler
+	if authConfig.Mode != auth.ModeNone {
+		generator, err := auth.NewTokenGenerator(authConfig)
+		if err != nil {
+			log.Fatalf("Failed to create token generator: %v", err)
+		}
+		handlers.InitTokenGenerator(generator)
+	}
+
 	// Create auth middleware with dependency injection
 	authMiddleware := auth.NewMiddleware(validator)
 

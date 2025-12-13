@@ -68,6 +68,13 @@ func (m *metricsResponseWriter) Write(b []byte) (int, error) {
 	return m.ResponseWriter.Write(b)
 }
 
+// Flush implements http.Flusher to support streaming (SSE, etc)
+func (m *metricsResponseWriter) Flush() {
+	if flusher, ok := m.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 // normalizePath reduces path cardinality for metrics
 // Converts paths like /api/runs/123/logs to /api/runs/:id/logs
 func normalizePath(path string) string {

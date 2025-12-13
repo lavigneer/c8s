@@ -68,6 +68,13 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
+// Flush implements http.Flusher to support streaming (SSE, etc)
+func (rw *responseWriter) Flush() {
+	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 // NotFoundMiddleware provides a friendly 404 handler
 func NotFoundMiddleware(w http.ResponseWriter, r *http.Request) {
 	log.Printf("404: %s %s not found", r.Method, r.URL.Path)

@@ -49,7 +49,9 @@ const logViewer = {
     totalSize: 0,
 
     init() {
+        console.log('Log Viewer initialized - RunID:', this.currentRunId);
         document.getElementById('step-selector').addEventListener('change', (e) => {
+            console.log('Step selected:', e.target.value, 'RunID:', this.currentRunId);
             this.selectStep(e.target.value);
         });
 
@@ -95,6 +97,7 @@ const logViewer = {
         document.getElementById('log-status').textContent = 'Streaming...';
 
         const url = `/api/runs/${this.currentRunId}/steps/${stepId}/logs`;
+        console.log('Opening EventSource at:', url);
         this.eventSource = new EventSource(url);
 
         this.eventSource.addEventListener('open', (event) => {
@@ -103,6 +106,7 @@ const logViewer = {
 
         this.eventSource.addEventListener('log', (event) => {
             try {
+                console.log('Received log event:', event.data.substring(0, 100));
                 const data = JSON.parse(event.data);
                 this.addLogLine(data.line);
             } catch (e) {
@@ -111,6 +115,7 @@ const logViewer = {
         });
 
         this.eventSource.addEventListener('complete', (event) => {
+            console.log('Log stream complete');
             document.getElementById('log-loading').classList.add('hidden');
             document.getElementById('log-status').textContent = 'Complete';
             this.eventSource.close();

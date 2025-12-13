@@ -12,6 +12,13 @@ import (
 	"github.com/org/c8s/pkg/pagination"
 )
 
+var tokenGenerator *auth.TokenGenerator
+
+// InitTokenGenerator initializes the token generator for login handler
+func InitTokenGenerator(tg *auth.TokenGenerator) {
+	tokenGenerator = tg
+}
+
 // DashboardHandler renders the main dashboard page with pipeline list
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := auth.GetUserFromContext(r.Context())
@@ -165,8 +172,21 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a demo token (in production, this would be a proper JWT)
-	token := "demo_token_" + username
+	// Generate JWT token using the token generator
+	var token string
+	var err error
+	if tokenGenerator != nil {
+		// Use proper JWT token generation
+		token, err = tokenGenerator.GenerateToken(username, username, username+"@example.com", "default")
+		if err != nil {
+			log.Printf("ERROR: Failed to generate token: %v", err)
+			http.Error(w, "Failed to generate authentication token", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Fallback for dev mode without token generator
+		token = "dev_token_" + username
+	}
 
 	// Set auth cookie
 	http.SetCookie(w, &http.Cookie{
