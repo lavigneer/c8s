@@ -6,17 +6,24 @@ import (
 
 	"github.com/org/c8s/pkg/apis/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // K8sClient wraps the controller-runtime client for C8S-specific operations
 type K8sClient struct {
 	client.Client
+	Clientset kubernetes.Interface
 }
 
 // NewK8sClient creates a new K8s client wrapper
 func NewK8sClient(c client.Client) *K8sClient {
-	return &K8sClient{Client: c}
+	return &K8sClient{Client: c, Clientset: nil}
+}
+
+// NewK8sClientWithClientset creates a new K8s client wrapper with clientset for log streaming
+func NewK8sClientWithClientset(c client.Client, clientset kubernetes.Interface) *K8sClient {
+	return &K8sClient{Client: c, Clientset: clientset}
 }
 
 // ListPipelineRuns retrieves pipeline runs for a namespace

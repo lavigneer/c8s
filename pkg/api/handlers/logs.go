@@ -49,7 +49,7 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	// Use Kubernetes log storage to fetch real logs from Job Pods
 	var logStorage logstorage.LogStorage
 	if k8sClient != nil {
-		logStorage = logstorage.NewKubernetesLogStorage(k8sClient, user.Namespace, runID)
+		logStorage = logstorage.NewKubernetesLogStorage(k8sClient, k8sClient.Clientset, user.Namespace, runID)
 	} else {
 		// Fallback to demo logs if K8s client not available
 		logStorage = logstorage.NewInMemoryLogStorageWithRun(runID)
