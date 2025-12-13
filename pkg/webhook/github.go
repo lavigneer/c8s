@@ -148,10 +148,17 @@ func (h *GitHubHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Webhook signature verified successfully")
 	}
 
-	// Parse timestamp
-	timestamp, err := parseTimestamp(pushEvent.HeadCommit.Timestamp)
-	if err != nil {
-		logger.Error(err, "Failed to parse timestamp")
+	// Parse timestamp (may be empty in some webhook events)
+	var timestamp metav1.Time
+	if pushEvent.HeadCommit.Timestamp != "" {
+		var err error
+		timestamp, err = parseTimestamp(pushEvent.HeadCommit.Timestamp)
+		if err != nil {
+			logger.Error(err, "Failed to parse timestamp", "timestamp", pushEvent.HeadCommit.Timestamp)
+			timestamp = metav1.Now()
+		}
+	} else {
+		// GitHub webhook may not always include timestamp
 		timestamp = metav1.Now()
 	}
 
