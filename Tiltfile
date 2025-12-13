@@ -264,10 +264,33 @@ helm_resource(
 )
 
 # ============================================================================
-# Deploy C8S
+# Install MinIO (S3-Compatible Object Storage for Log Persistence)
 # ============================================================================
 
 namespace_create('c8s-system')
+
+helm_resource(
+  name='minio',
+  chart='oci://registry.min.io/minio/minio',
+  namespace='c8s-system',
+  flags=[
+    '--set', 'rootUser=minioadmin',
+    '--set', 'rootPassword=minioadmin',
+    '--set', 'replicas=1',
+    '--set', 'persistence.enabled=true',
+    '--set', 'persistence.size=10Gi',
+    '--set', 'persistence.storageClassName=',
+    '--set', 'service.type=ClusterIP',
+    '--set', 's3.bucketName=c8s-logs,c8s-artifacts',
+    '--wait',
+    '--timeout', '5m',
+  ],
+  labels=['infrastructure'],
+)
+
+# ============================================================================
+# Deploy C8S
+# ============================================================================
 
 helm_resource(
   name='c8s',
@@ -288,7 +311,7 @@ helm_resource(
     ('components.webhook.image.registry', 'components.webhook.image.repository', 'components.webhook.image.tag'),
   ],
   namespace='c8s-system',
-  resource_deps=['cert-manager'],
+  resource_deps=['cert-manager', 'minio'],
 )
 
 # ============================================================================

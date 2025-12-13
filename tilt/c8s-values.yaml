@@ -17,9 +17,36 @@ components:
     env:
       - name: JWT_SECRET
         value: "dev-secret-key-change-in-production"
+      # S3 Configuration for log retrieval
+      - name: S3_BUCKET
+        value: "c8s-logs"
+      - name: S3_ENDPOINT
+        value: "http://minio.c8s-system.svc.cluster.local:9000"
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
+      - name: S3_REGION
+        value: "us-east-1"
+      - name: S3_USE_PATH_STYLE
+        value: "true"
 
   controller:
     replicas: 1
+    env:
+      # S3 Configuration for log persistence
+      - name: S3_BUCKET
+        value: "c8s-logs"
+      - name: S3_ENDPOINT
+        value: "http://minio.c8s-system.svc.cluster.local:9000"
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
+      - name: S3_REGION
+        value: "us-east-1"
+      - name: S3_USE_PATH_STYLE
+        value: "true"
 
   # Webhook enabled with TLS certificates (cert-manager is available)
   webhook:
@@ -34,4 +61,12 @@ components:
         renewBefore: 720h  # 30 days before expiry
 
 storage:
-  type: local
+  type: s3-compatible
+  s3:
+    enabled: true
+    endpoint: "http://minio.c8s-system.svc.cluster.local:9000"
+    bucket: "c8s-logs"
+    region: "us-east-1"
+    useSSL: false
+    accessKey: "minioadmin"
+    secretKey: "minioadmin"
