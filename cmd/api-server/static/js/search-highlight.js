@@ -140,29 +140,32 @@ document.addEventListener('DOMContentLoaded', () => {
     window.searchHighlighter = new SearchHighlighter();
 });
 
-// Add CSS for highlight styling
-const style = document.createElement('style');
-style.textContent = `
-    .search-highlight {
-        background-color: #fcd34d;
-        color: #1f2937;
-        font-weight: 600;
-        padding: 0 2px;
-        border-radius: 2px;
-        transition: background-color 0.2s ease;
-    }
+// Add CSS for highlight styling (only if not already added)
+if (!document.getElementById('search-highlight-styles')) {
+    const style = document.createElement('style');
+    style.id = 'search-highlight-styles';
+    style.textContent = `
+        .search-highlight {
+            background-color: #fcd34d;
+            color: #1f2937;
+            font-weight: 600;
+            padding: 0 2px;
+            border-radius: 2px;
+            transition: background-color 0.2s ease;
+        }
 
-    .dark .search-highlight {
-        background-color: #f59e0b;
-        color: #1f2937;
-    }
+        .dark .search-highlight {
+            background-color: #f59e0b;
+            color: #1f2937;
+        }
 
-    .search-highlight:hover {
-        background-color: #fbbf24;
-    }
+        .search-highlight:hover {
+            background-color: #fbbf24;
+        }
 
-    .dark .search-highlight:hover {
-        background-color: #d97706;
-    }
-`;
-document.head.appendChild(style);
+        .dark .search-highlight:hover {
+            background-color: #d97706;
+        }
+    `;
+    document.head.appendChild(style);
+}

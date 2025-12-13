@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
@@ -96,10 +97,14 @@ func main() {
 		log.Fatalf("Failed to get Kubernetes config: %v", err)
 	}
 
-	// Create a scheme and add C8S types
+	// Create a scheme and add C8S + Kubernetes types
 	scheme := runtime.NewScheme()
 	if err := v1alpha1.AddToScheme(scheme); err != nil {
 		log.Fatalf("Failed to add v1alpha1 types to scheme: %v", err)
+	}
+	// Add Kubernetes core types (needed for Pod, PodList, etc)
+	if err := corev1.AddToScheme(scheme); err != nil {
+		log.Fatalf("Failed to add corev1 types to scheme: %v", err)
 	}
 
 	c, err := client.New(k8sCfg, client.Options{Scheme: scheme})
