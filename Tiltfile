@@ -344,6 +344,21 @@ local_resource(
   resource_deps=['c8s'],
 )
 
+# MinIO port-forwards for S3 access
+local_resource(
+  name='minio-api-port-forward',
+  serve_cmd='kubectl port-forward -n c8s-system svc/minio 9000:9000',
+  allow_parallel=True,
+  resource_deps=['minio'],
+)
+
+local_resource(
+  name='minio-console-port-forward',
+  serve_cmd='kubectl port-forward -n c8s-system svc/minio 9001:9001',
+  allow_parallel=True,
+  resource_deps=['minio'],
+)
+
 # nginx reverse proxy for consolidating API and webhook under one ngrok tunnel
 local_resource(
   name='c8s-nginx-proxy',
