@@ -105,7 +105,9 @@ func (k *KubernetesLogStorage) StreamStepLogs(ctx context.Context, runID, stepID
 
 	// Stream logs line by line
 	scanner := bufio.NewScanner(logsReader)
+	lineCount := 0
 	for scanner.Scan() {
+		lineCount++
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -114,7 +116,13 @@ func (k *KubernetesLogStorage) StreamStepLogs(ctx context.Context, runID, stepID
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading logs: %w", err)
+		return fmt.Errorf("error reading logs after %d lines: %w", lineCount, err)
+	}
+
+	// If we got here with Follow: true, the stream should still be tailing
+	// Log the fact that we exited the scanner loop
+	if lineCount == 0 {
+		return fmt.Errorf("no logs received (stream may have been empty or closed immediately)")
 	}
 
 	return nil

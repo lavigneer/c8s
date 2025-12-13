@@ -63,7 +63,10 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer close(logChan) // Close channel when done streaming
 		if err := logStorage.StreamStepLogs(r.Context(), runID, stepID, logChan); err != nil {
+			log.Printf("Log streaming error for run %s step %s: %v", runID, stepID, err)
 			errChan <- err
+		} else {
+			log.Printf("Log streaming completed successfully for run %s step %s", runID, stepID)
 		}
 	}()
 
