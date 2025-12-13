@@ -192,19 +192,13 @@ func (k *KubernetesLogStorage) fetchPodLogsFromAPI(ctx context.Context, pod *cor
 		return io.NopCloser(strings.NewReader(fmt.Sprintf("Pod is pending, logs not yet available\n"))), nil
 	}
 
-	// Check if container has started
+	// Check if container is waiting (logs won't be available yet)
 	for _, status := range pod.Status.ContainerStatuses {
 		if status.Name == containerName {
 			if status.State.Waiting != nil {
 				return io.NopCloser(strings.NewReader(fmt.Sprintf("Container is waiting: %s\n", status.State.Waiting.Message))), nil
 			}
-			if status.State.Terminated != nil {
-				terminatedMsg := fmt.Sprintf("Container terminated (exit code %d)", status.State.Terminated.ExitCode)
-				if status.State.Terminated.Reason != "" {
-					terminatedMsg += fmt.Sprintf(": %s", status.State.Terminated.Reason)
-				}
-				return io.NopCloser(strings.NewReader(terminatedMsg + "\n")), nil
-			}
+			// Note: If container is Running or Terminated, we can fetch logs
 			break
 		}
 	}
