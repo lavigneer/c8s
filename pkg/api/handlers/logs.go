@@ -39,9 +39,21 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Get actual log storage implementation
-	// For now, use in-memory storage for testing - include demo logs for this run
-	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
+	// Get user namespace for Kubernetes queries
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Use Kubernetes log storage to fetch real logs from Job Pods
+	var logStorage logstorage.LogStorage
+	if k8sClient != nil {
+		logStorage = logstorage.NewKubernetesLogStorage(k8sClient, user.Namespace, runID)
+	} else {
+		// Fallback to demo logs if K8s client not available
+		logStorage = logstorage.NewInMemoryLogStorageWithRun(runID)
+	}
 
 	// Create channels for log streaming
 	logChan := make(chan string, 100)
