@@ -18,14 +18,11 @@ components:
       - name: JWT_SECRET
         value: "dev-secret-key-change-in-production"
       # S3 Configuration for log retrieval
+      # Note: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY come from the s3-secret
       - name: S3_BUCKET
         value: "c8s-logs"
       - name: S3_ENDPOINT
         value: "http://minio.c8s-system.svc.cluster.local:9000"
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
       - name: S3_REGION
         value: "us-east-1"
       - name: S3_USE_PATH_STYLE
@@ -35,14 +32,11 @@ components:
     replicas: 1
     env:
       # S3 Configuration for log persistence
+      # Note: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY come from the s3-secret
       - name: S3_BUCKET
         value: "c8s-logs"
       - name: S3_ENDPOINT
         value: "http://minio.c8s-system.svc.cluster.local:9000"
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
       - name: S3_REGION
         value: "us-east-1"
       - name: S3_USE_PATH_STYLE
