@@ -101,7 +101,7 @@
             Showing <span class="font-medium">{{.Pagination.Page}}</span> of <span class="font-medium">{{.Pagination.TotalPages}}</span> pages
         </div>
         <div class="flex gap-2">
-            {{if .Pagination.HasPrev}}
+            {{if gt .Pagination.Page 1}}
                 <a href="javascript:void(0)" onclick="navigatePage({{sub .Pagination.Page 1}})"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     Previous
@@ -112,7 +112,7 @@
                 </button>
             {{end}}
 
-            {{if .Pagination.HasNext}}
+            {{if lt .Pagination.Page .Pagination.TotalPages}}
                 <a href="javascript:void(0)" onclick="navigatePage({{add .Pagination.Page 1}})"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     Next
