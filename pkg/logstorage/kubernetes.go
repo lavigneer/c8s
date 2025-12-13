@@ -211,7 +211,7 @@ func (k *KubernetesLogStorage) fetchPodLogsFromAPI(ctx context.Context, pod *cor
 	// Get logs from the pod using the clientset
 	podLogOpts := &corev1.PodLogOptions{
 		Container: containerName,
-		Follow:    false, // Set to true for live streaming
+		Follow:    true, // Enable tailing to get logs as they're produced
 	}
 
 	logStream, err := k.clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts).Stream(ctx)
