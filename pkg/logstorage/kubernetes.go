@@ -198,6 +198,13 @@ func (k *KubernetesLogStorage) fetchPodLogsFromAPI(ctx context.Context, pod *cor
 			if status.State.Waiting != nil {
 				return io.NopCloser(strings.NewReader(fmt.Sprintf("Container is waiting: %s\n", status.State.Waiting.Message))), nil
 			}
+			if status.State.Terminated != nil {
+				terminatedMsg := fmt.Sprintf("Container terminated (exit code %d)", status.State.Terminated.ExitCode)
+				if status.State.Terminated.Reason != "" {
+					terminatedMsg += fmt.Sprintf(": %s", status.State.Terminated.Reason)
+				}
+				return io.NopCloser(strings.NewReader(terminatedMsg + "\n")), nil
+			}
 			break
 		}
 	}
@@ -215,8 +222,20 @@ func (k *KubernetesLogStorage) fetchPodLogsFromAPI(ctx context.Context, pod *cor
 
 	logStream, err := k.clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts).Stream(ctx)
 	if err != nil {
-		// If streaming fails, return informative message
-		return io.NopCloser(strings.NewReader(fmt.Sprintf("Could not fetch logs: %v\nPod Phase: %s\nContainer: %s\n", err, pod.Status.Phase, containerName))), nil
+		// If streaming fails, return informative message with pod state
+		podState := fmt.Sprintf("Pod Phase: %s | Container Status:", pod.Status.Phase)
+		for _, status := range pod.Status.ContainerStatuses {
+			if status.Name == containerName {
+				if status.State.Running != nil {
+					podState += fmt.Sprintf(" Running (started at %s)", status.State.Running.StartedAt)
+				} else if status.State.Waiting != nil {
+					podState += fmt.Sprintf(" Waiting (%s)", status.State.Waiting.Reason)
+				} else if status.State.Terminated != nil {
+					podState += fmt.Sprintf(" Terminated (exit code %d, reason: %s)", status.State.Terminated.ExitCode, status.State.Terminated.Reason)
+				}
+			}
+		}
+		return io.NopCloser(strings.NewReader(fmt.Sprintf("Unable to fetch logs: %v\n%s\n", err, podState))), nil
 	}
 
 	return logStream, nil
