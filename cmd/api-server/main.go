@@ -26,6 +26,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
@@ -112,7 +113,13 @@ func main() {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
-	k8sClient := dashboard.NewK8sClient(c)
+	// Create clientset for pod log streaming
+	clientset, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		log.Fatalf("Failed to create Kubernetes clientset: %v", err)
+	}
+
+	k8sClient := dashboard.NewK8sClientWithClientset(c, clientset)
 	handlers.InitK8sClient(k8sClient)
 	log.Println("Kubernetes client initialized successfully")
 
