@@ -294,3 +294,47 @@ func ListStepsHandler(w http.ResponseWriter, r *http.Request) {
 
 	_ = responses.RespondSuccess(w, http.StatusOK, steps)
 }
+
+// GetStepOptionsHandler returns step options as HTML for HTMX
+// GET /api/runs/{runId}/steps/options
+func GetStepOptionsHandler(w http.ResponseWriter, r *http.Request) {
+	runID := chi.URLParam(r, "runId")
+
+	if runID == "" {
+		http.Error(w, "runId required", http.StatusBadRequest)
+		return
+	}
+
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch raw PipelineRun from Kubernetes to access step status
+	pipelineRun := FetchPipelineRunByID(r.Context(), user.Namespace, runID)
+	if pipelineRun == nil {
+		http.Error(w, "Pipeline run not found", http.StatusNotFound)
+		return
+	}
+
+	// Return HTML option elements for HTMX
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	// Default option
+	_, _ = w.Write([]byte(`<option value="">-- Choose a step --</option>`))
+
+	// If no steps, show message
+	if len(pipelineRun.Status.Steps) == 0 {
+		_, _ = w.Write([]byte(`<option disabled>No steps found</option>`))
+		return
+	}
+
+	// Add step options from actual PipelineRun status
+	for _, step := range pipelineRun.Status.Steps {
+		html := fmt.Sprintf(`<option value="%s">%s (%s)</option>`,
+			step.Name, step.Name, step.Phase)
+		_, _ = w.Write([]byte(html))
+	}
+}

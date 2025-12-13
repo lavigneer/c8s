@@ -180,6 +180,7 @@ func main() {
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs", handlers.LogStreamHandler)
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs/text", handlers.GetLogsHandler)
 		r.Get("/api/runs/{runId}/steps/{stepId}/logs/snapshot", handlers.GetLogSnapshotHandler)
+		r.Get("/api/runs/{runId}/steps/options", handlers.GetStepOptionsHandler)
 
 		// SSE endpoints (US1)
 		r.Get("/api/projects/{projectId}/runs/updates", handlers.PipelineUpdatesSSEHandler)

@@ -1,9 +1,13 @@
 {{define "partials/log_viewer"}}
 <div class="space-y-4">
-    <!-- Step Selector -->
+    <!-- Step Selector - Load options via HTMX -->
     <div class="flex items-center gap-2">
         <label for="step-selector" class="text-sm font-medium text-gray-700 dark:text-gray-300">Select Step:</label>
-        <select id="step-selector" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select id="step-selector"
+                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                hx-get="/api/runs/{{.ID}}/steps/options"
+                hx-trigger="load"
+                hx-swap="innerHTML">
             <option value="">-- Loading steps --</option>
         </select>
         <button id="log-auto-scroll" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm rounded-lg transition">
@@ -47,7 +51,6 @@ const logViewer = {
 
     init() {
         console.log('Log Viewer initialized - RunID:', this.currentRunId);
-        this.loadSteps();
 
         document.getElementById('step-selector').addEventListener('change', (e) => {
             console.log('Step selected:', e.target.value, 'RunID:', this.currentRunId);
@@ -71,41 +74,6 @@ const logViewer = {
 
         document.getElementById('log-download').addEventListener('click', () => {
             this.downloadLogs();
-        });
-    },
-
-    loadSteps() {
-        // Fetch the PipelineRun to get actual step names
-        const url = `/api/runs/${this.currentRunId}`;
-        fetch(url)
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                this.populateSteps(data.steps || []);
-            })
-            .catch(error => {
-                console.error('Failed to load steps:', error);
-                const selector = document.getElementById('step-selector');
-                selector.innerHTML = '<option value="">-- Error loading steps --</option>';
-            });
-    },
-
-    populateSteps(steps) {
-        const selector = document.getElementById('step-selector');
-        selector.innerHTML = '<option value="">-- Choose a step --</option>';
-
-        if (!steps || steps.length === 0) {
-            selector.innerHTML += '<option disabled>No steps found</option>';
-            return;
-        }
-
-        steps.forEach(step => {
-            const option = document.createElement('option');
-            option.value = step.name || step.id;
-            option.textContent = `${step.name || step.id} (${step.status || 'Unknown'})`;
-            selector.appendChild(option);
         });
     },
 
