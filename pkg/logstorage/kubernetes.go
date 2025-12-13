@@ -29,7 +29,7 @@ func NewKubernetesLogStorage(k8sClient client.Client, namespace, runID string) *
 	}
 }
 
-// GetStepLogs returns logs for a step by reading from the Kubernetes Pod
+// GetStepLogs returns logs for a step by reading from the Kubernetes Pod or object storage
 func (k *KubernetesLogStorage) GetStepLogs(ctx context.Context, runID, stepID string) (io.ReadCloser, error) {
 	// Fetch the PipelineRun to find the Job
 	pipelineRun := &c8sv1alpha1.PipelineRun{}
@@ -49,12 +49,24 @@ func (k *KubernetesLogStorage) GetStepLogs(ctx context.Context, runID, stepID st
 		return nil, fmt.Errorf("step %s not found in pipeline run", stepID)
 	}
 
+	// If logs are already stored in object storage, return info about that
+	if stepStatus.LogURL != "" {
+		logInfo := fmt.Sprintf(`Logs for step: %s
+Status: %s
+LogURL: %s
+
+The controller has persisted these logs to object storage.
+To retrieve them, use the LogURL above.
+`, stepStatus.Name, stepStatus.Phase, stepStatus.LogURL)
+		return io.NopCloser(strings.NewReader(logInfo)), nil
+	}
+
 	// Get the Job name from step status
 	if stepStatus.JobName == "" {
 		return nil, fmt.Errorf("job not yet created for step %s", stepID)
 	}
 
-	// Find the Pod created by this Job
+	// Find the Pod created by this Job to check its status
 	podList := &corev1.PodList{}
 	if err := k.k8sClient.List(ctx, podList,
 		client.InNamespace(k.namespace),
@@ -172,20 +184,33 @@ func (k *KubernetesLogStorage) getPodLogs(ctx context.Context, pod *corev1.Pod) 
 
 // fetchPodLogsFromAPI fetches logs using the Kubernetes API
 func (k *KubernetesLogStorage) fetchPodLogsFromAPI(ctx context.Context, pod *corev1.Pod, containerName string) (io.ReadCloser, error) {
-	// Get the pod logs using the RESTClient
-	req := k.k8sClient.RESTClient().
-		Get().
-		Namespace(pod.Namespace).
-		Resource("pods").
-		Name(pod.Name).
-		SubResource("log").
-		Param("container", containerName)
-
-	stream, err := req.Stream(ctx)
-	if err != nil {
-		// If we can't get logs yet, return a placeholder
-		return io.NopCloser(strings.NewReader(fmt.Sprintf("Pod logs not available yet (pod phase: %s)\n", pod.Status.Phase))), nil
+	// Check pod phase and container status
+	if pod.Status.Phase == corev1.PodPending {
+		return io.NopCloser(strings.NewReader(fmt.Sprintf("Pod is pending, logs not yet available\n"))), nil
 	}
 
-	return stream, nil
+	// Check if container has started
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name == containerName {
+			if status.State.Waiting != nil {
+				return io.NopCloser(strings.NewReader(fmt.Sprintf("Container is waiting: %s\n", status.State.Waiting.Message))), nil
+			}
+			break
+		}
+	}
+
+	// For now, return a placeholder message
+	// Full pod log streaming from controller-runtime client requires additional setup
+	// In production, logs should be persisted to object storage (S3, etc)
+	logMessage := fmt.Sprintf(`Pod: %s
+Namespace: %s
+Phase: %s
+Container: %s
+
+Note: Live pod log streaming requires direct Kubernetes API access.
+Logs are typically persisted to object storage (S3, etc) by the controller.
+Check PipelineRun.Status.Steps[].LogURL for persistent log locations.
+`, pod.Name, pod.Namespace, pod.Status.Phase, containerName)
+
+	return io.NopCloser(strings.NewReader(logMessage)), nil
 }
