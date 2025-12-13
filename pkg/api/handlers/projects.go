@@ -15,6 +15,7 @@ import (
 	"github.com/org/c8s/pkg/apierrors"
 	"github.com/org/c8s/pkg/dashboard"
 	"github.com/org/c8s/pkg/api/responses"
+	"github.com/org/c8s/pkg/storage"
 )
 
 // k8sClient is initialized by the main package
@@ -23,6 +24,14 @@ var k8sClient *dashboard.K8sClient
 // InitK8sClient sets the k8s client for handlers
 func InitK8sClient(client *dashboard.K8sClient) {
 	k8sClient = client
+}
+
+// storageClient is initialized by the main package for S3 log persistence
+var storageClient storage.Client
+
+// InitStorageClient sets the storage client for handlers
+func InitStorageClient(client storage.Client) {
+	storageClient = client
 }
 
 // ListProjectsHandler returns projects for authenticated user

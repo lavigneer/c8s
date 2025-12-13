@@ -30,8 +30,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"k8s.io/client-go/kubernetes"
+
 	c8sv1alpha1 "github.com/org/c8s/pkg/apis/v1alpha1"
 	"github.com/org/c8s/pkg/controller"
+	"github.com/org/c8s/pkg/storage"
+	"github.com/org/c8s/pkg/storage/s3"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -85,10 +89,41 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize S3 storage client for log persistence (optional)
+	var storageClient storage.Client
+	storageConfig := storage.NewConfigFromEnv()
+
+	if storageConfig.Bucket != "" {
+		setupLog.Info("Initializing S3 storage client",
+			"endpoint", storageConfig.Endpoint,
+			"bucket", storageConfig.Bucket)
+		sc, err := s3.NewClient(storageConfig)
+		if err != nil {
+			setupLog.Error(err, "Failed to create S3 storage client, logs will not be persisted")
+			// Don't exit - controller can still work without S3
+		} else {
+			storageClient = sc
+			setupLog.Info("S3 storage client initialized successfully")
+		}
+	} else {
+		setupLog.Info("S3 storage not configured, logs will only be available from Kubernetes pods")
+	}
+
+	// Initialize log collector with Kubernetes clientset
+	var logCollector *controller.LogCollector
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "Failed to create Kubernetes clientset for log collection")
+		os.Exit(1)
+	}
+	logCollector = controller.NewLogCollector(clientset, storageClient)
+	setupLog.Info("Log collector initialized")
+
 	// Setup PipelineRun controller
 	if err = (&controller.PipelineRunReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		LogCollector: logCollector,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PipelineRun")
 		os.Exit(1)

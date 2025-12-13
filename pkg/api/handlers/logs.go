@@ -46,10 +46,17 @@ func LogStreamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use Kubernetes log storage to fetch real logs from Job Pods
+	// Use hybrid log storage (S3 with K8s fallback) to fetch logs
 	var logStorage logstorage.LogStorage
 	if k8sClient != nil {
-		logStorage = logstorage.NewKubernetesLogStorage(k8sClient, k8sClient.Clientset, user.Namespace, runID)
+		if storageClient != nil {
+			// Use hybrid storage: try S3 first (for completed jobs), fall back to K8s pods (for running jobs)
+			logStorage = logstorage.NewHybridLogStorage(
+				k8sClient.Client, k8sClient.Clientset, storageClient, user.Namespace, runID)
+		} else {
+			// No S3 storage, use Kubernetes pods only
+			logStorage = logstorage.NewKubernetesLogStorage(k8sClient.Client, k8sClient.Clientset, user.Namespace, runID)
+		}
 	} else {
 		// Fallback to demo logs if K8s client not available
 		logStorage = logstorage.NewInMemoryLogStorageWithRun(runID)
@@ -174,8 +181,25 @@ func GetLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Get actual log storage
-	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
+	// Get user namespace for log retrieval
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	// Use hybrid log storage (S3 with K8s fallback)
+	var logStorage logstorage.LogStorage
+	if k8sClient != nil {
+		if storageClient != nil {
+			logStorage = logstorage.NewHybridLogStorage(
+				k8sClient.Client, k8sClient.Clientset, storageClient, user.Namespace, runID)
+		} else {
+			logStorage = logstorage.NewKubernetesLogStorage(k8sClient.Client, k8sClient.Clientset, user.Namespace, runID)
+		}
+	} else {
+		logStorage = logstorage.NewInMemoryLogStorageWithRun(runID)
+	}
 
 	// Get logs
 	reader, err := logStorage.GetStepLogs(r.Context(), runID, stepID)
@@ -221,8 +245,25 @@ func GetLogSnapshotHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO: Get actual log storage
-	logStorage := logstorage.NewInMemoryLogStorageWithRun(runID)
+	// Get user namespace for log retrieval
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		_ = responses.RespondError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	// Use hybrid log storage (S3 with K8s fallback)
+	var logStorage logstorage.LogStorage
+	if k8sClient != nil {
+		if storageClient != nil {
+			logStorage = logstorage.NewHybridLogStorage(
+				k8sClient.Client, k8sClient.Clientset, storageClient, user.Namespace, runID)
+		} else {
+			logStorage = logstorage.NewKubernetesLogStorage(k8sClient.Client, k8sClient.Clientset, user.Namespace, runID)
+		}
+	} else {
+		logStorage = logstorage.NewInMemoryLogStorageWithRun(runID)
+	}
 
 	// Get log snapshot
 	logLines, err := logStorage.GetLogSnapshot(r.Context(), runID, stepID, lines)

@@ -39,6 +39,8 @@ import (
 	appconfig "github.com/org/c8s/pkg/config"
 	"github.com/org/c8s/pkg/dashboard"
 	_ "github.com/org/c8s/pkg/metrics" // Import for side effects (metric registration)
+	"github.com/org/c8s/pkg/storage"
+	"github.com/org/c8s/pkg/storage/s3"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -122,6 +124,21 @@ func main() {
 	k8sClient := dashboard.NewK8sClientWithClientset(c, clientset)
 	handlers.InitK8sClient(k8sClient)
 	log.Println("Kubernetes client initialized successfully")
+
+	// Initialize S3 storage client for log retrieval (optional)
+	storageConfig := storage.NewConfigFromEnv()
+	if storageConfig.Bucket != "" {
+		log.Println("Initializing S3 storage client for log retrieval...")
+		sc, err := s3.NewClient(storageConfig)
+		if err != nil {
+			log.Printf("WARNING: Failed to create S3 storage client: %v", err)
+		} else {
+			handlers.InitStorageClient(sc)
+			log.Println("S3 storage client initialized successfully")
+		}
+	} else {
+		log.Println("S3 storage not configured, logs will only be available from Kubernetes pods")
+	}
 
 	// Create rate limiter for public API endpoints from config
 	apiRateLimiter := apimiddleware.NewRateLimiter(cfg.APIRateLimit, cfg.APIRateLimitBurst)
