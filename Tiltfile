@@ -286,7 +286,7 @@ helm_resource(
   chart='./chart/c8s',
   flags=[
     '-f', './chart/c8s/values-dev.yaml',
-    '-f', './tilt/c8s-values.yaml',
+    '-f', './tilt/config/c8s-values.yaml',
     '--create-namespace',
   ],
   image_deps=[
@@ -362,7 +362,7 @@ local_resource(
 # nginx reverse proxy for consolidating API and webhook under one ngrok tunnel
 local_resource(
   name='c8s-nginx-proxy',
-  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
+  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/config/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
   allow_parallel=True,
   resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
 )
@@ -373,7 +373,7 @@ local_resource(
 
 local_resource(
   name='c8s-ngrok-tunnel',
-  serve_cmd='ngrok start --all --config=./tilt/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
+  serve_cmd='ngrok start --all --config=./tilt/config/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
   allow_parallel=True,
   resource_deps=['c8s-nginx-proxy'],
 )
@@ -384,6 +384,6 @@ local_resource(
 # ============================================================================
 
 watch_file('./chart/c8s')
-watch_file('./tilt/c8s-values.yaml')
+watch_file('./tilt/config/c8s-values.yaml')
 watch_file('./cmd/')
 watch_file('./pkg/')

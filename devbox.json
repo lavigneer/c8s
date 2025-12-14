@@ -20,10 +20,12 @@
       "echo 'Kubectl version: $(kubectl version --client --short 2>/dev/null || echo \"not configured\")'",
       "echo ''",
       "echo 'Quick commands:'",
-      "echo '  make help       - Show available make targets'",
+      "echo '  make dev        - Start Tilt development environment (recommended)'",
       "echo '  make test       - Run tests'",
       "echo '  make build      - Build all binaries'",
-      "echo '  make manifests  - Generate CRD manifests'",
+      "echo '  make help       - Show all available make targets'",
+      "echo ''",
+      "echo 'See devbox-README.md for tool documentation'",
       "echo ''"
     ],
     "scripts": {
