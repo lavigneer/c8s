@@ -60,18 +60,20 @@
 
         <!-- Important Note -->
         <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mt-4">
-            <p class="text-sm text-blue-900 dark:text-blue-200">
-                <strong>💡 Tip:</strong> Once configured, the webhook will automatically trigger C8S pipelines whenever you push code or open a pull request.
+            <p class="text-sm text-blue-900 dark:text-blue-200 flex items-start gap-2">
+                {{template "icons/light-bulb" dict "Class" "w-4 h-4 flex-shrink-0 mt-0.5"}}
+                <span><strong>Tip:</strong> Once configured, the webhook will automatically trigger C8S pipelines whenever you push code or open a pull request.</span>
             </p>
         </div>
     </div>
 
     <!-- Test Webhook -->
     <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <button class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+        <button class="text-sm text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5"
                 hx-post="/api/webhooks/test"
                 hx-confirm="Send a test webhook to verify the connection is working?">
-            📤 Send Test Webhook
+            {{template "icons/arrow-up-tray" dict "Class" "w-4 h-4"}}
+            Send Test Webhook
         </button>
     </div>
 </div>

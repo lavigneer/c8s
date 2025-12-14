@@ -78,12 +78,13 @@
     </div>
 
     <!-- View Logs Button -->
-    <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white"
+    <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white inline-flex items-center gap-2"
             onclick="showLogs('{{.ID}}', '{{.Name}}')"
             hx-get="/api/runs/{{.PipelineRunID}}/steps/{{.ID}}/logs"
             hx-target="#log-section"
             hx-swap="innerHTML">
-        📋 View Logs
+        {{template "icons/document-text" dict "Class" "w-4 h-4"}}
+        View Logs
     </button>
 </div>
 
