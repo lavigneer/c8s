@@ -1,0 +1,88 @@
+# Monorepo Pipeline
+# Build and test multiple services in a monorepo
+
+version: v1alpha1
+name: monorepo-pipeline
+description: Build all services in monorepo
+
+repository: https://github.com/org/monorepo
+branches: [main, develop]
+
+timeout: 45m  # Longer timeout for large builds
+
+steps:
+  # Install root dependencies
+  - name: install
+    image: node:20
+    commands:
+      - npm ci
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Service A: Frontend
+  - name: frontend-test
+    image: node:20
+    commands:
+      - cd services/frontend
+      - npm test
+      - npm run build
+    dependsOn: [install]
+    artifacts:
+      - services/frontend/dist
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Service B: API Server
+  - name: api-test
+    image: golang:1.25
+    commands:
+      - cd services/api
+      - go test ./...
+      - go build -o api-server
+    dependsOn: [install]
+    artifacts:
+      - services/api/api-server
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Service C: Worker
+  - name: worker-test
+    image: python:3.11
+    commands:
+      - cd services/worker
+      - pip install -r requirements.txt
+      - pytest
+    dependsOn: [install]
+    resources:
+      cpu: 500m
+      memory: 1Gi
+
+  # Integration tests (runs after all services tested)
+  - name: integration-tests
+    image: node:20
+    commands:
+      - npm run test:integration
+    dependsOn: [frontend-test, api-test, worker-test]
+    resources:
+      cpu: 2000m
+      memory: 4Gi
+
+  # Deploy (only on main branch, after all tests pass)
+  - name: deploy
+    image: ubuntu:22.04
+    commands:
+      - ./scripts/deploy.sh production
+    dependsOn: [integration-tests]
+    secrets:
+      - secretRef: deploy-credentials
+        key: token
+        envVar: DEPLOY_TOKEN
+    conditional:
+      branch: "main"
+      onSuccess: true
+    resources:
+      cpu: 500m
+      memory: 512Mi

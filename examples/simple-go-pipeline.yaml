@@ -1,0 +1,47 @@
+# Simple Go Pipeline
+# A basic pipeline for testing and building a Go application
+
+version: v1alpha1
+name: simple-go-pipeline
+description: Test and build a Go application
+
+# Repository configuration
+repository: https://github.com/org/my-go-app
+branches:
+  - main
+  - develop
+
+# Pipeline steps
+steps:
+  # Step 1: Run tests
+  - name: test
+    image: golang:1.25
+    commands:
+      - go mod download
+      - go test -v ./...
+      - go test -race ./...
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Step 2: Build binary (runs after test)
+  - name: build
+    image: golang:1.25
+    commands:
+      - CGO_ENABLED=0 go build -o app ./cmd/main.go
+      - ls -lh app
+    dependsOn: [test]
+    artifacts:
+      - app
+    resources:
+      cpu: 500m
+      memory: 1Gi
+
+  # Step 3: Lint code (runs in parallel with test)
+  - name: lint
+    image: golangci/golangci-lint:latest
+    commands:
+      - golangci-lint run
+    resources:
+      cpu: 500m
+      memory: 512Mi

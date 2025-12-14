@@ -1,0 +1,54 @@
+# Docker Build Pipeline
+# Builds and pushes a Docker image to a registry
+
+version: v1alpha1
+name: docker-build-pipeline
+description: Build and push Docker image
+
+repository: https://github.com/org/my-app
+branches: [main]
+
+steps:
+  # Run tests first
+  - name: test
+    image: node:20
+    commands:
+      - npm ci
+      - npm run test
+      - npm run lint
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Build Docker image
+  - name: docker-build
+    image: docker:latest
+    commands:
+      - docker build -t my-app:$COMMIT_SHA .
+      - docker tag my-app:$COMMIT_SHA my-app:latest
+    dependsOn: [test]
+    resources:
+      cpu: 2000m
+      memory: 4Gi
+    # Note: Requires Docker-in-Docker or similar setup
+
+  # Push to registry
+  - name: docker-push
+    image: docker:latest
+    commands:
+      - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+      - docker push my-app:$COMMIT_SHA
+      - docker push my-app:latest
+    dependsOn: [docker-build]
+    secrets:
+      - secretRef: docker-credentials
+        key: username
+        envVar: DOCKER_USERNAME
+      - secretRef: docker-credentials
+        key: password
+        envVar: DOCKER_PASSWORD
+    resources:
+      cpu: 500m
+      memory: 1Gi
+    conditional:
+      branch: "main"  # Only push on main branch

@@ -1,0 +1,135 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: When I do X, Y happens instead of Z
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Create pipeline with '...'
+        2. Trigger webhook from '...'
+        3. View logs at '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: The pipeline should complete successfully
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: The pipeline fails with error "..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: |
+        Please paste relevant logs, stack traces, or error messages.
+        Tip: You can attach files by clicking this area to highlight it and dragging files in.
+      render: shell
+      placeholder: |
+        kubectl logs deployment/c8s-controller -n c8s-system
+        # Paste output here
+
+  - type: input
+    id: version
+    attributes:
+      label: C8S Version
+      description: What version of C8S are you running?
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where is C8S running?
+      options:
+        - Local development (Tilt + kind/k3d)
+        - Self-hosted Kubernetes cluster
+        - Cloud Kubernetes (EKS/GKE/AKS)
+        - Other (describe in additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: kubernetes-version
+    attributes:
+      label: Kubernetes Version
+      description: What version of Kubernetes are you using?
+      placeholder: "kubectl version --short"
+    validations:
+      required: true
+
+  - type: textarea
+    id: pipeline-config
+    attributes:
+      label: Pipeline Configuration
+      description: The pipeline YAML that triggers the bug (if applicable)
+      render: yaml
+      placeholder: |
+        version: v1alpha1
+        name: example-pipeline
+        steps:
+          - name: test
+            image: golang:1.25
+            commands:
+              - go test ./...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: |
+        - Custom configuration
+        - Recent changes
+        - Related issues
+        - Workarounds attempted
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before submitting
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have included relevant logs and error messages
+          required: true
+        - label: I have specified my C8S and Kubernetes versions
+          required: true
+        - label: I have provided steps to reproduce the issue
+          required: true

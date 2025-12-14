@@ -1,0 +1,44 @@
+# Matrix Build Pipeline
+# Test across multiple versions and platforms
+
+version: v1alpha1
+name: matrix-pipeline
+description: Test across Go versions and OS platforms
+
+repository: https://github.com/org/my-library
+branches: [main, develop]
+
+# Matrix configuration
+matrix:
+  dimensions:
+    go_version: ["1.24", "1.25"]
+    os: ["ubuntu", "alpine"]
+  exclude:
+    # Exclude specific combinations if needed
+    - go_version: "1.24"
+      os: "alpine"
+
+steps:
+  # Test step uses matrix variables
+  - name: test
+    image: golang:${{ matrix.go_version }}-${{ matrix.os }}
+    commands:
+      - go version
+      - go mod download
+      - go test -v ./...
+    resources:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Build for specific matrix combination
+  - name: build
+    image: golang:${{ matrix.go_version }}-${{ matrix.os }}
+    commands:
+      - go build -o app-${{ matrix.os }}-go${{ matrix.go_version }} .
+      - ls -lh app-*
+    dependsOn: [test]
+    artifacts:
+      - app-${{ matrix.os }}-go${{ matrix.go_version }}
+    resources:
+      cpu: 500m
+      memory: 1Gi
