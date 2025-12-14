@@ -3,8 +3,20 @@
 [![Go Version](https://img.shields.io/badge/go-1.25-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/org/c8s/workflows/CI/badge.svg)](https://github.com/org/c8s/actions)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](./docs/README.md)
+[![Tests](https://img.shields.io/badge/tests-200%2B-success.svg)](./tests/README.md)
 
 C8S is a Kubernetes-native continuous integration system that runs pipeline steps as isolated container Jobs. It leverages Kubernetes primitives (CRDs, Jobs, Pods) for orchestration, scheduling, and state management, providing a scalable and secure CI platform.
+
+## Quick Links
+
+📚 **Documentation**: [Getting Started](./docs/guides/getting-started.md) • [Architecture](./docs/guides/architecture.md) • [API Reference](./specs/001-build-a-continuous/contracts/openapi.yaml)
+
+🛠️ **Development**: [5-Min Setup](./docs/development/QUICKSTART.md) • [Tilt Workflow](./docs/development/TILT-WORKFLOW.md) • [Contributing](./docs/CONTRIBUTING.md)
+
+🧪 **Testing**: [Test Guide](./tests/README.md) • [E2E Tests](./tests/e2e/README.md) • [Coverage](./coverage.html)
+
+🚀 **Deployment**: [Helm Chart](./chart/c8s/README.md) • [Operator Guide](./docs/operations/operator-guide.md)
 
 ## Features
 

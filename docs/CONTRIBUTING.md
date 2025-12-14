@@ -48,24 +48,25 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ### Prerequisites
 
-See [CLAUDE.md](./CLAUDE.md) for development environment setup.
+**For detailed setup, see**: [Development QUICKSTART](./development/QUICKSTART.md) (5-minute setup)
 
 **Quick Setup**:
 ```bash
-# Clone repository
-git clone https://github.com/org/c8s.git
+# 1. Install Devbox
+curl -fsSL https://get.jetify.com/devbox | bash
+
+# 2. Clone repository
+git clone https://github.com/lavigneer/c8s.git
 cd c8s
 
-# Install dependencies
-devbox shell    # or manual setup (see CLAUDE.md)
-go mod download
+# 3. Enter dev environment
+devbox shell
 
-# Run tests
-make test
-
-# Start development
-tilt up         # or: make run-controller & make run-api-server
+# 4. Start development
+make dev    # or: tilt up
 ```
+
+**Alternative manual setup**: See [CLAUDE.md](../CLAUDE.md)
 
 ### Development Tools
 
@@ -76,28 +77,22 @@ tilt up         # or: make run-controller & make run-api-server
 
 ### Project Structure
 
+See [pkg/README.md](../pkg/README.md) for detailed package documentation.
+
 ```
 c8s/
 ├── cmd/                    # Executable entry points
-│   ├── controller/         # Controller binary
-│   ├── api-server/         # API server binary
-│   ├── webhook/            # Webhook service binary
-│   └── c8s/               # CLI tool
-│
-├── pkg/                    # Shared packages
-│   ├── apis/              # CRD definitions
-│   ├── controller/        # Controller logic
-│   ├── dashboard/         # Dashboard/API logic
-│   └── ...
-│
-├── tests/                  # Test files
-│   ├── unit/              # Unit tests
-│   ├── integration/       # Integration tests
-│   └── e2e/              # End-to-end tests
-│
+├── pkg/                    # Shared packages (see pkg/README.md)
+├── tests/                  # Test files (see tests/README.md)
 ├── docs/                   # Documentation
-├── config/                 # Kubernetes manifests
-└── Makefile               # Build commands
+│   ├── guides/            # User guides
+│   ├── development/       # Developer docs
+│   └── operations/        # Operations guides
+├── chart/c8s/             # Helm chart
+├── config/                # CRD manifests
+├── tilt/                  # Tilt configuration
+└── Makefile              # Build commands
+```
 ```
 
 ---
