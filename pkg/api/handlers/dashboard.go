@@ -111,6 +111,114 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ProjectDetailHandler renders the project detail page with runs for that project
+func ProjectDetailHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+		return
+	}
+
+	// Extract projectID from URL path
+	projectID := r.PathValue("projectId")
+	if projectID == "" {
+		http.Error(w, "Project ID required", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch all projects and find the requested one
+	allProjects := FetchPipelineConfigsForUser(r.Context(), user.Namespace)
+	var project *dashboard.ProjectDTO
+	for _, p := range allProjects {
+		if p.ID == projectID {
+			project = p
+			break
+		}
+	}
+
+	if project == nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	// Fetch all runs and filter for this project
+	allRuns := FetchPipelineRunsForUser(r.Context(), user.Namespace)
+	var projectRuns []*dashboard.PipelineRunDTO
+	for _, run := range allRuns {
+		if run.ProjectID == projectID {
+			projectRuns = append(projectRuns, run)
+		}
+	}
+
+	// Parse filter parameters and apply filters
+	filters := ParseFilters(r)
+	projectRuns = filterPipelineRuns(projectRuns, filters)
+
+	// Parse pagination parameters
+	params := pagination.ParsePaginationParams(r.URL.Query())
+
+	// Calculate pagination metadata
+	total := len(projectRuns)
+	paginationMeta := pagination.CalculatePagination(total, params.Page, params.PerPage)
+
+	// Get branches for this project
+	var branches []string
+	branchMap := make(map[string]bool)
+	for _, run := range projectRuns {
+		if !branchMap[run.Branch] {
+			branches = append(branches, run.Branch)
+			branchMap[run.Branch] = true
+		}
+	}
+
+	// Calculate project stats
+	totalRuns := len(projectRuns)
+	successCount := 0
+	failedCount := 0
+	runningCount := 0
+	for _, run := range projectRuns {
+		switch run.Status {
+		case "Succeeded":
+			successCount++
+		case "Failed":
+			failedCount++
+		case "Running":
+			runningCount++
+		}
+	}
+
+	successRate := float64(0)
+	if totalRuns > 0 {
+		successRate = (float64(successCount) / float64(totalRuns)) * 100
+	}
+
+	// Generate activity feed for this project only
+	activities := GenerateActivityFeed(projectRuns, 5)
+
+	// Prepare data for template
+	data := map[string]interface{}{
+		"User":         user,
+		"Project":      project,
+		"ProjectID":    projectID,
+		"PipelineRuns": projectRuns,
+		"Pagination":   paginationMeta,
+		"Branches":     branches,
+		"TotalRuns":    totalRuns,
+		"SuccessCount": successCount,
+		"FailedCount":  failedCount,
+		"RunningCount": runningCount,
+		"SuccessRate":  successRate,
+		"Activities":   activities,
+	}
+
+	// Render template
+	if err := dashboard.RenderTemplate(w, "project_detail", data); err != nil {
+		log.Printf("ERROR: Failed to render project detail: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to render project detail: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
 // ProjectsHandler renders the projects page
 func ProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := auth.GetUserFromContext(r.Context())

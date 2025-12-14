@@ -21,15 +21,15 @@
     {{template "partials/filter_panel" .}}
 
     <!-- Main Content Grid: Pipelines (2/3) + Activity Feed (1/3) -->
-    <div class="mt-4">
-        <div class="grid gap-0 lg:gap-0 lg:grid-cols-3">
+    <div class="px-6 mt-4">
+        <div class="grid gap-4 lg:grid-cols-3">
             <!-- Pipelines Section (2/3 width) -->
             <div class="lg:col-span-2">
                 <!-- Pipeline List Container with SSE -->
                 <div id="pipeline-list-container"
                      hx-ext="sse"
                      sse-connect="/api/projects/{{.ProjectID}}/runs/updates"
-                     class="bg-white dark:bg-gray-800/30 rounded-none border-b border-gray-200 dark:border-gray-700 overflow-hidden">
+                     class="bg-white dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
 
                 <!-- Recent Builds Header -->
                 <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-3">

@@ -186,6 +186,7 @@ func main() {
 		// Dashboard pages (US1)
 		r.Get("/dashboard", handlers.DashboardHandler)
 		r.Get("/dashboard/projects", handlers.ProjectsHandler)
+		r.Get("/dashboard/projects/{projectId}", handlers.ProjectDetailHandler)
 
 		// Dashboard pages (US2)
 		r.Get("/dashboard/runs/{runId}", handlers.PipelineRunDetailsHandler)
