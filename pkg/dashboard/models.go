@@ -9,6 +9,7 @@ type PipelineRunDTO struct {
 	Name            string     `json:"name"`
 	Status          string     `json:"status"` // Pending, Running, Succeeded, Failed, Canceled
 	CommitSHA       string     `json:"commit_sha"`
+	CommitMessage   string     `json:"commit_message"`
 	Branch          string     `json:"branch"`
 	Author          string     `json:"author"`
 	AuthorEmail     string     `json:"author_email"`

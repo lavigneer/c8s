@@ -17,6 +17,7 @@ func MapPipelineRunToDTO(run *v1alpha1.PipelineRun) *PipelineRunDTO {
 		Name:          run.Name,
 		Status:        string(run.Status.Phase),
 		CommitSHA:     run.Spec.Commit,
+		CommitMessage: run.Spec.CommitMessage,
 		Branch:        run.Spec.Branch,
 		Author:        run.Spec.TriggeredBy,
 		AuthorEmail:   "",
