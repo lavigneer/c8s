@@ -24,8 +24,10 @@ Essential reference materials for using C8S:
 
 Resources for building and contributing to C8S:
 
+- **[Quick Start (5 min)](./development/QUICKSTART.md)** - Get started developing in 5 minutes (recommended first stop)
+- **[Tilt Workflow](./development/TILT-WORKFLOW.md)** - Complete Tilt workflow guide (primary development workflow)
 - **[Development Guide](./development/development.md)** - Building and testing locally
-- **[Tilt Setup](./development/tilt-setup.md)** - Local Kubernetes development with Tilt (primary workflow)
+- **[Tilt Setup](./development/tilt-setup.md)** - Local Kubernetes development with Tilt
 - **[Devbox Setup](./development/devbox-setup.md)** - Using Devbox for reproducible development environment
 - **[Local Testing](./development/local-testing.md)** - Running tests locally
 - **[Image Building](./development/image-building.md)** - Docker image building and registry setup
@@ -49,6 +51,7 @@ Guides for deploying and managing C8S in production:
 
 Deep technical specifications and contracts:
 
+- **[Architecture Guide](./guides/architecture.md)** - Complete system architecture and design
 - [Feature Specification](../specs/001-build-a-continuous/spec.md) - Core CI/CD feature spec
 - [Data Model](../specs/001-build-a-continuous/data-model.md) - CRD and data structure definitions
 - [API Contracts](../specs/001-build-a-continuous/contracts/openapi.yaml) - REST API specification
@@ -105,8 +108,25 @@ docs/
 | Troubleshoot issues | [Troubleshooting](./guides/troubleshooting.md) |
 | See all settings | [Configuration](./guides/configuration.md) |
 
+## Directory Documentation
+
+Comprehensive README files for each major directory:
+
+- **[pkg/](../pkg/README.md)** - Go package structure and architecture
+- **[tests/](../tests/README.md)** - Testing infrastructure and test suites
+  - [E2E Tests](../tests/e2e/README.md) - Playwright end-to-end testing
+  - [Load Tests](../tests/load/README.md) - Performance and load testing
+- **[hack/](../hack/README.md)** - Code generation utilities and templates
+- **[scripts/](../scripts/README.md)** - Development and CI/CD utility scripts
+- **[specs/](../specs/README.md)** - Feature specifications (SpecKit framework)
+- **[deploy/](../deploy/README.md)** - Kubernetes manifests and migration guide
+- **[examples/](../examples/README.md)** - Pipeline configuration examples
+- **[.github/workflows/](../.github/workflows/README.md)** - CI/CD workflows
+
 ## Other Resources
 
 - **[Contributing Guidelines](../CONTRIBUTING.md)** - How to contribute to C8S
 - **[Development Guidelines](../CLAUDE.md)** - Project structure and standards
 - **[Main README](../README.md)** - Project overview and features
+- **[Security Policy](../SECURITY.md)** - Vulnerability reporting and security practices
+- **[Roadmap](../ROADMAP.md)** - Strategic roadmap and future features
