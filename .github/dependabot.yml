@@ -1,0 +1,103 @@
+# Dependabot configuration for C8S
+# https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Go modules
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "lavigneer"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "[Deps]"
+      include: "scope"
+    groups:
+      # Group Kubernetes-related dependencies
+      k8s-dependencies:
+        patterns:
+          - "k8s.io/*"
+          - "sigs.k8s.io/*"
+      # Group testing dependencies
+      test-dependencies:
+        patterns:
+          - "github.com/stretchr/testify"
+          - "github.com/onsi/ginkgo*"
+          - "github.com/onsi/gomega"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "lavigneer"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "[CI]"
+
+  # npm (for Playwright E2E tests and Tailwind CSS)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "lavigneer"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "[Deps]"
+      include: "scope"
+    groups:
+      # Group Playwright updates
+      playwright-dependencies:
+        patterns:
+          - "@playwright/*"
+          - "playwright*"
+      # Group Tailwind CSS
+      tailwind-dependencies:
+        patterns:
+          - "tailwindcss*"
+          - "@tailwindcss/*"
+      # Group development dependencies
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker (for base images in Dockerfile)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "lavigneer"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "[Docker]"
