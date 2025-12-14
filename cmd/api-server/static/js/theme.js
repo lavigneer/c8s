@@ -47,16 +47,12 @@ class ThemeManager {
         const root = document.documentElement;
 
         if (theme === this.DARK_CLASS) {
-            root.classList.remove(this.LIGHT_CLASS);
             root.classList.add(this.DARK_CLASS);
-            root.classList.add('dark');
-            document.body.classList.add('dark');
+            document.body.classList.add(this.DARK_CLASS);
             localStorage.setItem(this.STORAGE_KEY, this.DARK_CLASS);
         } else {
             root.classList.remove(this.DARK_CLASS);
-            root.classList.remove('dark');
-            root.classList.add(this.LIGHT_CLASS);
-            document.body.classList.remove('dark');
+            document.body.classList.remove(this.DARK_CLASS);
             localStorage.setItem(this.STORAGE_KEY, this.LIGHT_CLASS);
         }
 
