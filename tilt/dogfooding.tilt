@@ -1,0 +1,77 @@
+# Tilt Module: Dog-fooding / GitHub Actions Integration
+#
+# This module sets up ngrok tunneling and nginx reverse proxy to enable
+# GitHub webhooks to reach your local C8S instance. This allows C8S to
+# test itself (dog-fooding) by receiving real GitHub webhook events.
+#
+# To enable: Uncomment the load() call in the main Tiltfile
+#
+# Prerequisites:
+# - ngrok account and authtoken configured
+# - GitHub repository with webhook configured
+# - Local C8S instance running via Tilt
+
+# ============================================================================
+# nginx Reverse Proxy
+# ============================================================================
+#
+# Consolidates API server and webhook under one ngrok tunnel using nginx
+# for path-based routing:
+#   http://ngrok-url/api/v1/*    → c8s-api-server:8000
+#   http://ngrok-url/webhook/*   → c8s-webhook:8080
+#
+local_resource(
+  name='c8s-nginx-proxy',
+  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/config/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
+  allow_parallel=True,
+  resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
+  labels=['dogfooding'],
+)
+
+# ============================================================================
+# ngrok Tunnel
+# ============================================================================
+#
+# Creates public HTTPS tunnel to localhost for GitHub webhooks
+#
+# Setup:
+#   1. Sign up for ngrok: https://ngrok.com
+#   2. Get authtoken: https://dashboard.ngrok.com/get-started/your-authtoken
+#   3. Configure ngrok: ngrok config add-authtoken <your-token>
+#   4. Start Tilt: tilt up
+#   5. Get tunnel URL: tilt logs c8s-ngrok-tunnel | grep "started tunnel"
+#   6. Configure GitHub webhook with that URL
+#
+# GitHub Webhook Configuration:
+#   - Payload URL: https://<ngrok-url>/api/v1/webhook
+#   - Content type: application/json
+#   - Secret: (use webhook secret from C8S config)
+#   - Events: Push, Pull request
+#
+local_resource(
+  name='c8s-ngrok-tunnel',
+  serve_cmd='ngrok start --all --config=./tilt/config/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
+  allow_parallel=True,
+  resource_deps=['c8s-nginx-proxy'],
+  labels=['dogfooding'],
+)
+
+# ============================================================================
+# Helper: Get ngrok URL
+# ============================================================================
+#
+# Uncomment to add a helper resource that displays the ngrok URL
+#
+# local_resource(
+#   name='get-ngrok-url',
+#   cmd='echo "Wait 10s for ngrok to start..." && sleep 10 && curl -s http://localhost:4040/api/tunnels | jq -r ".tunnels[0].public_url" || echo "ngrok not ready"',
+#   resource_deps=['c8s-ngrok-tunnel'],
+#   labels=['dogfooding'],
+# )
+
+# ============================================================================
+# Documentation
+# ============================================================================
+#
+# For complete dog-fooding setup guide, see:
+# docs/development/c8s-dogfooding.md

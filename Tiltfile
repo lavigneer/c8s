@@ -15,19 +15,12 @@
 #   tilt trigger c8s     # Force redeploy
 #   tilt logs controller # View controller logs
 #
-# ngrok Integration:
-#   ngrok CLI is used to tunnel both the API server and webhook for external access
-#   Separate ngrok instances are launched for each service
-#   Port mapping: API Server 8000, Webhook 8080
-#   The tunnel URLs are displayed in Tilt logs
-#   Requirements:
-#     - ngrok installed: https://ngrok.com/download
-#     - ngrok authtoken configured: ngrok config add-authtoken <TOKEN>
+# Optional: Dog-fooding / GitHub Webhooks
+#   Uncomment the following line to enable ngrok tunneling for GitHub webhooks:
+#   load('./tilt/dogfooding.tilt')
 #
-# Setup for GitHub Actions dog-fooding:
-#   1. Run: tilt up
-#   2. Get ngrok URLs from Tilt logs (c8s-api-server-ngrok and c8s-webhook-ngrok)
-#      Example: https://abc1234.ngrok.io
+#   This enables C8S to test itself by receiving real GitHub webhook events.
+#   See tilt/dogfooding.tilt for setup instructions.
 #   3. Add GitHub repository secrets:
 #      - C8S_API_URL: <api-server-ngrok-url>
 #      - C8S_WEBHOOK_URL: <webhook-ngrok-url>
@@ -359,24 +352,25 @@ local_resource(
   resource_deps=['minio'],
 )
 
-# nginx reverse proxy for consolidating API and webhook under one ngrok tunnel
-local_resource(
-  name='c8s-nginx-proxy',
-  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/config/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
-  allow_parallel=True,
-  resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
-)
+# ============================================================================
+# Optional: Dog-fooding Setup (GitHub Webhooks)
+# ============================================================================
+#
+# To enable C8S to test itself via GitHub webhooks (dog-fooding):
+# 1. Uncomment the following line:
+#    load('./tilt/dogfooding.tilt')
+#
+# 2. This will start:
+#    - nginx reverse proxy (consolidates API + webhook under one URL)
+#    - ngrok tunnel (exposes local C8S to internet for GitHub webhooks)
+#
+# 3. See tilt/dogfooding.tilt for complete setup instructions
+#
+# Note: Dog-fooding is OPTIONAL - most development doesn't require it.
+#       Only enable if you need to test GitHub webhook integration locally.
 
-# ngrok tunnel for C8S services (optional)
-# Routes through nginx reverse proxy on port 8888
-# nginx handles path-based routing to API server and webhook
-
-local_resource(
-  name='c8s-ngrok-tunnel',
-  serve_cmd='ngrok start --all --config=./tilt/config/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
-  allow_parallel=True,
-  resource_deps=['c8s-nginx-proxy'],
-)
+# Uncomment to enable dog-fooding:
+# load('./tilt/dogfooding.tilt')
 
 
 # ============================================================================
