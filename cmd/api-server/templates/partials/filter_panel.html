@@ -1,10 +1,8 @@
 {{define "partials/filter_panel"}}
-<div class="filter-panel bg-white dark:bg-gray-800 mx-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md dark:shadow-lg p-6 mb-8">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h3>
-
-    <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" id="filter-form">
-        <!-- Search Input -->
-        <div class="filter-group">
+<form id="filter-form" class="mx-6 mb-8">
+    <!-- Compact Search Bar with More Filters Toggle -->
+    <div class="flex gap-3 items-end">
+        <div class="flex-1">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
             <input type="text"
                    name="search"
@@ -15,132 +13,152 @@
                    hx-trigger="keyup changed delay:500ms"
                    hx-include="#filter-form [name]">
         </div>
-
-        <!-- Branch Filter -->
-        <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch</label>
-            <select name="branch"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    hx-get="/api/projects/{{.ProjectID}}/runs"
-                    hx-target="#pipeline-rows"
-                    hx-trigger="change"
-                    hx-include="#filter-form [name]">
-                <option value="">All Branches</option>
-                {{range .Branches}}
-                    <option value="{{.}}">{{.}}</option>
-                {{end}}
-            </select>
-        </div>
-
-        <!-- Status Filter -->
-        <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
-            <select name="status"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    hx-get="/api/projects/{{.ProjectID}}/runs"
-                    hx-target="#pipeline-rows"
-                    hx-trigger="change"
-                    hx-include="#filter-form [name]">
-                <option value="">All Statuses</option>
-                <option value="Succeeded">✓ Succeeded</option>
-                <option value="Failed">✗ Failed</option>
-                <option value="Running">⏳ Running</option>
-                <option value="Pending">⏸ Pending</option>
-                <option value="Cancelled">⊘ Cancelled</option>
-            </select>
-        </div>
-
-        <!-- From Date -->
-        <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Date</label>
-            <input type="date"
-                   name="from_date"
-                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   hx-get="/api/projects/{{.ProjectID}}/runs"
-                   hx-target="#pipeline-rows"
-                   hx-trigger="change"
-                   hx-include="#filter-form [name]">
-        </div>
-
-        <!-- To Date -->
-        <div class="filter-group">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Date</label>
-            <input type="date"
-                   name="to_date"
-                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   hx-get="/api/projects/{{.ProjectID}}/runs"
-                   hx-target="#pipeline-rows"
-                   hx-trigger="change"
-                   hx-include="#filter-form [name]">
-        </div>
-    </form>
-
-    <!-- Quick Filters -->
-    <div class="mt-6 pt-4 border-t border-gray-300 dark:border-gray-700">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Filters:</label>
-        <div class="flex flex-wrap gap-2">
-            <button type="button"
-                    class="px-3 py-1 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-medium rounded-full transition"
-                    onclick="applyQuickFilter('status', 'Succeeded')">
-                ✓ Succeeded
-            </button>
-            <button type="button"
-                    class="px-3 py-1 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white text-xs font-medium rounded-full transition"
-                    onclick="applyQuickFilter('status', 'Failed')">
-                ✗ Failed
-            </button>
-            <button type="button"
-                    class="px-3 py-1 bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600 text-white text-xs font-medium rounded-full transition"
-                    onclick="applyQuickFilter('status', 'Running')">
-                ⏳ Running
-            </button>
-            <button type="button"
-                    class="px-3 py-1 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-medium rounded-full transition"
-                    onclick="clearFiltersCompletely()">
-                Clear All
-            </button>
-        </div>
+        <button type="button"
+                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition"
+                onclick="toggleAdvancedFilters()"
+                id="more-filters-btn">
+            More Filters
+        </button>
     </div>
 
-    <!-- Clear Button & Export -->
-    <div class="mt-4 flex gap-2 items-center justify-between">
-        <div class="flex gap-2">
-            <button type="button"
-                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    onclick="clearFilters()"
-                    id="clear-filters-btn">
-                Clear Filters
-            </button>
+    <!-- Advanced Filters (Hidden by Default) -->
+    <div id="advanced-filters" class="hidden mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Branch Filter -->
+            <div class="filter-group">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch</label>
+                <select name="branch"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        hx-get="/api/projects/{{.ProjectID}}/runs"
+                        hx-target="#pipeline-rows"
+                        hx-trigger="change"
+                        hx-include="#filter-form [name]">
+                    <option value="">All Branches</option>
+                    {{range .Branches}}
+                        <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-group">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                <select name="status"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        hx-get="/api/projects/{{.ProjectID}}/runs"
+                        hx-target="#pipeline-rows"
+                        hx-trigger="change"
+                        hx-include="#filter-form [name]">
+                    <option value="">All Statuses</option>
+                    <option value="Succeeded">✓ Succeeded</option>
+                    <option value="Failed">✗ Failed</option>
+                    <option value="Running">⏳ Running</option>
+                    <option value="Pending">⏸ Pending</option>
+                    <option value="Cancelled">⊘ Cancelled</option>
+                </select>
+            </div>
+
+            <!-- From Date -->
+            <div class="filter-group">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Date</label>
+                <input type="date"
+                       name="from_date"
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       hx-get="/api/projects/{{.ProjectID}}/runs"
+                       hx-target="#pipeline-rows"
+                       hx-trigger="change"
+                       hx-include="#filter-form [name]">
+            </div>
+
+            <!-- To Date -->
+            <div class="filter-group">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Date</label>
+                <input type="date"
+                       name="to_date"
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       hx-get="/api/projects/{{.ProjectID}}/runs"
+                       hx-target="#pipeline-rows"
+                       hx-trigger="change"
+                       hx-include="#filter-form [name]">
+            </div>
         </div>
-        <div class="flex gap-2 items-center">
-            <div class="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                Showing <span id="result-count" class="font-semibold mx-1">0</span> results
-                <span id="filter-loading" class="ml-3 text-blue-600 dark:text-blue-400 hidden">
-                    <span class="inline-block animate-spin">⟳</span> Filtering...
-                </span>
-            </div>
-            <div class="flex gap-1 ml-4 pl-4 border-l border-gray-300 dark:border-gray-700">
-                <button type="button"
-                        class="px-3 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-semibold rounded transition"
-                        onclick="exportRuns('json')"
-                        title="Export runs as JSON">
-                    ⬇ JSON
-                </button>
-                <button type="button"
-                        class="px-3 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-semibold rounded transition"
-                        onclick="exportRuns('csv')"
-                        title="Export runs as CSV">
-                    ⬇ CSV
-                </button>
-            </div>
+    </div>
+</form>
+
+<!-- Quick Filters & Controls -->
+<div class="mx-6 flex flex-wrap gap-3 items-center justify-between">
+    <div class="flex flex-wrap gap-2">
+        <button type="button"
+                class="px-3 py-1 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-medium rounded-full transition"
+                onclick="applyQuickFilter('status', 'Succeeded')">
+            ✓ Succeeded
+        </button>
+        <button type="button"
+                class="px-3 py-1 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white text-xs font-medium rounded-full transition"
+                onclick="applyQuickFilter('status', 'Failed')">
+            ✗ Failed
+        </button>
+        <button type="button"
+                class="px-3 py-1 bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600 text-white text-xs font-medium rounded-full transition"
+                onclick="applyQuickFilter('status', 'Running')">
+            ⏳ Running
+        </button>
+        <button type="button"
+                class="px-3 py-1 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-medium rounded-full transition"
+                onclick="clearFiltersCompletely()">
+            Clear All
+        </button>
+    </div>
+
+    <div class="flex gap-2 items-center">
+        <div class="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+            Showing <span id="result-count" class="font-semibold mx-1">0</span> results
+            <span id="filter-loading" class="ml-3 text-blue-600 dark:text-blue-400 hidden">
+                <span class="inline-block animate-spin">⟳</span> Filtering...
+            </span>
+        </div>
+        <div class="flex gap-1 ml-4 pl-4 border-l border-gray-300 dark:border-gray-700">
+            <button type="button"
+                    class="px-3 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-xs font-semibold rounded transition"
+                    onclick="exportRuns('json')"
+                    title="Export runs as JSON">
+                ⬇ JSON
+            </button>
+            <button type="button"
+                    class="px-3 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white text-xs font-semibold rounded transition"
+                    onclick="exportRuns('csv')"
+                    title="Export runs as CSV">
+                ⬇ CSV
+            </button>
         </div>
     </div>
 </div>
 
 <script>
+// Toggle advanced filters visibility
+function toggleAdvancedFilters() {
+    const advancedFilters = document.getElementById('advanced-filters');
+    const moreFiltersBtn = document.getElementById('more-filters-btn');
+
+    advancedFilters.classList.toggle('hidden');
+
+    // Update button text and styling
+    if (advancedFilters.classList.contains('hidden')) {
+        moreFiltersBtn.textContent = 'More Filters';
+        moreFiltersBtn.classList.remove('bg-blue-600', 'text-white');
+        moreFiltersBtn.classList.add('bg-gray-200', 'text-gray-900', 'dark:bg-gray-700', 'dark:text-white');
+    } else {
+        moreFiltersBtn.textContent = 'Hide Filters';
+        moreFiltersBtn.classList.remove('bg-gray-200', 'text-gray-900');
+        moreFiltersBtn.classList.add('bg-blue-600', 'text-white');
+    }
+}
+
 // Initialize filters from URL on page load
 function initializeFiltersFromURL() {
     const params = new URLSearchParams(window.location.search);
+    const hasAdvancedFilters = params.has('branch') || params.has('status') ||
+                               params.has('from_date') || params.has('to_date');
 
     // Set form values from URL params
     const search = params.get('search');
@@ -157,6 +175,11 @@ function initializeFiltersFromURL() {
 
     const toDate = params.get('to_date');
     if (toDate) document.querySelector('input[name="to_date"]').value = toDate;
+
+    // Auto-expand advanced filters if URL has any advanced filter params
+    if (hasAdvancedFilters) {
+        toggleAdvancedFilters();
+    }
 }
 
 // Update URL when filters change
@@ -263,7 +286,6 @@ document.addEventListener('htmx:afterSwap', function(event) {
 // Handle HTMX errors with user-friendly messages
 document.addEventListener('htmx:responseError', function(event) {
     console.error('Filter error:', event.detail.xhr.status, event.detail.xhr.statusText);
-    // Show error notification (could integrate with a toast library)
     const resultCount = document.getElementById('result-count');
     if (resultCount) {
         resultCount.textContent = '0';
