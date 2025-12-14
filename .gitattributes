@@ -1,0 +1,111 @@
+# Git attributes for C8S
+# https://git-scm.com/docs/gitattributes
+
+# Auto detect text files and normalize line endings to LF
+* text=auto eol=lf
+
+# Source code
+*.go text diff=golang
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Web files
+*.html text diff=html
+*.css text diff=css
+*.js text
+*.ts text
+*.jsx text
+*.tsx text
+
+# Configuration files
+*.yaml text
+*.yml text
+*.json text
+*.toml text
+*.ini text
+*.conf text
+
+# Documentation
+*.md text diff=markdown
+*.txt text
+*.adoc text
+*.tex text
+
+# Templates
+*.tpl text
+*.tmpl text
+*.gotmpl text
+
+# Scripts (always LF, even on Windows)
+*.sh text eol=lf
+*.bash text eol=lf
+*.fish text eol=lf
+
+# Makefiles (must use tabs, always LF)
+Makefile text eol=lf
+*.mk text eol=lf
+
+# Docker
+Dockerfile* text eol=lf
+*.dockerignore text
+
+# Git
+.gitignore text
+.gitattributes text
+.gitmodules text
+
+# CI/CD
+.github/**/*.yml text
+.github/**/*.yaml text
+
+# Charts and manifests
+*.yaml linguist-language=YAML
+*.yml linguist-language=YAML
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+*.bz2 binary
+*.xz binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Go specific
+go.mod text
+go.sum text
+
+# Exclude files from archives
+.gitattributes export-ignore
+.gitignore export-ignore
+.github export-ignore
+.devbox export-ignore
+.tilt export-ignore
+tests export-ignore
+docs export-ignore
+examples export-ignore
+
+# Custom diff for generated files
+**/zz_generated.*.go linguist-generated=true
+vendor/** linguist-vendored
+node_modules/** linguist-vendored
+
+# Merge strategies
+*.md merge=union
+CHANGELOG.md merge=union
