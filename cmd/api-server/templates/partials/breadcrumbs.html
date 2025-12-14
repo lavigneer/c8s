@@ -1,7 +1,7 @@
 {{define "partials/breadcrumbs"}}
 <nav class="text-sm text-gray-600 dark:text-gray-400">
     <div class="flex items-center gap-2">
-        {{range $index, $item := .Items}}
+        {{range $index, $item := .Breadcrumbs}}
             {{if $item.Href}}
                 <a href="{{$item.Href}}" class="hover:text-gray-900 dark:hover:text-white transition">
                     {{$item.Label}}
@@ -10,7 +10,7 @@
                 <span class="text-gray-900 dark:text-white">{{$item.Label}}</span>
             {{end}}
 
-            {{if lt $index (sub (len $.Items) 1)}}
+            {{if lt $index (sub (len $.Breadcrumbs) 1)}}
                 <span>/</span>
             {{end}}
         {{end}}

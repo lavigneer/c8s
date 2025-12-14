@@ -14,6 +14,12 @@ import (
 
 var tokenGenerator *auth.TokenGenerator
 
+// BreadcrumbItem represents a single breadcrumb in the navigation trail
+type BreadcrumbItem struct {
+	Label string
+	Href  string
+}
+
 // InitTokenGenerator initializes the token generator for login handler
 func InitTokenGenerator(tg *auth.TokenGenerator) {
 	tokenGenerator = tg
@@ -87,6 +93,11 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	// Fetch projects for the projects list
 	projects := FetchPipelineConfigsForUser(r.Context(), user.Namespace)
 
+	// Build breadcrumbs
+	breadcrumbs := []BreadcrumbItem{
+		{Label: "Dashboard", Href: ""},
+	}
+
 	// Prepare data for template
 	data := map[string]interface{}{
 		"User":         user,
@@ -101,6 +112,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		"SuccessRate":  successRate,
 		"Activities":   activities,
 		"Projects":     projects,
+		"Breadcrumbs":  breadcrumbs,
 	}
 
 	// Render template
@@ -195,6 +207,13 @@ func ProjectDetailHandler(w http.ResponseWriter, r *http.Request) {
 	// Generate activity feed for this project only
 	activities := GenerateActivityFeed(projectRuns, 5)
 
+	// Build breadcrumbs
+	breadcrumbs := []BreadcrumbItem{
+		{Label: "Dashboard", Href: "/dashboard"},
+		{Label: "Projects", Href: "/dashboard/projects"},
+		{Label: project.Name, Href: ""},
+	}
+
 	// Prepare data for template
 	data := map[string]interface{}{
 		"User":         user,
@@ -209,6 +228,7 @@ func ProjectDetailHandler(w http.ResponseWriter, r *http.Request) {
 		"RunningCount": runningCount,
 		"SuccessRate":  successRate,
 		"Activities":   activities,
+		"Breadcrumbs":  breadcrumbs,
 	}
 
 	// Render template
@@ -284,12 +304,20 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		projectName = run.ProjectID // Fallback to project ID if not found
 	}
 
+	// Build breadcrumbs
+	breadcrumbs := []BreadcrumbItem{
+		{Label: "Dashboard", Href: "/dashboard"},
+		{Label: projectName, Href: fmt.Sprintf("/dashboard/projects/%s", run.ProjectID)},
+		{Label: run.Name, Href: ""},
+	}
+
 	data := map[string]interface{}{
 		"User":        user,
 		"PipelineRun": run,
 		"ProjectName": projectName,
 		"ProjectID":   run.ProjectID,
 		"Artifacts":   artifacts,
+		"Breadcrumbs": breadcrumbs,
 	}
 
 	if err := dashboard.RenderTemplate(w, "pipeline_detail", data); err != nil {

@@ -4,7 +4,7 @@
 <div class="py-8">
     <!-- Breadcrumbs -->
     <div class="px-6 py-4">
-        {{template "partials/breadcrumbs" dict "Items" (slice (dict "Label" "Dashboard" "Href" "/dashboard") (dict "Label" .ProjectName "Href" (printf "/dashboard/projects/%s" .ProjectID)) (dict "Label" .PipelineRun.Name))}}
+        {{template "partials/breadcrumbs" dict "Breadcrumbs" .Breadcrumbs}}
     </div>
 
     <!-- Header -->

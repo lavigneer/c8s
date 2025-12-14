@@ -5,7 +5,7 @@
 <div class="flex flex-col">
     <!-- Breadcrumbs -->
     <div class="px-6 py-4">
-        {{template "partials/breadcrumbs" dict "Items" (slice (dict "Label" "Dashboard" "Href" "/dashboard") (dict "Label" "Projects" "Href" "/dashboard/projects") (dict "Label" .Project.Name))}}
+        {{template "partials/breadcrumbs" dict "Breadcrumbs" .Breadcrumbs}}
     </div>
 
     <!-- Page Header with padding -->
