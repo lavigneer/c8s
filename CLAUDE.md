@@ -15,9 +15,18 @@ Auto-generated from all feature plans. Last updated: 2025-10-12
 
 ## Project Structure
 ```
-src/
-tests/
+cmd/          # Main applications (controller, api-server, webhook, CLI)
+pkg/          # Shared libraries and APIs
+tests/        # Unit, integration, and E2E tests (Playwright)
+chart/c8s/    # Helm chart (values.yaml and values-dev.yaml actively used)
+deploy/       # Legacy manifests (use Helm + Tilt for deployment)
+config/       # CRD manifests and RBAC
 ```
+
+**Development Workflow**:
+- **Primary**: Tilt (`tilt up`) for local Kubernetes development with live reload
+- **Deployment**: Helm chart (chart/c8s/) with values-dev.yaml for local development
+- **Testing**: Playwright E2E tests (shell-based *.sh tests are deprecated)
 
 ## E2E Testing Framework (005-create-a-robust)
 

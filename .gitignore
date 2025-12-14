@@ -70,8 +70,12 @@ tilt_modules/
 
 # Node/npm (for Tailwind CSS build and Playwright tests)
 node_modules/
+package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Design prototypes (deprecated - using HTMX)
+design/
 
 # Playwright test artifacts (but DO commit docs/screenshots/ for documentation)
 test-results/
@@ -80,6 +84,12 @@ blob-report/
 playwright/.cache/
 tests/e2e/**/*.log
 !docs/screenshots/
+
+# Deprecated shell-based E2E tests (superseded by Playwright)
+tests/e2e/*.sh
+
+# Stale analysis reports
+*-analysis-report.md
 
 # Node.js build/dist
 npm-debug.log

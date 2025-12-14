@@ -1,21 +1,22 @@
 # C8S Helm Chart
 
-A production-ready Helm 3.x chart for deploying the C8S continuous integration stack to Kubernetes.
+A Helm 3.x chart for deploying the C8S continuous integration stack to Kubernetes, optimized for local development.
 
 ## Overview
 
-This Helm chart provides an easy way to deploy the complete C8S stack (API server, controller, webhook, and frontend) to any Kubernetes cluster (k3s, kind, EKS, GKE, AKS) with a single command.
+This Helm chart provides an easy way to deploy the complete C8S stack (API server, controller, webhook) to any Kubernetes cluster. It's primarily designed for local development using Tilt, but can be customized for production deployments.
 
 **Features**:
 - ✅ Single-command deployment: `helm install c8s ./chart/c8s`
-- ✅ Environment presets: dev, staging, production
+- ✅ Optimized for local development (via Tilt)
 - ✅ Customizable via values files and CLI flags
 - ✅ Health verification via post-install hook
 - ✅ Rolling updates and zero-downtime deployments
 - ✅ Cross-distribution compatible (Kubernetes 1.24+)
-- ✅ S3-compatible and PVC storage support
+- ✅ PVC storage support (local development default)
 - ✅ RBAC and security-first design
-- ✅ Automatic webhook TLS certificate management via cert-manager
+
+**For Production Deployment**: Customize values.yaml with production-appropriate settings (replica counts, resource limits, S3 storage, cert-manager integration, etc.)
 
 ## Prerequisites
 
@@ -26,7 +27,25 @@ This Helm chart provides an easy way to deploy the complete C8S stack (API serve
 
 ## Quick Start
 
-### 1. Install on Development Cluster
+### For Local Development (Recommended: Use Tilt)
+
+The easiest way to deploy C8S locally is using **Tilt**, which handles all deployment automatically:
+
+```bash
+# Install Tilt (if not already installed)
+brew install tilt
+
+# Start C8S with live reload
+tilt up
+
+# Tilt uses this Helm chart with values-dev.yaml automatically
+```
+
+See [Tiltfile](../../Tiltfile) for configuration details.
+
+### Manual Installation (Local Development)
+
+If you prefer manual Helm installation:
 
 ```bash
 # Clone the repository
@@ -40,44 +59,43 @@ helm install c8s ./chart/c8s -f ./chart/c8s/values-dev.yaml -n c8s-system --crea
 kubectl rollout status deployment/c8s-api-server -n c8s-system
 kubectl rollout status deployment/c8s-controller -n c8s-system
 kubectl rollout status deployment/c8s-webhook -n c8s-system
-kubectl rollout status deployment/c8s-frontend -n c8s-system
 
-# Access the dashboard
-kubectl port-forward svc/c8s-frontend -n c8s-system 3000:80
-# Open http://localhost:3000 in your browser
+# Access the API server
+kubectl port-forward svc/c8s-api-server -n c8s-system 8080:80
+# Open http://localhost:8080 in your browser
 ```
 
-### 2. Install with Cert-Manager (Recommended for Production)
+### Production Deployment
 
-Cert-manager automatically generates and renews TLS certificates for the webhook:
-
-```bash
-# 1. Install cert-manager (one-time setup)
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --set installCRDs=true
-
-# 2. Deploy C8S with automatic certificate management
-helm install c8s ./chart/c8s \
-  -n c8s-system \
-  --create-namespace \
-  -f ./chart/c8s/values-certmanager.yaml
-
-# Certificates are automatically generated and renewed
-```
-
-See [Cert-Manager Setup Guide](../../docs/cert-manager-setup.md) for detailed configuration options.
-
-### 3. Install on Production Cluster
+For production deployments, customize values.yaml with your requirements:
 
 ```bash
-# Install with production values
+# Create custom production values file
+cat > values-custom.yaml <<EOF
+replicaCount:
+  apiServer: 3
+  controller: 3
+  webhook: 2
+
+resources:
+  apiServer:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+storage:
+  type: s3
+  s3:
+    endpoint: s3.amazonaws.com
+    bucket: my-c8s-artifacts
+    # ... etc
+EOF
+
+# Install with custom values
 helm install c8s ./chart/c8s \
-  -f ./chart/c8s/values-prod.yaml \
-  -f ./chart/c8s/values.yaml \
   -n c8s-system \
   --create-namespace
 

@@ -52,11 +52,9 @@ Developer views results via CLI/API/Dashboard
 
 ## Quick Start
 
-See [quickstart.md](./specs/001-build-a-continuous/quickstart.md) for complete installation and usage guide.
+**For Local Development** (Recommended): Use **Tilt** for rapid local Kubernetes development with live reload:
 
-### Local Development with Tilt
-
-For developers working on C8S, use **Tilt** for rapid local Kubernetes development:
+### Local Development with Tilt (Primary Workflow)
 
 ```bash
 # Install prerequisites (if needed)
@@ -79,25 +77,16 @@ vim cmd/controller/main.go  # Save → auto-rebuild in ~30 seconds
 kubectl logs -f deployment/c8s-controller -n c8s-system
 ```
 
-See [docs/development/tilt-setup.md](docs/development/tilt-setup.md) for setup instructions.
+See [docs/development/tilt-setup.md](docs/development/tilt-setup.md) for detailed setup instructions.
 
 **Requirements for local development:**
 - Docker (27.3.1+)
-- k3d (5.8.3+)
+- k3d (5.8.3+) or kind
 - kubectl (1.28+)
 - Go 1.25+ (for building from source)
+- Tilt (for live development)
 
-### Install CRDs
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/org/c8s/main/deploy/crds.yaml
-```
-
-### Install C8S
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/org/c8s/main/deploy/install.yaml
-```
+**For Manual Installation or Production Deployment**: See [quickstart.md](./specs/001-build-a-continuous/quickstart.md) for Helm chart installation and manual kubectl deployment.
 
 ### Create Pipeline
 
@@ -219,7 +208,7 @@ make generate
 c8s/
 ├── cmd/
 │   ├── controller/       # Controller main
-│   ├── api-server/       # API server main
+│   ├── api-server/       # API server main (includes templates/ and static/)
 │   ├── webhook/          # Webhook service main
 │   └── c8s/              # CLI main
 ├── pkg/
@@ -239,11 +228,9 @@ c8s/
 ├── tests/
 │   ├── unit/             # Unit tests
 │   ├── integration/      # Integration tests
-│   └── contract/         # API contract tests
-├── web/
-│   ├── templates/        # HTMX HTML templates
-│   └── static/           # CSS, HTMX.js
-└── deploy/               # Deployment manifests
+│   └── e2e/              # Playwright E2E tests
+├── chart/c8s/            # Helm chart for deployment
+└── deploy/               # Kubernetes manifests (legacy - use Helm + Tilt)
 ```
 
 ## API Reference

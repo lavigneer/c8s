@@ -1,14 +1,16 @@
 # Default values for C8S Helm chart
 # This is a YAML-formatted file declaring variables to be passed into templates
 #
+# This chart is optimized for local development (used by Tilt).
+# For production deployments, customize these values as needed.
+#
 # Usage:
+#   tilt up                                                   # Primary workflow (uses values-dev.yaml)
 #   helm install c8s ./chart/c8s                              # Use defaults
 #   helm install c8s ./chart/c8s -f values-dev.yaml          # Development
-#   helm install c8s ./chart/c8s -f values-staging.yaml      # Staging
-#   helm install c8s ./chart/c8s -f values-prod.yaml         # Production
-#   helm install c8s ./chart/c8s --set components.controller.replicas=5
+#   helm install c8s ./chart/c8s --set replicaCount.apiServer=3  # Custom values
 #
-# For more information, see the README.md file
+# For production deployment examples, see README.md
 
 # CRD installation
 crds:
@@ -17,7 +19,7 @@ crds:
   install: true
 
 # Cert-Manager configuration for webhook TLS certificates
-# See values-certmanager.yaml for production-ready preset
+# For production deployments, consider enabling cert-manager for automatic TLS certificate management
 certManager:
   # Enable cert-manager integration for automatic certificate management
   # When enabled, webhook TLS certificates are automatically provisioned and renewed
