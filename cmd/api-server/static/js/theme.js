@@ -112,10 +112,10 @@ class ThemeManager {
         document.querySelectorAll('[data-theme-toggle]').forEach(button => {
             if (theme === this.DARK_CLASS) {
                 button.setAttribute('title', 'Switch to light mode');
-                button.textContent = '☀️ Light';
+                button.setAttribute('aria-label', 'Switch to light mode');
             } else {
                 button.setAttribute('title', 'Switch to dark mode');
-                button.textContent = '🌙 Dark';
+                button.setAttribute('aria-label', 'Switch to dark mode');
             }
         });
     }
