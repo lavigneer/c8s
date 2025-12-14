@@ -1,14 +1,10 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './cmd/api-server/templates/**/*.html',
   ],
   theme: {
-    extend: {
-      colors: {
-        // Custom colors can be added here if needed
-      },
-    },
+    extend: {},
   },
   plugins: [],
   darkMode: 'class',
