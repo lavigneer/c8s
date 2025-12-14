@@ -1,0 +1,19 @@
+{{define "partials/breadcrumbs"}}
+<nav class="text-sm text-gray-600 dark:text-gray-400">
+    <div class="flex items-center gap-2">
+        {{range $index, $item := .Items}}
+            {{if $item.Href}}
+                <a href="{{$item.Href}}" class="hover:text-gray-900 dark:hover:text-white transition">
+                    {{$item.Label}}
+                </a>
+            {{else}}
+                <span class="text-gray-900 dark:text-white">{{$item.Label}}</span>
+            {{end}}
+
+            {{if lt $index (sub (len $.Items) 1)}}
+                <span>/</span>
+            {{end}}
+        {{end}}
+    </div>
+</nav>
+{{end}}

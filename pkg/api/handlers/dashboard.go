@@ -271,9 +271,24 @@ func PipelineRunDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	// Add demo artifacts for successful runs
 	artifacts := generateDemoArtifacts(run.ID)
 
+	// Fetch project name for breadcrumb
+	var projectName string
+	allProjects := FetchPipelineConfigsForUser(r.Context(), user.Namespace)
+	for _, p := range allProjects {
+		if p.ID == run.ProjectID {
+			projectName = p.Name
+			break
+		}
+	}
+	if projectName == "" {
+		projectName = run.ProjectID // Fallback to project ID if not found
+	}
+
 	data := map[string]interface{}{
 		"User":        user,
 		"PipelineRun": run,
+		"ProjectName": projectName,
+		"ProjectID":   run.ProjectID,
 		"Artifacts":   artifacts,
 	}
 

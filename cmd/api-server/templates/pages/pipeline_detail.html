@@ -2,6 +2,11 @@
 {{template "base" .}}
 <!-- Content -->
 <div class="py-8">
+    <!-- Breadcrumbs -->
+    <div class="px-6 py-4">
+        {{template "partials/breadcrumbs" dict "Items" (slice (dict "Label" "Dashboard" "Href" "/dashboard") (dict "Label" .ProjectName "Href" (printf "/dashboard/projects/%s" .ProjectID)) (dict "Label" .PipelineRun.Name))}}
+    </div>
+
     <!-- Header -->
     {{if .PipelineRun}}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
