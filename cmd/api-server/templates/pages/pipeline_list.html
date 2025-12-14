@@ -1,96 +1,75 @@
 {{define "pipeline_list"}}
 {{template "base" .}}
-<!-- Content -->
+
+<!-- Main Content -->
 <div class="py-8">
-    <!-- Header -->
+    <!-- Page Header -->
     <div class="mb-8">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">Pipeline History</h1>
-        <p class="text-gray-600">View and monitor your pipeline runs</p>
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+        <p class="text-gray-600 dark:text-gray-400">Monitor your pipeline runs and projects</p>
     </div>
 
-    <!-- Quick Stats -->
-    {{if .PipelineRuns}}
-    <div class="grid grid-cols-4 gap-4 mb-8">
-        {{$total := len .PipelineRuns}}
-        {{$succeeded := 0}}
-        {{$failed := 0}}
-        {{$running := 0}}
-        {{range .PipelineRuns}}
-            {{if eq .Status "Succeeded"}}{{$succeeded = add $succeeded 1}}{{end}}
-            {{if eq .Status "Failed"}}{{$failed = add $failed 1}}{{end}}
-            {{if eq .Status "Running"}}{{$running = add $running 1}}{{end}}
-        {{end}}
+    <!-- Builds Overview Stats -->
+    {{template "partials/builds_overview" .}}
 
-        <!-- Total Runs -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-lg p-4 border-l-4 border-blue-500">
-            <div class="text-gray-600 dark:text-gray-400 text-sm">Total Runs</div>
-            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{$total}}</div>
-        </div>
+    <!-- Projects List -->
+    {{template "partials/projects_list" .}}
 
-        <!-- Success Rate -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-lg p-4 border-l-4 border-green-500">
-            <div class="text-gray-600 dark:text-gray-400 text-sm">Success Rate</div>
-            {{if gt $total 0}}
-                {{$rate := div (mul $succeeded 100) $total}}
-                <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{$rate}}%</div>
-            {{else}}
-                <div class="text-3xl font-bold text-green-600 dark:text-green-400">—</div>
-            {{end}}
-        </div>
+    <!-- Main Content Grid: Pipelines (2/3) + Activity Feed (1/3) -->
+    <div class="grid gap-6 lg:grid-cols-3 mb-8">
+        <!-- Pipelines Section (2/3 width) -->
+        <div class="lg:col-span-2">
+            <!-- Filter Panel -->
+            {{template "partials/filter_panel" .}}
 
-        <!-- Failed Runs -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-lg p-4 border-l-4 border-red-500">
-            <div class="text-gray-600 dark:text-gray-400 text-sm">Failed</div>
-            <div class="text-3xl font-bold text-red-600 dark:text-red-400">{{$failed}}</div>
-        </div>
+            <!-- Recent Builds Title -->
+            <div class="mb-4 mt-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Builds</h2>
+            </div>
 
-        <!-- Currently Running -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-lg p-4 border-l-4 border-yellow-500">
-            <div class="text-gray-600 dark:text-gray-400 text-sm">Running</div>
-            <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{$running}}</div>
-        </div>
-    </div>
-    {{end}}
+            <!-- Pipeline List Container with SSE -->
+            <div id="pipeline-list-container"
+                 hx-ext="sse"
+                 sse-connect="/api/projects/{{.ProjectID}}/runs/updates"
+                 class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
 
-    <!-- Filter Panel -->
-    {{template "partials/filter_panel" .}}
-
-    <!-- Pipeline List Container with SSE -->
-    <div id="pipeline-list-container"
-         hx-ext="sse"
-         sse-connect="/api/projects/{{.ProjectID}}/runs/updates"
-         class="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-lg overflow-hidden">
-
-        <!-- Pipeline Rows -->
-        <div id="pipeline-rows" class="divide-y divide-gray-200 dark:divide-gray-700">
-            {{if .PipelineRuns}}
-                {{range .PipelineRuns}}
-                    {{template "partials/pipeline_row" .}}
-                {{end}}
-            {{else}}
-                {{template "partials/empty_state" dict "Title" "No Pipeline Runs" "Message" "No pipeline runs found. Create a new pipeline to get started." "ActionText" "Create Pipeline" "ActionURL" "/dashboard/create"}}
-            {{end}}
-        </div>
-
-        <!-- Loading Skeleton (shown only during manual filter/search AJAX requests) -->
-        <div id="pipeline-list-loading" class="htmx-request divide-y divide-gray-200" style="display:none">
-            {{range until 3}}
-            <div class="animate-pulse p-6 border-b border-gray-200">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="flex-1">
-                        <div class="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                        <div class="h-3 bg-gray-100 rounded w-1/3"></div>
-                    </div>
-                    <div class="h-6 bg-gray-200 rounded w-20"></div>
+                <!-- Pipeline Rows -->
+                <div id="pipeline-rows" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {{if .PipelineRuns}}
+                        {{range .PipelineRuns}}
+                            {{template "partials/pipeline_row" .}}
+                        {{end}}
+                    {{else}}
+                        {{template "partials/empty_state" dict "Title" "No Pipeline Runs" "Message" "No pipeline runs found. Create a new pipeline to get started." "ActionText" "Create Pipeline" "ActionURL" "/dashboard/create"}}
+                    {{end}}
                 </div>
-                <div class="grid grid-cols-4 gap-4">
-                    <div class="h-3 bg-gray-100 rounded"></div>
-                    <div class="h-3 bg-gray-100 rounded"></div>
-                    <div class="h-3 bg-gray-100 rounded"></div>
-                    <div class="h-3 bg-gray-100 rounded"></div>
+
+                <!-- Loading Skeleton (shown only during manual filter/search AJAX requests) -->
+                <div id="pipeline-list-loading" class="htmx-request divide-y divide-gray-200 dark:divide-gray-700" style="display:none">
+                    {{range until 3}}
+                    <div class="animate-pulse p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                                <div class="h-3 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
+                            </div>
+                            <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="h-3 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                            <div class="h-3 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                            <div class="h-3 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                            <div class="h-3 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                        </div>
+                    </div>
+                    {{end}}
                 </div>
             </div>
-            {{end}}
+        </div>
+
+        <!-- Activity Feed Section (1/3 width) -->
+        <div>
+            {{template "partials/activity_feed" .}}
         </div>
     </div>
 

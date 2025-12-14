@@ -2,6 +2,7 @@ import DashboardHeader from "@/components/dashboard-header"
 import BuildsOverview from "@/components/builds-overview"
 import PipelinesList from "@/components/pipelines-list"
 import RecentActivity from "@/components/recent-activity"
+import ProjectsList from "@/components/projects-list"
 
 export default function DashboardPage() {
   return (
@@ -10,6 +11,8 @@ export default function DashboardPage() {
 
       <main className="container mx-auto space-y-6 p-6">
         <BuildsOverview />
+
+        <ProjectsList />
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">

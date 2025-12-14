@@ -59,6 +59,34 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Calculate dashboard stats
+	totalRuns := len(runs)
+	successCount := 0
+	failedCount := 0
+	runningCount := 0
+	for _, run := range runs {
+		switch run.Status {
+		case "Succeeded":
+			successCount++
+		case "Failed":
+			failedCount++
+		case "Running":
+			runningCount++
+		}
+	}
+
+	successRate := float64(0)
+	if totalRuns > 0 {
+		successRate = (float64(successCount) / float64(totalRuns)) * 100
+	}
+
+	// Generate activity feed from all runs
+	allRuns := FetchPipelineRunsForUser(r.Context(), user.Namespace)
+	activities := GenerateActivityFeed(allRuns, 5) // Get 5 most recent activities
+
+	// Fetch projects for the projects list
+	projects := FetchPipelineConfigsForUser(r.Context(), user.Namespace)
+
 	// Prepare data for template
 	data := map[string]interface{}{
 		"User":         user,
@@ -66,6 +94,13 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		"PipelineRuns": runs,
 		"Pagination":   paginationMeta,
 		"Branches":     branches,
+		"TotalRuns":    totalRuns,
+		"SuccessCount": successCount,
+		"FailedCount":  failedCount,
+		"RunningCount": runningCount,
+		"SuccessRate":  successRate,
+		"Activities":   activities,
+		"Projects":     projects,
 	}
 
 	// Render template

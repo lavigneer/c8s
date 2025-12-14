@@ -94,3 +94,70 @@ func FetchPipelineRunByID(ctx context.Context, namespace, runID string) *v1alpha
 
 	return run
 }
+
+// GenerateActivityFeed creates activity entries from recent pipeline runs
+// Returns the most recent activities in reverse chronological order (newest first)
+func GenerateActivityFeed(runs []*dashboard.PipelineRunDTO, limit int) []*dashboard.ActivityDTO {
+	activities := make([]*dashboard.ActivityDTO, 0)
+
+	// Sort runs by triggered_at (newest first)
+	// Create a copy to avoid modifying the original slice
+	runsCopy := make([]*dashboard.PipelineRunDTO, len(runs))
+	copy(runsCopy, runs)
+
+	// Simple bubble sort for small datasets
+	for i := 0; i < len(runsCopy)-1; i++ {
+		for j := 0; j < len(runsCopy)-i-1; j++ {
+			if runsCopy[j].TriggeredAt.Before(runsCopy[j+1].TriggeredAt) {
+				runsCopy[j], runsCopy[j+1] = runsCopy[j+1], runsCopy[j]
+			}
+		}
+	}
+
+	// Convert runs to activities
+	for _, run := range runsCopy {
+		if len(activities) >= limit {
+			break
+		}
+
+		activity := &dashboard.ActivityDTO{
+			ID:        run.ID,
+			User:      run.Author,
+			Timestamp: run.TriggeredAt,
+			ProjectID: run.ProjectID,
+			RunID:     run.ID,
+		}
+
+		// Determine activity type and message based on status
+		switch run.Status {
+		case "Succeeded":
+			activity.Type = "build"
+			activity.Message = "Build completed successfully"
+		case "Failed":
+			activity.Type = "error"
+			activity.Message = "Build failed"
+		case "Running":
+			activity.Type = "build"
+			activity.Message = "Build in progress"
+		case "Pending":
+			activity.Type = "build"
+			activity.Message = "Build queued"
+		default:
+			activity.Type = "commit"
+			activity.Message = "Pipeline triggered"
+		}
+
+		// Append branch and commit info to message
+		if run.CommitSHA != "" {
+			shortSHA := run.CommitSHA
+			if len(shortSHA) > 7 {
+				shortSHA = shortSHA[:7]
+			}
+			activity.Message += " on " + run.Branch + " (" + shortSHA + ")"
+		}
+
+		activities = append(activities, activity)
+	}
+
+	return activities
+}

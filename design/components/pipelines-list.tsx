@@ -1,9 +1,13 @@
 "use client"
 
+import Link from "next/link"
+
 export default function PipelinesList() {
   const pipelines = [
     {
       id: 1,
+      projectId: "web-app",
+      projectName: "web-application",
       name: "main",
       commit: "feat: add user authentication",
       author: "john.doe",
@@ -13,6 +17,8 @@ export default function PipelinesList() {
     },
     {
       id: 2,
+      projectId: "api-service",
+      projectName: "api-service",
       name: "develop",
       commit: "fix: resolve database connection issue",
       author: "jane.smith",
@@ -22,6 +28,8 @@ export default function PipelinesList() {
     },
     {
       id: 3,
+      projectId: "web-app",
+      projectName: "web-application",
       name: "feature/new-ui",
       commit: "chore: update dependencies",
       author: "bob.wilson",
@@ -31,6 +39,8 @@ export default function PipelinesList() {
     },
     {
       id: 4,
+      projectId: "mobile-app",
+      projectName: "mobile-app",
       name: "main",
       commit: "docs: update README with setup instructions",
       author: "alice.chen",
@@ -90,6 +100,13 @@ export default function PipelinesList() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
+                  <Link
+                    href={`/project/${pipeline.projectId}`}
+                    className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    {pipeline.projectName}
+                  </Link>
+                  <span className="text-muted-foreground">/</span>
                   <span className="font-mono text-sm font-semibold">{pipeline.name}</span>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-white ${getStatusColor(pipeline.status)}`}
@@ -107,9 +124,12 @@ export default function PipelinesList() {
                   <span>{pipeline.time}</span>
                 </div>
               </div>
-              <button className="rounded-lg border border-border bg-secondary px-3 py-1 text-sm hover:bg-accent">
+              <Link
+                href={`/project/${pipeline.projectId}/pipeline/${pipeline.id}`}
+                className="rounded-lg border border-border bg-secondary px-3 py-1 text-sm hover:bg-accent"
+              >
                 View
-              </button>
+              </Link>
             </div>
           </div>
         ))}

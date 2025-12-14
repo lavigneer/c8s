@@ -1,0 +1,40 @@
+{{define "partials/builds_overview"}}
+<!-- Builds Overview Stats Cards -->
+<div class="grid gap-4 md:grid-cols-4">
+  <!-- Total Builds Card -->
+  <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div class="text-sm text-gray-600 dark:text-gray-400">Total Builds</div>
+    <div class="mt-2 flex items-end justify-between">
+      <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{.TotalRuns}}</div>
+      <div class="text-sm text-blue-600 dark:text-blue-400">+12%</div>
+    </div>
+  </div>
+
+  <!-- Success Rate Card -->
+  <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div class="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
+    <div class="mt-2 flex items-end justify-between">
+      <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{printf "%.1f" .SuccessRate}}%</div>
+      <div class="text-sm text-green-600 dark:text-green-400">+2.1%</div>
+    </div>
+  </div>
+
+  <!-- Failed Builds Card -->
+  <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div class="text-sm text-gray-600 dark:text-gray-400">Failed</div>
+    <div class="mt-2 flex items-end justify-between">
+      <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{.FailedCount}}</div>
+      <div class="text-sm text-green-600 dark:text-green-400">-3</div>
+    </div>
+  </div>
+
+  <!-- Running Builds Card -->
+  <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div class="text-sm text-gray-600 dark:text-gray-400">Running</div>
+    <div class="mt-2 flex items-end justify-between">
+      <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{.RunningCount}}</div>
+      <div class="text-sm text-yellow-600 dark:text-yellow-400">Active</div>
+    </div>
+  </div>
+</div>
+{{end}}

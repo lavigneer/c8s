@@ -82,3 +82,14 @@ type PipelineConfigDTO struct {
 	Timeout     int       `json:"timeout"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+// ActivityDTO represents an activity feed entry for dashboard display
+type ActivityDTO struct {
+	ID        string    `json:"id"`
+	Type      string    `json:"type"`       // deployment, build, error, commit
+	Message   string    `json:"message"`
+	User      string    `json:"user"`
+	Timestamp time.Time `json:"timestamp"`
+	ProjectID string    `json:"project_id,omitempty"`
+	RunID     string    `json:"run_id,omitempty"`
+}
