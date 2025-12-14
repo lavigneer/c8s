@@ -257,19 +257,28 @@ See [pipeline-config-schema.json](./specs/001-build-a-continuous/contracts/pipel
 
 ## Examples
 
-### Multi-Step Pipeline with Dependencies
+See [examples/](./examples/) for complete pipeline configurations:
+
+- **[Simple Go Pipeline](./examples/simple-go-pipeline.yaml)** - Basic test and build
+- **[Docker Build Pipeline](./examples/docker-build-pipeline.yaml)** - Container build and push
+- **[Matrix Pipeline](./examples/matrix-pipeline.yaml)** - Multi-version/platform testing
+- **[Monorepo Pipeline](./examples/monorepo-pipeline.yaml)** - Multi-service builds
+
+Full examples guide with patterns and best practices: [examples/README.md](./examples/README.md)
+
+### Quick Example: Multi-Step Pipeline
 
 ```yaml
 version: v1alpha1
 name: test-build-deploy
 steps:
   - name: test
-    image: golang:1.21
+    image: golang:1.25
     commands:
       - go test ./...
 
   - name: build
-    image: golang:1.21
+    image: golang:1.25
     commands:
       - go build -o app
     dependsOn: [test]
@@ -285,38 +294,6 @@ steps:
       branch: "main"
 ```
 
-### Matrix Strategy
-
-```yaml
-version: v1alpha1
-name: multi-platform-test
-matrix:
-  dimensions:
-    os: ["ubuntu", "alpine"]
-    go_version: ["1.21", "1.22"]
-steps:
-  - name: test
-    image: golang:${{ matrix.go_version }}-${{ matrix.os }}
-    commands:
-      - go test ./...
-```
-
-### Using Secrets
-
-```yaml
-version: v1alpha1
-name: deploy-with-secrets
-steps:
-  - name: deploy
-    image: ubuntu:22.04
-    commands:
-      - ./deploy.sh --token=$API_TOKEN
-    secrets:
-      - secretRef: deploy-credentials
-        key: API_TOKEN
-        envVar: API_TOKEN
-```
-
 ## Contributing
 
 Contributions are welcome! Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
@@ -327,29 +304,29 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ## Documentation
 
-See [docs/README.md](./docs/README.md) for complete documentation index.
+📖 **[Complete Documentation Index](./docs/README.md)** - Full documentation catalog
 
-### Quick Links
+### Essential Resources
 
 **Getting Started**
 - [Getting Started Guide](./docs/guides/getting-started.md) - Installation and first pipeline
 - [Pipeline Syntax](./docs/guides/pipeline-syntax.md) - YAML configuration reference
-- [Troubleshooting](./docs/guides/troubleshooting.md) - Common issues and solutions
+- [Examples](./examples/README.md) - Pipeline configuration examples
 
 **Development**
-- [Development Guide](./docs/development/development.md) - Building and testing
-- [Tilt Setup](./docs/development/tilt-setup.md) - Local Kubernetes development
-- [Local Testing](./docs/development/local-testing.md) - Running tests
+- [5-Minute Quick Start](./docs/development/QUICKSTART.md) - Get developing fast
+- [Tilt Workflow Guide](./docs/development/TILT-WORKFLOW.md) - Primary development workflow
+- [Testing Guide](./tests/README.md) - Comprehensive test documentation
 
-**Operations**
-- [Operator Guide](./docs/operations/operator-guide.md) - Deployment and management
-- [Authentication](./docs/operations/authentication.md) - JWT and API key setup
-- [HTTPS Setup](./docs/operations/https-setup.md) - TLS/HTTPS configuration
+**Architecture & Reference**
+- [System Architecture](./docs/guides/architecture.md) - Complete architecture guide
+- [Package Documentation](./pkg/README.md) - Go package structure
+- [Specs Framework](./specs/README.md) - Feature specification methodology
 
-**Reference**
-- [Feature Specification](./specs/001-build-a-continuous/spec.md)
-- [Data Model](./specs/001-build-a-continuous/data-model.md)
-- [API Contracts](./specs/001-build-a-continuous/contracts/openapi.yaml)
+**Deployment & Operations**
+- [Operator Guide](./docs/operations/operator-guide.md) - Production deployment
+- [Helm Chart](./chart/c8s/README.md) - Kubernetes deployment
+- [Security Policy](./SECURITY.md) - Security practices and vulnerability reporting
 
 ## Community
 
