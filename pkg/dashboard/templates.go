@@ -45,33 +45,34 @@ func LoadTemplates(basePath string) error {
 	}
 
 	// Go's filepath.Glob doesn't support ** for recursive matching
-	// Parse multiple patterns to handle all nested directories
+	// Collect all matching files from all patterns
 	patterns := []string{
 		filepath.Join(basePath, "templates", "*.html"),
 		filepath.Join(basePath, "templates", "*", "*.html"),
 		filepath.Join(basePath, "templates", "*", "*", "*.html"),
 	}
 
-	var err error
-	tmpl := template.New("").Funcs(funcMap)
-
+	var allFiles []string
 	for _, pattern := range patterns {
-		tmpl, err = tmpl.ParseGlob(pattern)
-		if err != nil && !isNoMatchErr(err) {
-			return fmt.Errorf("failed to parse templates with pattern %s: %w", pattern, err)
+		files, err := filepath.Glob(pattern)
+		if err != nil {
+			return fmt.Errorf("failed to glob pattern %s: %w", pattern, err)
+		}
+		allFiles = append(allFiles, files...)
+	}
+
+	// Create template and parse all files at once
+	tmpl := template.New("").Funcs(funcMap)
+	if len(allFiles) > 0 {
+		var err error
+		tmpl, err = tmpl.ParseFiles(allFiles...)
+		if err != nil {
+			return fmt.Errorf("failed to parse template files: %w", err)
 		}
 	}
 
 	Templates = tmpl
 	return nil
-}
-
-// isNoMatchErr checks if an error is a "no files matched" error
-func isNoMatchErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	return err.Error() == "html/template: pattern matches no files"
 }
 
 // Unexported helper functions that can be used in templates
