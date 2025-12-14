@@ -67,6 +67,38 @@
                     </div>
                     {{end}}
                 </div>
+
+                <!-- Pagination -->
+                {{if .Pagination}}
+                <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Showing <span class="font-medium">{{.Pagination.Page}}</span> of <span class="font-medium">{{.Pagination.TotalPages}}</span> pages
+                    </div>
+                    <div class="flex gap-2">
+                        {{if gt .Pagination.Page 1}}
+                            <a href="javascript:void(0)" onclick="navigatePage({{sub .Pagination.Page 1}})"
+                               class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition text-sm">
+                                Previous
+                            </a>
+                        {{else}}
+                            <button disabled class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-400 cursor-not-allowed text-sm">
+                                Previous
+                            </button>
+                        {{end}}
+
+                        {{if lt .Pagination.Page .Pagination.TotalPages}}
+                            <a href="javascript:void(0)" onclick="navigatePage({{add .Pagination.Page 1}})"
+                               class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition text-sm">
+                                Next
+                            </a>
+                        {{else}}
+                            <button disabled class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-400 cursor-not-allowed text-sm">
+                                Next
+                            </button>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
             </div>
         </div>
 
@@ -76,38 +108,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Pagination -->
-    {{if .Pagination}}
-    <div class="px-6 mt-8 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
-            Showing <span class="font-medium">{{.Pagination.Page}}</span> of <span class="font-medium">{{.Pagination.TotalPages}}</span> pages
-        </div>
-        <div class="flex gap-2">
-            {{if gt .Pagination.Page 1}}
-                <a href="javascript:void(0)" onclick="navigatePage({{sub .Pagination.Page 1}})"
-                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                    Previous
-                </a>
-            {{else}}
-                <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
-                    Previous
-                </button>
-            {{end}}
-
-            {{if lt .Pagination.Page .Pagination.TotalPages}}
-                <a href="javascript:void(0)" onclick="navigatePage({{add .Pagination.Page 1}})"
-                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                    Next
-                </a>
-            {{else}}
-                <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
-                    Next
-                </button>
-            {{end}}
-        </div>
-    </div>
-    {{end}}
 
     <script>
     function navigatePage(page) {
