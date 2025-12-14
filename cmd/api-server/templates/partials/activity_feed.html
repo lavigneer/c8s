@@ -1,46 +1,46 @@
 {{define "partials/activity_feed"}}
 <!-- Activity Feed Section -->
-<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 overflow-hidden">
-  <div class="border-b border-gray-200 dark:border-gray-700 p-4">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Activity Feed</h2>
+<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/30 overflow-hidden">
+  <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+    <h2 class="text-base font-semibold text-gray-900 dark:text-white">Activity Feed</h2>
   </div>
   {{if .Activities}}
   <div class="divide-y divide-gray-200 dark:divide-gray-700">
     {{range .Activities}}
-    <div class="flex gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+    <div class="flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
       <!-- Activity Icon -->
       {{if eq .Type "deployment"}}
-      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex-shrink-0">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-7 w-7 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex-shrink-0">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       </div>
       {{else if eq .Type "build"}}
-      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex-shrink-0">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
         </svg>
       </div>
       {{else if eq .Type "error"}}
-      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex-shrink-0">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex-shrink-0">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
       {{else if eq .Type "commit"}}
-      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex-shrink-0">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-7 w-7 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex-shrink-0">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="4" />
           <line x1="1.05" y1="12" x2="7" y2="12" />
           <line x1="17.01" y1="12" x2="22.96" y2="12" />
         </svg>
       </div>
       {{else}}
-      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400 flex-shrink-0">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400 flex-shrink-0">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="1" />
         </svg>
       </div>
@@ -48,8 +48,8 @@
 
       <!-- Activity Content -->
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-medium text-gray-900 dark:text-white">{{.Message}}</div>
-        <div class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+        <div class="text-sm text-gray-900 dark:text-white font-medium">{{.Message}}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">
           {{.User}} • {{formatTime .Timestamp}}
         </div>
       </div>
@@ -57,8 +57,8 @@
     {{end}}
   </div>
   {{else}}
-  <div class="p-8 text-center">
-    <p class="text-sm text-gray-600 dark:text-gray-400">No activity yet</p>
+  <div class="p-6 text-center">
+    <p class="text-xs text-gray-600 dark:text-gray-400">No activity yet</p>
   </div>
   {{end}}
 </div>
