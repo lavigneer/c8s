@@ -6,7 +6,7 @@
 # ============================================================================
 # Controller
 # ============================================================================
-FROM alpine:3.18 AS controller
+FROM alpine:3.23 AS controller
 RUN apk add --no-cache ca-certificates
 WORKDIR /
 
@@ -22,7 +22,7 @@ ENTRYPOINT ["/controller"]
 # ============================================================================
 # Webhook
 # ============================================================================
-FROM alpine:3.18 AS webhook
+FROM alpine:3.23 AS webhook
 RUN apk add --no-cache ca-certificates
 WORKDIR /
 
@@ -38,7 +38,7 @@ ENTRYPOINT ["/webhook"]
 # ============================================================================
 # API Server
 # ============================================================================
-FROM alpine:3.18 AS api-server
+FROM alpine:3.23 AS api-server
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
