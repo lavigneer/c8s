@@ -28,7 +28,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/webhook ./cm
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o bin/api-server ./cmd/api-server
 
 # Controller image
-FROM alpine:3.18 AS controller
+FROM alpine:3.23 AS controller
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
@@ -44,7 +44,7 @@ USER 65532:65532
 ENTRYPOINT ["/app/controller"]
 
 # Webhook image
-FROM alpine:3.18 AS webhook
+FROM alpine:3.23 AS webhook
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
@@ -61,7 +61,7 @@ ENTRYPOINT ["/app/webhook"]
 
 # API Server image
 # Supports both production builds (via Dockerfile) and Tilt development (via docker_build_with_restart)
-FROM alpine:3.18 AS api-server
+FROM alpine:3.23 AS api-server
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
