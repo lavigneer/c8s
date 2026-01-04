@@ -151,18 +151,6 @@ install-crds: manifests ## Install CRDs to cluster
 uninstall-crds: manifests ## Uninstall CRDs from cluster
 	kubectl delete -f config/crd/bases
 
-.PHONY: deploy
-deploy: manifests ## Deploy controller and webhook to cluster
-	kubectl create namespace c8s-system --dry-run=client -o yaml | kubectl apply -f -
-	kubectl apply -f deploy/install.yaml
-	kubectl apply -f deploy/webhook-deployment.yaml
-	kubectl apply -f deploy/webhook-service.yaml
-	kubectl apply -f deploy/webhook-ingress.yaml
-
-.PHONY: undeploy
-undeploy: ## Remove controller and webhook from cluster
-	kubectl delete -f deploy/
-
 ##@ Check
 
 .PHONY: check-deps
@@ -218,7 +206,7 @@ run-webhook: ## Run webhook server locally
 tilt-up: ## Start Tilt with local K8s development environment (creates cluster if needed)
 	@command -v tilt >/dev/null 2>&1 || { echo "⚠ Tilt is not installed. Install from https://docs.tilt.dev/install.html"; exit 1; }
 	@echo "Starting Tilt..."
-	tilt up
+	C8S_DOGFOOD_ENABLED=true tilt up
 
 .PHONY: tilt-down
 tilt-down: ## Stop Tilt development environment

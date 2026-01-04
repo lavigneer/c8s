@@ -17,7 +17,9 @@
 #
 # Optional: Dog-fooding / GitHub Webhooks
 #   Uncomment the following line to enable ngrok tunneling for GitHub webhooks:
-#   load('./tilt/dogfooding.tilt')
+c8s_dogfood_enabled = os.getenv('C8S_DOGFOOD_ENABLED', '')
+if c8s_dogfood_enabled == 'true':
+  load_dynamic('./tilt/dogfooding.tilt')
 #
 #   This enables C8S to test itself by receiving real GitHub webhook events.
 #   See tilt/dogfooding.tilt for setup instructions.
@@ -265,7 +267,7 @@ namespace_create('c8s-system')
 # Deploy MinIO using the manifest (simpler than Helm, no registry auth needed)
 local_resource(
   name='minio',
-  cmd='kubectl apply -f ./deploy/minio.yaml',
+  cmd='kubectl apply -f ./tilt/deploy/minio.yaml',
   resource_deps=[],
   labels=['infrastructure'],
 )
