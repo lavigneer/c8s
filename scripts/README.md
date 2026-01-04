@@ -8,66 +8,6 @@ Contains shell scripts for common development tasks, validation, and CI/CD opera
 
 ## Scripts
 
-### validate-pipeline.sh
-
-**Purpose**: Validates C8S pipeline YAML files against the PipelineConfig CRD schema.
-
-**Usage**:
-```bash
-# Validate a pipeline file
-./scripts/validate-pipeline.sh .c8s.yaml
-
-# Verbose output with detailed validation steps
-./scripts/validate-pipeline.sh -v my-pipeline.yaml
-
-# Validate from stdin
-cat pipeline.yaml | ./scripts/validate-pipeline.sh -
-
-# Show help
-./scripts/validate-pipeline.sh --help
-```
-
-**What It Validates**:
-- ✅ YAML syntax correctness
-- ✅ Required fields (version, name, steps)
-- ✅ Version format (must be `v1alpha1`)
-- ✅ Name format (lowercase alphanumeric + hyphens)
-- ✅ Step structure (name, image, commands)
-- ✅ Resource limits format (CPU, memory)
-- ✅ CRD schema validation (if kubectl available)
-
-**Dependencies**:
-- `yq` - YAML processor (auto-installed with Homebrew if missing)
-- `kubectl` - Optional, enables CRD schema validation
-
-**Example Output**:
-```
-=== C8S Pipeline Validator ===
-
-ℹ INFO: Validating pipeline: .c8s.yaml
-
-ℹ INFO: Checking YAML syntax...
-✓ SUCCESS: YAML syntax is valid
-ℹ INFO: Checking required fields...
-✓ SUCCESS: All required fields present
-ℹ INFO: Validating pipeline steps...
-✓ SUCCESS: All steps are valid
-
-✅ Pipeline validation PASSED
-```
-
-**Exit Codes**:
-- `0` - Validation passed
-- `1` - Validation failed (detailed errors printed)
-
-**When to Use**:
-- Before committing `.c8s.yaml` changes
-- In pre-commit hooks
-- During pipeline development
-- In CI/CD to validate PRs
-
----
-
 ### tilt-ci-local.sh
 
 **Purpose**: Runs Tilt CI locally using a kind cluster for testing Tiltfile changes.
@@ -174,15 +114,6 @@ CLEANUP=true ./scripts/tilt-ci-local.sh
 
 ## Common Workflows
 
-### Pre-Commit Pipeline Validation
-```bash
-# Add to .git/hooks/pre-commit
-#!/bin/bash
-if [ -f .c8s.yaml ]; then
-  ./scripts/validate-pipeline.sh .c8s.yaml || exit 1
-fi
-```
-
 ### Local CI Testing Before Push
 ```bash
 # Test Tiltfile changes
@@ -194,10 +125,7 @@ git push
 
 ### CI/CD Integration
 
-Both scripts are used in GitHub Actions workflows:
-
-- **validate-pipeline.sh**: Used in `.github/workflows/c8s-dogfood.yml` to validate `.c8s.yaml`
-- **tilt-ci-local.sh**: Reference for `.github/workflows/tilt-ci.yml` implementation
+The **tilt-ci-local.sh** script is referenced in the `.github/workflows/tilt-ci.yml` implementation.
 
 See [.github/workflows/README.md](../.github/workflows/README.md) for CI/CD details.
 

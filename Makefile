@@ -34,17 +34,6 @@ COVERAGE_FILE := coverage.out
 .PHONY: all
 all: fmt vet test build
 
-##@ Quick Start (Primary Workflows)
-
-.PHONY: dev
-dev: tilt-up ## Start local development environment with Tilt (recommended)
-
-.PHONY: test-all
-test-all: test test-e2e ## Run all tests (unit, integration, and E2E)
-
-.PHONY: quick-build
-quick-build: build ## Build all binaries quickly
-
 ##@ Development
 
 .PHONY: fmt

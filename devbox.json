@@ -52,8 +52,6 @@
       "run:webhook":             "make run-webhook",
       "install:crds":            "make install-crds",
       "uninstall:crds":          "make uninstall-crds",
-      "deploy":                  "make deploy",
-      "undeploy":                "make undeploy",
       "tilt:up":                 "make tilt-up",
       "tilt:down":               "make tilt-down",
       "tilt:logs":               "make tilt-logs",
@@ -66,7 +64,6 @@
       "docker:push":             "make docker-push",
       "fmt":                     "make fmt",
       "vet":                     "make vet",
-      "tools":                   "make tools",
       "check:deps":              "make check-deps"
     }
   },
