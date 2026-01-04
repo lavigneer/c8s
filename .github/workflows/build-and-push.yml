@@ -55,7 +55,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push ${{ matrix.component }} image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -90,7 +90,7 @@ jobs:
   #         password: ${{ secrets.GITHUB_TOKEN }}
   #
   #     - name: Build and push frontend image
-  #       uses: docker/build-push-action@v5
+  #       uses: docker/build-push-action@v6
   #       with:
   #         context: ./cmd/frontend
   #         file: ./cmd/frontend/Dockerfile
