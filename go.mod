@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.327
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-logr/logr v1.4.3
-	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/time v0.10.0
