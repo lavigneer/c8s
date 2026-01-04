@@ -22,7 +22,7 @@
 #
 local_resource(
   name='c8s-nginx-proxy',
-  serve_cmd='docker run --rm --network host -v $(pwd)/tilt/config/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
+  serve_cmd='docker run --rm --network host -v $(pwd)/config/nginx.conf:/etc/nginx/nginx.conf:ro nginx:latest',
   allow_parallel=True,
   resource_deps=['c8s-api-server-port-forward', 'c8s-webhook-port-forward'],
   labels=['dogfooding'],
@@ -50,7 +50,7 @@ local_resource(
 #
 local_resource(
   name='c8s-ngrok-tunnel',
-  serve_cmd='ngrok start --all --config=./tilt/config/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
+  serve_cmd='ngrok start --all --config=./config/ngrok-config.yml --config=$HOME/.config/ngrok/ngrok.yml --log=stdout',
   allow_parallel=True,
   resource_deps=['c8s-nginx-proxy'],
   labels=['dogfooding'],
